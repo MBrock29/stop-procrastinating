@@ -7,6 +7,9 @@ interface LearningCardRow {
   user_id: string
   question: string
   answer: string
+  source: 'manual' | 'ai'
+  generation_topic: string | null
+  is_user_edited: boolean
   is_archived: boolean
   last_reviewed_at: string | null
   next_review_at: string | null
@@ -20,6 +23,9 @@ interface LearningCardRow {
 interface SaveLearningCardInput {
   question: string
   answer: string
+  source?: 'manual' | 'ai'
+  generationTopic?: string | null
+  isUserEdited?: boolean
 }
 
 function mapRow(row: LearningCardRow): LearningCard {
@@ -28,6 +34,9 @@ function mapRow(row: LearningCardRow): LearningCard {
     userId: row.user_id,
     question: row.question,
     answer: row.answer,
+    source: row.source,
+    generationTopic: row.generation_topic,
+    isUserEdited: row.is_user_edited,
     isArchived: row.is_archived,
     lastReviewedAt: row.last_reviewed_at,
     nextReviewAt: row.next_review_at,
@@ -90,6 +99,9 @@ export async function createLearningCard(userId: string, input: SaveLearningCard
       userId,
       question: input.question,
       answer: input.answer,
+      source: input.source ?? 'manual',
+      generationTopic: input.generationTopic ?? null,
+      isUserEdited: input.isUserEdited ?? false,
       isArchived: false,
       lastReviewedAt: null,
       nextReviewAt: null,
@@ -110,6 +122,9 @@ export async function createLearningCard(userId: string, input: SaveLearningCard
       user_id: userId,
       question: input.question,
       answer: input.answer,
+      source: input.source ?? 'manual',
+      generation_topic: input.generationTopic ?? null,
+      is_user_edited: input.isUserEdited ?? false,
     })
     .select()
     .single()
@@ -139,6 +154,7 @@ export async function updateLearningCard(
         ...item,
         question: input.question,
         answer: input.answer,
+        isUserEdited: true,
         updatedAt: new Date().toISOString(),
       }
 
@@ -153,6 +169,7 @@ export async function updateLearningCard(
     .update({
       question: input.question,
       answer: input.answer,
+      is_user_edited: input.isUserEdited ?? true,
       updated_at: new Date().toISOString(),
     })
     .eq('id', cardId)
@@ -230,6 +247,9 @@ export async function saveReviewedLearningCard(userId: string, card: LearningCar
     .update({
       question: card.question,
       answer: card.answer,
+      source: card.source,
+      generation_topic: card.generationTopic,
+      is_user_edited: card.isUserEdited,
       is_archived: card.isArchived,
       last_reviewed_at: card.lastReviewedAt,
       next_review_at: card.nextReviewAt,
@@ -248,4 +268,52 @@ export async function saveReviewedLearningCard(userId: string, card: LearningCar
   }
 
   return mapRow(data as LearningCardRow)
+}
+
+export async function bulkCreateLearningCards(userId: string, inputs: SaveLearningCardInput[]) {
+  const client = getSupabaseBrowserClient()
+
+  if (!client) {
+    const now = new Date().toISOString()
+    const nextCards = inputs.map<LearningCard>((input) => ({
+      id: crypto.randomUUID(),
+      userId,
+      question: input.question,
+      answer: input.answer,
+      source: input.source ?? 'manual',
+      generationTopic: input.generationTopic ?? null,
+      isUserEdited: input.isUserEdited ?? false,
+      isArchived: false,
+      lastReviewedAt: null,
+      nextReviewAt: null,
+      knowCount: 0,
+      semiCount: 0,
+      notConfidentCount: 0,
+      createdAt: now,
+      updatedAt: now,
+    }))
+    const existing = readDemoCards(userId)
+    writeDemoCards(userId, [...nextCards, ...existing])
+    return nextCards
+  }
+
+  const { data, error } = await client
+    .from('learning_cards')
+    .insert(
+      inputs.map((input) => ({
+        user_id: userId,
+        question: input.question,
+        answer: input.answer,
+        source: input.source ?? 'manual',
+        generation_topic: input.generationTopic ?? null,
+        is_user_edited: input.isUserEdited ?? false,
+      })),
+    )
+    .select()
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []).map((item) => mapRow(item as LearningCardRow))
 }

@@ -17,6 +17,9 @@ export interface LearningCard {
   userId: string
   question: string
   answer: string
+  source: 'manual' | 'ai'
+  generationTopic: string | null
+  isUserEdited: boolean
   isArchived: boolean
   lastReviewedAt: string | null
   nextReviewAt: string | null

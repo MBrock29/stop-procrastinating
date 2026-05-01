@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  bulkCreateLearningCards,
   createLearningCard,
   getNextLearningCard,
   listLearningCards,
@@ -12,6 +13,9 @@ import type { LearningCard } from '../../types/domain'
 interface SaveLearningCardInput {
   question: string
   answer: string
+  source?: 'manual' | 'ai'
+  generationTopic?: string | null
+  isUserEdited?: boolean
 }
 
 export function useLearningCards() {
@@ -106,6 +110,15 @@ export function useLearningCards() {
       }
 
       return getNextLearningCard(user.id)
+    },
+    async addGeneratedCards(inputs: SaveLearningCardInput[]) {
+      if (!user) {
+        throw new Error('You must be signed in to add generated cards.')
+      }
+
+      const created = await bulkCreateLearningCards(user.id, inputs)
+      setCards((current) => [...created, ...current])
+      return created
     },
   }
 }

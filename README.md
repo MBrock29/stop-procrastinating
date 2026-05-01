@@ -6,6 +6,7 @@ React, TypeScript, Tailwind, Supabase, and a Chrome Manifest V3 extension workin
 
 - Users manage blocked domains in the web app.
 - Users create their own question-and-answer learning cards.
+- Users can generate a cheap cached batch of AI cards for a topic and then review them like normal cards.
 - The extension caches active blocked domains locally.
 - When a blocked domain is visited, the extension redirects the browser to the app’s `/interrupt` route.
 - The interrupt route shows one due card, records a confidence rating, and reschedules the card.
@@ -20,6 +21,7 @@ React, TypeScript, Tailwind, Supabase, and a Chrome Manifest V3 extension workin
 - `src/features/extension`: app-side bridge that syncs rules to the extension
 - `extension/`: Manifest V3 extension source and static assets
 - `supabase/migrations/`: SQL schema for blocked domains, cards, interrupt sessions, and reviews
+- `supabase/functions/generate-learning-cards`: edge function that calls the LLM once and returns a stored card batch
 
 ## Local setup
 
@@ -39,19 +41,24 @@ cp .env.example .env
 
 If `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are missing, the app still runs in demo mode with local-storage-backed auth and data so you can exercise the full flow locally.
 
-4. Start the app:
+4. Optional for AI generation in production:
+
+- set `OPENAI_API_KEY` in your Supabase edge-function secrets
+- optionally set `OPENAI_GENERATION_MODEL` if you want a model other than `gpt-4o-mini`
+
+5. Start the app:
 
 ```bash
 npm run dev
 ```
 
-5. Build the extension:
+6. Build the extension:
 
 ```bash
 npm run build:extension
 ```
 
-6. Load the extension in Chrome:
+7. Load the extension in Chrome:
 
 - Open `chrome://extensions`
 - Enable `Developer mode`
@@ -68,6 +75,16 @@ Apply the SQL in `supabase/migrations/` to create:
 - `card_reviews`
 
 Each table is protected with row-level security for the signed-in owner.
+
+To enable AI generation with Supabase:
+
+```bash
+supabase secrets set OPENAI_API_KEY=your-key
+supabase secrets set OPENAI_GENERATION_MODEL=gpt-4o-mini
+supabase functions deploy generate-learning-cards
+```
+
+If the app is running without Supabase, the AI generator falls back to a deterministic local demo generator so the UI still works for testing.
 
 ## Extension sync flow
 
@@ -94,6 +111,17 @@ Each table is protected with row-level security for the signed-in owner.
 5. The app loads one due card.
 6. The user reveals the answer and rates confidence.
 7. The app records a `card_review`, updates scheduling fields on the card, and completes the interrupt session.
+
+## AI card generation flow
+
+1. User opens the cards page and enters a topic such as `mid-senior React interview questions`.
+2. The app sends one request to the `generate-learning-cards` edge function.
+3. The edge function calls the OpenAI Responses API once and asks for structured JSON output.
+4. The returned cards are saved into `learning_cards` with:
+   - `source = ai`
+   - `generation_topic = <topic>`
+   - `is_user_edited = false`
+5. From that point on, AI cards use the same review scheduling and interrupt flow as manual cards.
 
 ## Scripts
 

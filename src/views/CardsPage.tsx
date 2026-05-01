@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
+import { generateCardsWithAi } from '../features/cards/aiGenerator'
 import { useLearningCards } from '../features/cards/useLearningCards'
 import type { LearningCard } from '../types/domain'
 
@@ -11,6 +12,18 @@ interface CardDraft {
 const initialDraft: CardDraft = {
   question: '',
   answer: '',
+}
+
+interface AiDraft {
+  topic: string
+  seniority: string
+  cardCount: number
+}
+
+const initialAiDraft: AiDraft = {
+  topic: '',
+  seniority: 'mid-senior',
+  cardCount: 10,
 }
 
 function CardEditor({
@@ -149,11 +162,22 @@ function CardListItem({
 }
 
 export function CardsPage() {
-  const { archiveCard, cards, createCard, error, getNextCard, isLoading, updateCard } =
-    useLearningCards()
+  const {
+    addGeneratedCards,
+    archiveCard,
+    cards,
+    createCard,
+    error,
+    getNextCard,
+    isLoading,
+    updateCard,
+  } = useLearningCards()
   const [draft, setDraft] = useState<CardDraft>(initialDraft)
+  const [aiDraft, setAiDraft] = useState<AiDraft>(initialAiDraft)
   const [pending, setPending] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiSuccess, setAiSuccess] = useState<string | null>(null)
   const [nextCardLabel, setNextCardLabel] = useState<string | null>(null)
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
@@ -210,6 +234,46 @@ export function CardsPage() {
     setNextCardLabel(card ? card.question : 'No active cards are available yet.')
   }
 
+  async function handleGenerateCards(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!aiDraft.topic.trim()) {
+      setAiError('Add a topic for the generated card set.')
+      return
+    }
+
+    setPending(true)
+    setAiError(null)
+    setAiSuccess(null)
+
+    try {
+      const generatedCards = await generateCardsWithAi({
+        topic: aiDraft.topic.trim(),
+        seniority: aiDraft.seniority.trim(),
+        cardCount: aiDraft.cardCount,
+      })
+
+      await addGeneratedCards(
+        generatedCards.map((card) => ({
+          question: card.question,
+          answer: card.answer,
+          source: 'ai',
+          generationTopic: aiDraft.topic.trim(),
+          isUserEdited: false,
+        })),
+      )
+
+      setAiSuccess(`Generated ${generatedCards.length} cards for "${aiDraft.topic.trim()}".`)
+      setAiDraft(initialAiDraft)
+    } catch (nextError) {
+      const message =
+        nextError instanceof Error ? nextError.message : 'Unable to generate cards right now.'
+      setAiError(message)
+    } finally {
+      setPending(false)
+    }
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
       <section className="panel px-6 py-6 sm:px-8">
@@ -247,6 +311,78 @@ export function CardsPage() {
             {nextCardLabel}
           </div>
         ) : null}
+
+        <form className="mt-10 space-y-4 rounded-[2rem] border border-slate-200 bg-slate-50 p-5" onSubmit={handleGenerateCards}>
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+              AI generate
+            </p>
+            <h3 className="mt-2 text-lg font-bold text-ink">Create a cheap cached batch once</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Enter a topic like “mid-senior React interview questions” and the app
+              will generate a stored batch that reuses your existing review flow.
+            </p>
+          </div>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-slate-700">Topic</span>
+            <input
+              value={aiDraft.topic}
+              onChange={(event) => setAiDraft({ ...aiDraft, topic: event.target.value })}
+              type="text"
+              placeholder="mid-senior React interview questions"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-reef focus:ring-4 focus:ring-reef/10"
+            />
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Seniority</span>
+              <input
+                value={aiDraft.seniority}
+                onChange={(event) =>
+                  setAiDraft({ ...aiDraft, seniority: event.target.value })
+                }
+                type="text"
+                placeholder="mid-senior"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-reef focus:ring-4 focus:ring-reef/10"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Card count</span>
+              <input
+                value={aiDraft.cardCount}
+                onChange={(event) =>
+                  setAiDraft({
+                    ...aiDraft,
+                    cardCount: Math.max(1, Math.min(20, Number(event.target.value) || 1)),
+                  })
+                }
+                type="number"
+                min={1}
+                max={20}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-reef focus:ring-4 focus:ring-reef/10"
+              />
+            </label>
+          </div>
+
+          {aiError ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {aiError}
+            </div>
+          ) : null}
+
+          {aiSuccess ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              {aiSuccess}
+            </div>
+          ) : null}
+
+          <button type="submit" className="action-button" disabled={pending}>
+            {pending ? 'Generating…' : 'Generate AI cards'}
+          </button>
+        </form>
       </section>
 
       <section className="panel px-6 py-6 sm:px-8">
