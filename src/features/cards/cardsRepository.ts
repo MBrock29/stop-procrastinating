@@ -215,3 +215,37 @@ export async function getNextLearningCard(userId: string) {
   const cards = await listLearningCards(userId)
   return selectNextDueCard(cards)
 }
+
+export async function saveReviewedLearningCard(userId: string, card: LearningCard) {
+  const client = getSupabaseBrowserClient()
+
+  if (!client) {
+    const nextItems = readDemoCards(userId).map((item) => (item.id === card.id ? card : item))
+    writeDemoCards(userId, nextItems)
+    return card
+  }
+
+  const { data, error } = await client
+    .from('learning_cards')
+    .update({
+      question: card.question,
+      answer: card.answer,
+      is_archived: card.isArchived,
+      last_reviewed_at: card.lastReviewedAt,
+      next_review_at: card.nextReviewAt,
+      know_count: card.knowCount,
+      semi_count: card.semiCount,
+      not_confident_count: card.notConfidentCount,
+      updated_at: card.updatedAt,
+    })
+    .eq('id', card.id)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return mapRow(data as LearningCardRow)
+}
