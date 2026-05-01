@@ -1,73 +1,114 @@
-# React + TypeScript + Vite
+# Stop Procrastinating
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React, TypeScript, Tailwind, Supabase, and a Chrome Manifest V3 extension working together to turn habit-site visits into a short learning interrupt.
 
-Currently, two official plugins are available:
+## What it does
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Users manage blocked domains in the web app.
+- Users create their own question-and-answer learning cards.
+- The extension caches active blocked domains locally.
+- When a blocked domain is visited, the extension redirects the browser to the app’s `/interrupt` route.
+- The interrupt route shows one due card, records a confidence rating, and reschedules the card.
 
-## React Compiler
+## Project shape
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `src/`: React app
+- `src/features/auth`: auth provider and session handling
+- `src/features/blocked-domains`: blocked-domain data layer and UI hooks
+- `src/features/cards`: card CRUD and scheduling logic
+- `src/features/interrupts`: interrupt session and review persistence
+- `src/features/extension`: app-side bridge that syncs rules to the extension
+- `extension/`: Manifest V3 extension source and static assets
+- `supabase/migrations/`: SQL schema for blocked domains, cards, interrupt sessions, and reviews
 
-## Expanding the ESLint configuration
+## Local setup
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Install dependencies:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Copy environment variables:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env
 ```
+
+3. Fill in Supabase values if you want real auth/data.
+
+If `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are missing, the app still runs in demo mode with local-storage-backed auth and data so you can exercise the full flow locally.
+
+4. Start the app:
+
+```bash
+npm run dev
+```
+
+5. Build the extension:
+
+```bash
+npm run build:extension
+```
+
+6. Load the extension in Chrome:
+
+- Open `chrome://extensions`
+- Enable `Developer mode`
+- Click `Load unpacked`
+- Select `extension/dist`
+
+## Supabase setup
+
+Apply the SQL in `supabase/migrations/` to create:
+
+- `blocked_domains`
+- `learning_cards`
+- `interrupt_sessions`
+- `card_reviews`
+
+Each table is protected with row-level security for the signed-in owner.
+
+## Extension sync flow
+
+- The authenticated app shell mounts `ExtensionSyncBridge`.
+- Whenever active blocked domains change, the app posts a sync message to the page.
+- The extension content script forwards that payload to the background worker.
+- The background worker stores:
+  - `appBaseUrl`
+  - `blockedDomains`
+  - `lastSyncedAt`
+- The popup reads that status and can request a sync from the currently open app tab.
+
+## Redirect flow
+
+1. User navigates to a blocked domain.
+2. Background worker checks the cached rules.
+3. If the host matches, the tab is updated to:
+
+```text
+/interrupt?site=<hostname>&source=extension
+```
+
+4. The app creates an interrupt session.
+5. The app loads one due card.
+6. The user reveals the answer and rates confidence.
+7. The app records a `card_review`, updates scheduling fields on the card, and completes the interrupt session.
+
+## Scripts
+
+```bash
+npm run dev
+npm run build
+npm run build:extension
+npm run build:all
+npm run lint
+npm run test
+```
+
+## Notes
+
+- Browser target is Chrome/Chromium first.
+- Domain matching is domain-level, including subdomains.
+- v1 is designed to interrupt habits, not to be impossible to bypass.
+- The extension currently uses the app origin to avoid redirect loops; it will not redirect when you are already on the app itself.
