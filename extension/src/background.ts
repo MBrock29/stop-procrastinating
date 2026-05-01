@@ -1,4 +1,3 @@
-import { domainMatchesRule } from '../../src/utils/domains'
 import {
   EXTENSION_CLEAR_STATUS_MESSAGE,
   EXTENSION_GET_STATUS_MESSAGE,
@@ -6,6 +5,7 @@ import {
   type ExtensionStatusPayload,
   type ExtensionSyncPayload,
 } from '../../src/shared/extension'
+import { resolveRedirectTarget } from './redirect'
 
 const DEFAULT_APP_URL = 'http://localhost:5173'
 
@@ -29,15 +29,6 @@ async function setStatus(payload: ExtensionSyncPayload) {
     blockedDomains: payload.blockedDomains,
     lastSyncedAt: new Date().toISOString(),
   })
-}
-
-function isAppUrl(appBaseUrl: string, url: URL) {
-  try {
-    const appUrl = new URL(appBaseUrl)
-    return appUrl.origin === url.origin
-  } catch {
-    return false
-  }
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -83,24 +74,11 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
   }
 
   const status = await getStatus()
-  const nextUrl = new URL(details.url)
+  const interruptUrl = resolveRedirectTarget(status, details.url)
 
-  if (!status.blockedDomains.length || isAppUrl(status.appBaseUrl, nextUrl)) {
-    return
+  if (interruptUrl) {
+    await chrome.tabs.update(details.tabId, {
+      url: interruptUrl,
+    })
   }
-
-  const hostname = nextUrl.hostname
-  const isBlocked = status.blockedDomains.some((rule) => domainMatchesRule(hostname, rule))
-
-  if (!isBlocked) {
-    return
-  }
-
-  const interruptUrl = new URL('/interrupt', status.appBaseUrl)
-  interruptUrl.searchParams.set('site', hostname)
-  interruptUrl.searchParams.set('source', 'extension')
-
-  await chrome.tabs.update(details.tabId, {
-    url: interruptUrl.toString(),
-  })
 })
