@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth'
+import { ExtensionSyncBridge } from '../features/extension/ExtensionSyncBridge'
 
 const navItems = [
   { to: '/app', label: 'Dashboard' },
@@ -19,6 +20,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-soft-grid bg-[size:36px_36px]">
+      <ExtensionSyncBridge />
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <header className="panel mb-6 flex flex-col gap-5 px-6 py-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">

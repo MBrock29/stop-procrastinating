@@ -34,3 +34,55 @@ h1 {
   font-size: 14px;
   line-height: 1.6;
 }
+
+.status-card {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.label {
+  color: #0f766e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.value {
+  margin: 6px 0 14px;
+  color: #1e293b;
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.button-stack {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.primary-button,
+.secondary-button {
+  width: 100%;
+  border-radius: 999px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-button {
+  border: none;
+  color: #ffffff;
+  background: #0f766e;
+}
+
+.secondary-button {
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  background: #ffffff;
+}

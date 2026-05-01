@@ -1,12 +1,15 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains'
+import { syncExtensionRules } from '../features/extension/extensionBridge'
 
 export function BlockedDomainsPage() {
   const { addDomain, domains, error, isLoading, removeDomain, toggleDomain } =
     useBlockedDomains()
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+
+  const activeDomains = domains.filter((item) => item.isActive).map((item) => item.domain)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -26,6 +29,10 @@ export function BlockedDomainsPage() {
     } finally {
       setPending(false)
     }
+  }
+
+  function handleManualSync() {
+    syncExtensionRules(activeDomains)
   }
 
   return (
@@ -75,6 +82,21 @@ export function BlockedDomainsPage() {
               }
             </li>
           </ul>
+        </div>
+
+        <div className="mt-4 rounded-3xl bg-white p-5 text-sm text-slate-600">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-base font-bold text-ink">Extension sync</h3>
+              <p className="mt-1">
+                If the extension is installed, this sends your active rules to it from the
+                app.
+              </p>
+            </div>
+            <button type="button" className="ghost-button" onClick={handleManualSync}>
+              Sync browser extension
+            </button>
+          </div>
         </div>
       </section>
 
