@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../features/auth/useAuth'
 
 const navItems = [
   { to: '/app', label: 'Dashboard' },
@@ -7,6 +9,14 @@ const navItems = [
 ]
 
 export function AppShell() {
+  const navigate = useNavigate()
+  const { mode, signOut, user } = useAuth()
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/')
+  }
+
   return (
     <div className="min-h-screen bg-soft-grid bg-[size:36px_36px]">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
@@ -25,24 +35,37 @@ export function AppShell() {
               </p>
             </div>
           </div>
-          <nav className="flex flex-wrap gap-3">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  [
-                    'rounded-full px-4 py-2 text-sm font-semibold transition',
-                    isActive
-                      ? 'bg-reef text-white shadow-lg shadow-reef/20'
-                      : 'bg-white text-slate-600 hover:bg-slate-100',
-                  ].join(' ')
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+          <div className="flex flex-col gap-4 lg:items-end">
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <div className="font-semibold text-ink">{user?.email ?? 'Unknown user'}</div>
+              <div className="mt-1">
+                {mode === 'supabase' ? 'Supabase session active' : 'Demo auth mode'}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <nav className="flex flex-wrap gap-3">
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      [
+                        'rounded-full px-4 py-2 text-sm font-semibold transition',
+                        isActive
+                          ? 'bg-reef text-white shadow-lg shadow-reef/20'
+                          : 'bg-white text-slate-600 hover:bg-slate-100',
+                      ].join(' ')
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </nav>
+              <button type="button" onClick={() => void handleSignOut()} className="ghost-button">
+                Sign out
+              </button>
+            </div>
+          </div>
         </header>
 
         <main className="flex-1">

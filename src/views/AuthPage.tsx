@@ -1,17 +1,53 @@
 import type { FormEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-
-const DEMO_AUTH_KEY = 'stop-procrastinating.demo-auth'
+import { useState } from 'react'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../features/auth/useAuth'
 
 export function AuthPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { mode, signInWithGoogle, signInWithPassword, status } = useAuth()
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
   const redirect = searchParams.get('redirect') ?? '/app'
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  if (status === 'authenticated') {
+    return <Navigate to={redirect} replace />
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    window.localStorage.setItem(DEMO_AUTH_KEY, 'true')
-    navigate(redirect)
+    setError(null)
+    setPending(true)
+
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get('email') ?? '')
+    const password = String(formData.get('password') ?? '')
+
+    try {
+      await signInWithPassword(email, password)
+      navigate(redirect)
+    } catch (nextError) {
+      const message =
+        nextError instanceof Error ? nextError.message : 'Unable to sign in right now.'
+      setError(message)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setError(null)
+    setPending(true)
+
+    try {
+      await signInWithGoogle()
+    } catch (nextError) {
+      const message =
+        nextError instanceof Error ? nextError.message : 'Unable to start Google sign-in.'
+      setError(message)
+      setPending(false)
+    }
   }
 
   return (
@@ -46,8 +82,9 @@ export function AuthPage() {
             <div className="mx-auto max-w-md">
               <h2 className="text-2xl font-bold text-ink">Sign in to your focus space</h2>
               <p className="mt-2 text-sm text-slate-600">
-                Supabase auth will plug in here next. For now, this route gives us the
-                protected flow and redirect behavior we need.
+                {mode === 'supabase'
+                  ? 'Use your Supabase-backed account to sync sites, cards, and redirect sessions.'
+                  : 'Supabase keys are not configured yet, so this screen runs in demo mode while keeping the same protected flow.'}
               </p>
 
               <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
@@ -55,6 +92,7 @@ export function AuthPage() {
                   <span className="mb-2 block text-sm font-semibold text-slate-700">Email</span>
                   <input
                     type="email"
+                    name="email"
                     required
                     placeholder="you@example.com"
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-reef focus:ring-4 focus:ring-reef/10"
@@ -66,15 +104,30 @@ export function AuthPage() {
                   </span>
                   <input
                     type="password"
+                    name="password"
                     required
                     placeholder="••••••••"
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-reef focus:ring-4 focus:ring-reef/10"
                   />
                 </label>
+                {error ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    {error}
+                  </div>
+                ) : null}
                 <button type="submit" className="action-button w-full">
-                  Continue
+                  {pending ? 'Signing in…' : 'Continue'}
                 </button>
               </form>
+
+              <button
+                type="button"
+                onClick={() => void handleGoogleSignIn()}
+                className="ghost-button mt-4 w-full"
+                disabled={pending}
+              >
+                Continue with Google
+              </button>
             </div>
           </section>
         </div>
