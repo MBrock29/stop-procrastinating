@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:extension": "node ./scripts/build-extension.mjs",
+    "build:all": "npm run build && npm run build:extension",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -20,10 +22,12 @@
     "@types/node": "^20.17.30",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@types/chrome": "^0.0.319",
     "@typescript-eslint/eslint-plugin": "^8.19.1",
     "@typescript-eslint/parser": "^8.19.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "esbuild": "^0.25.4",
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
