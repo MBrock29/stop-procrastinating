@@ -6,7 +6,7 @@ import { useAuth } from '../features/auth/useAuth'
 export function AuthPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { mode, signInWithGoogle, signInWithPassword, status } = useAuth()
+  const { authError, mode, signInWithGoogle, signInWithPassword, status } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   const redirect = searchParams.get('redirect') ?? '/app'
@@ -113,6 +113,11 @@ export function AuthPage() {
                 {error ? (
                   <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     {error}
+                  </div>
+                ) : null}
+                {authError ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+                    {authError}
                   </div>
                 ) : null}
                 <button type="submit" className="action-button w-full">

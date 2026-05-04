@@ -10,6 +10,7 @@ export interface AuthContextValue {
   mode: AuthMode
   user: UserProfile | null
   session: Session | null
+  authError: string | null
   signInWithPassword: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>

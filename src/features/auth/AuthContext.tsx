@@ -25,6 +25,16 @@ function mapSupabaseUser(session: Session | null): UserProfile | null {
 function cleanupAuthCallbackUrl() {
   const url = new URL(window.location.href)
   const authKeys = ['code', 'error', 'error_code', 'error_description', 'state']
+  const authHashKeys = [
+    'access_token',
+    'expires_at',
+    'expires_in',
+    'provider_token',
+    'refresh_token',
+    'sb',
+    'token_type',
+    'type',
+  ]
 
   let changed = false
 
@@ -34,6 +44,21 @@ function cleanupAuthCallbackUrl() {
       changed = true
     }
   })
+
+  if (url.hash) {
+    const hash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash
+    const hashParams = new URLSearchParams(hash)
+
+    authHashKeys.forEach((key) => {
+      if (hashParams.has(key)) {
+        hashParams.delete(key)
+        changed = true
+      }
+    })
+
+    const nextHash = hashParams.toString()
+    url.hash = nextHash ? `#${nextHash}` : ''
+  }
 
   if (changed) {
     const nextUrl = `${url.pathname}${url.search}${url.hash}`
@@ -64,12 +89,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [user, setUser] = useState<UserProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!hasSupabaseEnv) {
       const demoUser = getDemoUser()
       setUser(demoUser)
       setSession(null)
+      setAuthError(null)
       setStatus(demoUser ? 'authenticated' : 'unauthenticated')
       return
     }
@@ -86,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event, nextSession) => {
+      setAuthError(null)
       setSession(nextSession)
       setUser(mapSupabaseUser(nextSession))
       setStatus(nextSession ? 'authenticated' : 'unauthenticated')
@@ -109,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           cleanupAuthCallbackUrl()
+          setAuthError(null)
           setSession(data.session)
           setUser(mapSupabaseUser(data.session))
           setStatus(data.session ? 'authenticated' : 'unauthenticated')
@@ -130,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           cleanupAuthCallbackUrl()
+          setAuthError(null)
           setSession(data.session)
           setUser(mapSupabaseUser(data.session))
           setStatus(data.session ? 'authenticated' : 'unauthenticated')
@@ -142,14 +172,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
+        setAuthError(null)
         setSession(data.session)
         setUser(mapSupabaseUser(data.session))
         setStatus(data.session ? 'authenticated' : 'unauthenticated')
-      } catch {
+      } catch (error) {
         if (!isMounted) {
           return
         }
 
+        const message =
+          error instanceof Error ? error.message : 'Unable to restore your Supabase session.'
+        console.error('Supabase auth bootstrap failed:', error)
+        setAuthError(message)
         setSession(null)
         setUser(null)
         setStatus('unauthenticated')
@@ -170,9 +205,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mode: hasSupabaseEnv ? 'supabase' : 'demo',
       user,
       session,
+      authError,
       async signInWithPassword(email, password) {
         if (!hasSupabaseEnv) {
           setDemoUser(email)
+          setAuthError(null)
           setUser({ id: 'demo-user', email })
           setStatus('authenticated')
           return
@@ -192,11 +229,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) {
           throw error
         }
+
+        setAuthError(null)
       },
       async signInWithGoogle() {
         if (!hasSupabaseEnv) {
           const email = 'demo@example.com'
           setDemoUser(email)
+          setAuthError(null)
           setUser({ id: 'demo-user', email })
           setStatus('authenticated')
           return
@@ -222,6 +262,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signOut() {
         if (!hasSupabaseEnv) {
           clearDemoUser()
+          setAuthError(null)
           setUser(null)
           setStatus('unauthenticated')
           return
@@ -238,9 +279,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) {
           throw error
         }
+
+        setAuthError(null)
       },
     }),
-    [session, status, user],
+    [authError, session, status, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
