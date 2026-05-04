@@ -22,6 +22,25 @@ function mapSupabaseUser(session: Session | null): UserProfile | null {
   }
 }
 
+function cleanupAuthCallbackUrl() {
+  const url = new URL(window.location.href)
+  const authKeys = ['code', 'error', 'error_code', 'error_description', 'state']
+
+  let changed = false
+
+  authKeys.forEach((key) => {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key)
+      changed = true
+    }
+  })
+
+  if (changed) {
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`
+    window.history.replaceState({}, document.title, nextUrl)
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [user, setUser] = useState<UserProfile | null>(null)
@@ -45,16 +64,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let isMounted = true
 
-    client.auth.getSession().then(({ data }) => {
-      if (!isMounted) {
-        return
-      }
-
-      setSession(data.session)
-      setUser(mapSupabaseUser(data.session))
-      setStatus(data.session ? 'authenticated' : 'unauthenticated')
-    })
-
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event, nextSession) => {
@@ -62,6 +71,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(mapSupabaseUser(nextSession))
       setStatus(nextSession ? 'authenticated' : 'unauthenticated')
     })
+
+    async function hydrateSession() {
+      const url = new URL(window.location.href)
+      const authCode = url.searchParams.get('code')
+
+      try {
+        if (authCode) {
+          const { data, error } = await client.auth.exchangeCodeForSession(authCode)
+
+          if (error) {
+            throw error
+          }
+
+          if (!isMounted) {
+            return
+          }
+
+          cleanupAuthCallbackUrl()
+          setSession(data.session)
+          setUser(mapSupabaseUser(data.session))
+          setStatus(data.session ? 'authenticated' : 'unauthenticated')
+          return
+        }
+
+        const { data } = await client.auth.getSession()
+
+        if (!isMounted) {
+          return
+        }
+
+        setSession(data.session)
+        setUser(mapSupabaseUser(data.session))
+        setStatus(data.session ? 'authenticated' : 'unauthenticated')
+      } catch {
+        if (!isMounted) {
+          return
+        }
+
+        setSession(null)
+        setUser(null)
+        setStatus('unauthenticated')
+      }
+    }
+
+    void hydrateSession()
 
     return () => {
       isMounted = false
@@ -116,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await client.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${env.appUrl}/app`,
+            redirectTo: env.appUrl,
           },
         })
 
