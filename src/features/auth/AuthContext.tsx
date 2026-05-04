@@ -41,6 +41,25 @@ function cleanupAuthCallbackUrl() {
   }
 }
 
+function readAuthHashParams() {
+  const hash = window.location.hash.startsWith('#')
+    ? window.location.hash.slice(1)
+    : window.location.hash
+
+  const params = new URLSearchParams(hash)
+  const accessToken = params.get('access_token')
+  const refreshToken = params.get('refresh_token')
+
+  if (!accessToken || !refreshToken) {
+    return null
+  }
+
+  return {
+    accessToken,
+    refreshToken,
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [user, setUser] = useState<UserProfile | null>(null)
@@ -75,10 +94,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function hydrateSession() {
       const url = new URL(window.location.href)
       const authCode = url.searchParams.get('code')
+      const authTokens = readAuthHashParams()
 
       try {
         if (authCode) {
           const { data, error } = await client.auth.exchangeCodeForSession(authCode)
+
+          if (error) {
+            throw error
+          }
+
+          if (!isMounted) {
+            return
+          }
+
+          cleanupAuthCallbackUrl()
+          setSession(data.session)
+          setUser(mapSupabaseUser(data.session))
+          setStatus(data.session ? 'authenticated' : 'unauthenticated')
+          return
+        }
+
+        if (authTokens) {
+          const { data, error } = await client.auth.setSession({
+            access_token: authTokens.accessToken,
+            refresh_token: authTokens.refreshToken,
+          })
 
           if (error) {
             throw error
