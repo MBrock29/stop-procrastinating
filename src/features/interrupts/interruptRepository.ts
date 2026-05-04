@@ -160,7 +160,6 @@ export async function submitInterruptReview(input: {
   if (!client) {
     const existing = readCardReviews(input.userId)
     writeCardReviews(input.userId, [review, ...existing])
-    await completeInterruptSession(input.userId, input.sessionId)
     return {
       review,
       updatedCard,
@@ -182,8 +181,6 @@ export async function submitInterruptReview(input: {
   if (error) {
     throw error
   }
-
-  await completeInterruptSession(input.userId, input.sessionId)
 
   return {
     review: {

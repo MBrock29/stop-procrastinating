@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyConfidenceToCard, getNextReviewAt, selectNextDueCard } from './scheduling'
+import { applyConfidenceToCard, getCardPriority, selectNextDueCard, sortCardsForReview } from './scheduling'
 import type { LearningCard } from '../../types/domain'
 
 function createCard(overrides: Partial<LearningCard> = {}): LearningCard {
@@ -11,6 +11,7 @@ function createCard(overrides: Partial<LearningCard> = {}): LearningCard {
     source: 'manual',
     generationTopic: null,
     isUserEdited: false,
+    latestConfidence: null,
     isArchived: false,
     lastReviewedAt: null,
     nextReviewAt: null,
@@ -23,15 +24,12 @@ function createCard(overrides: Partial<LearningCard> = {}): LearningCard {
   }
 }
 
-describe('getNextReviewAt', () => {
-  it('schedules know farther out than semi and not confident', () => {
-    const base = new Date('2026-05-01T10:00:00.000Z')
-    const know = new Date(getNextReviewAt('know', base)).getTime()
-    const semi = new Date(getNextReviewAt('semi', base)).getTime()
-    const notConfident = new Date(getNextReviewAt('not_confident', base)).getTime()
-
-    expect(know).toBeGreaterThan(semi)
-    expect(semi).toBeGreaterThan(notConfident)
+describe('getCardPriority', () => {
+  it('puts unreviewed and not confident cards at the top', () => {
+    expect(getCardPriority(createCard())).toBe(0)
+    expect(getCardPriority(createCard({ latestConfidence: 'not_confident' }))).toBe(0)
+    expect(getCardPriority(createCard({ latestConfidence: 'semi' }))).toBe(1)
+    expect(getCardPriority(createCard({ latestConfidence: 'know' }))).toBe(2)
   })
 })
 
@@ -43,32 +41,48 @@ describe('applyConfidenceToCard', () => {
     expect(updated.semiCount).toBe(1)
     expect(updated.knowCount).toBe(0)
     expect(updated.notConfidentCount).toBe(0)
-    expect(updated.nextReviewAt).toBe('2026-05-06T10:00:00.000Z')
+    expect(updated.latestConfidence).toBe('semi')
+    expect(updated.nextReviewAt).toBeNull()
+  })
+})
+
+describe('sortCardsForReview', () => {
+  it('sorts cards by priority bucket before last reviewed time', () => {
+    const know = createCard({ id: 'know', latestConfidence: 'know' })
+    const semi = createCard({ id: 'semi', latestConfidence: 'semi' })
+    const notConfident = createCard({ id: 'not-confident', latestConfidence: 'not_confident' })
+
+    expect(sortCardsForReview([know, semi, notConfident]).map((card) => card.id)).toEqual([
+      'not-confident',
+      'semi',
+      'know',
+    ])
+  })
+
+  it('keeps older cards first within the same priority bucket', () => {
+    const older = createCard({
+      id: 'older',
+      latestConfidence: 'semi',
+      lastReviewedAt: '2026-05-01T10:00:00.000Z',
+    })
+    const newer = createCard({
+      id: 'newer',
+      latestConfidence: 'semi',
+      lastReviewedAt: '2026-05-05T10:00:00.000Z',
+    })
+
+    expect(sortCardsForReview([newer, older]).map((card) => card.id)).toEqual([
+      'older',
+      'newer',
+    ])
   })
 })
 
 describe('selectNextDueCard', () => {
-  it('returns a due card before later cards', () => {
-    const now = new Date('2026-05-10T10:00:00.000Z')
-    const due = createCard({ id: 'due', nextReviewAt: '2026-05-09T10:00:00.000Z' })
-    const later = createCard({ id: 'later', nextReviewAt: '2026-05-12T10:00:00.000Z' })
+  it('returns the first card in the review priority order', () => {
+    const know = createCard({ id: 'know', latestConfidence: 'know' })
+    const unmarked = createCard({ id: 'unmarked', latestConfidence: null })
 
-    expect(selectNextDueCard([later, due], now)?.id).toBe('due')
-  })
-
-  it('falls back to the least recently reviewed active card when nothing is due', () => {
-    const now = new Date('2026-05-10T10:00:00.000Z')
-    const older = createCard({
-      id: 'older',
-      lastReviewedAt: '2026-05-01T10:00:00.000Z',
-      nextReviewAt: '2026-05-12T10:00:00.000Z',
-    })
-    const newer = createCard({
-      id: 'newer',
-      lastReviewedAt: '2026-05-05T10:00:00.000Z',
-      nextReviewAt: '2026-05-13T10:00:00.000Z',
-    })
-
-    expect(selectNextDueCard([newer, older], now)?.id).toBe('older')
+    expect(selectNextDueCard([know, unmarked])?.id).toBe('unmarked')
   })
 })

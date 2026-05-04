@@ -1,22 +1,31 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { getNextLearningCard } from '../features/cards/cardsRepository'
+import { listLearningCards } from '../features/cards/cardsRepository'
+import { sortCardsForReview } from '../features/cards/scheduling'
 import { useAuth } from '../features/auth/useAuth'
-import { createInterruptSession, submitInterruptReview } from '../features/interrupts/interruptRepository'
+import {
+  completeInterruptSession,
+  createInterruptSession,
+  submitInterruptReview,
+} from '../features/interrupts/interruptRepository'
 import type { ConfidenceRating, InterruptSession, LearningCard } from '../types/domain'
 
 export function InterruptPage() {
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
-  const site = searchParams.get('site') ?? 'unknown-site.com'
+  const site = searchParams.get('site')
   const source = searchParams.get('source') ?? 'manual'
   const [session, setSession] = useState<InterruptSession | null>(null)
-  const [card, setCard] = useState<LearningCard | null>(null)
+  const [cards, setCards] = useState<LearningCard[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [answerRevealed, setAnswerRevealed] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [completionMessage, setCompletionMessage] = useState<string | null>(null)
+
+  const card = cards[currentIndex] ?? null
+  const reviewedCount = currentIndex
+  const remainingCount = Math.max(cards.length - currentIndex - 1, 0)
 
   useEffect(() => {
     let cancelled = false
@@ -29,15 +38,15 @@ export function InterruptPage() {
       setIsLoading(true)
       setError(null)
       setAnswerRevealed(false)
-      setCompletionMessage(null)
+      setCurrentIndex(0)
 
       try {
-        const nextSession = await createInterruptSession(user.id, site)
-        const nextCard = await getNextLearningCard(user.id)
+        const nextSession = await createInterruptSession(user.id, site ?? source)
+        const nextCards = sortCardsForReview(await listLearningCards(user.id))
 
         if (!cancelled) {
           setSession(nextSession)
-          setCard(nextCard)
+          setCards(nextCards)
         }
       } catch (nextError) {
         if (!cancelled) {
@@ -59,7 +68,7 @@ export function InterruptPage() {
     return () => {
       cancelled = true
     }
-  }, [site, user])
+  }, [site, source, user])
 
   async function handleConfidence(confidence: ConfidenceRating) {
     if (!user || !session || !card) {
@@ -77,14 +86,20 @@ export function InterruptPage() {
         confidence,
       })
 
-      setCard(result.updatedCard)
-      setCompletionMessage(
-        confidence === 'know'
-          ? 'Nice. This card has been pushed farther out.'
-          : confidence === 'semi'
-            ? 'Solid. This card will come back at a medium interval.'
-            : 'Useful signal. This card will return sooner for reinforcement.',
+      const nextCards = cards.map((item, index) =>
+        index === currentIndex ? result.updatedCard : item,
       )
+      const prioritizedRemainder = sortCardsForReview(nextCards.slice(currentIndex + 1))
+      const updatedCards = [...nextCards.slice(0, currentIndex + 1), ...prioritizedRemainder]
+
+      setCards(updatedCards)
+      setAnswerRevealed(false)
+
+      if (currentIndex + 1 >= updatedCards.length) {
+        await completeInterruptSession(user.id, session.id)
+      } else {
+        setCurrentIndex((value) => value + 1)
+      }
     } catch (nextError) {
       const message =
         nextError instanceof Error ? nextError.message : 'Unable to save your review.'
@@ -105,9 +120,26 @@ export function InterruptPage() {
             Pause the habit loop.
           </h1>
           <p className="mt-4 text-base leading-7 text-slate-600">
-            The extension tried to open <span className="font-semibold text-ink">{site}</span>.
-            {' '}You were redirected from <span className="font-semibold text-ink">{source}</span>.
+            {site ? (
+              <>
+                The extension tried to open <span className="font-semibold text-ink">{site}</span>.
+                {' '}You were redirected from <span className="font-semibold text-ink">{source}</span>.
+              </>
+            ) : (
+              <>
+                You started a manual learning session from{' '}
+                <span className="font-semibold text-ink">{source}</span>.
+              </>
+            )}
           </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to="/app" className="ghost-button">
+              Return to dashboard
+            </Link>
+            <Link to="/app/cards" className="ghost-button">
+              Manage cards
+            </Link>
+          </div>
 
           {error ? (
             <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -121,7 +153,7 @@ export function InterruptPage() {
             </div>
           ) : null}
 
-          {!isLoading && !card ? (
+          {!isLoading && !card && cards.length === 0 ? (
             <div className="mt-8 rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
               <h2 className="text-2xl font-bold text-ink">No cards to review yet</h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
@@ -136,7 +168,11 @@ export function InterruptPage() {
           {!isLoading && card ? (
             <div className="mt-8 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
               <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
-                One-card review
+                Learning session
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
+                <span>{reviewedCount} reviewed</span>
+                <span>{remainingCount} remaining</span>
               </div>
               <h2 className="mt-4 text-2xl font-bold leading-tight text-ink">
                 {card.question}
@@ -162,7 +198,7 @@ export function InterruptPage() {
                     <div className="mt-4 flex flex-wrap gap-3">
                       <button
                         type="button"
-                        disabled={isSubmitting || Boolean(completionMessage)}
+                        disabled={isSubmitting}
                         onClick={() => void handleConfidence('know')}
                         className="rounded-full bg-emerald-600 px-5 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
                       >
@@ -170,7 +206,7 @@ export function InterruptPage() {
                       </button>
                       <button
                         type="button"
-                        disabled={isSubmitting || Boolean(completionMessage)}
+                        disabled={isSubmitting}
                         onClick={() => void handleConfidence('semi')}
                         className="rounded-full bg-amber-500 px-5 py-3 font-semibold text-white transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
                       >
@@ -178,7 +214,7 @@ export function InterruptPage() {
                       </button>
                       <button
                         type="button"
-                        disabled={isSubmitting || Boolean(completionMessage)}
+                        disabled={isSubmitting}
                         onClick={() => void handleConfidence('not_confident')}
                         className="rounded-full bg-rose-600 px-5 py-3 font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
                       >
@@ -189,23 +225,28 @@ export function InterruptPage() {
                 </>
               )}
 
-              {completionMessage ? (
-                <div className="mt-6 rounded-3xl bg-white p-5">
-                  <div className="text-lg font-bold text-ink">Review captured</div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{completionMessage}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
-                    Next review: {card.nextReviewAt ? new Date(card.nextReviewAt).toLocaleString() : 'Not scheduled'}
-                  </p>
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <Link to="/app" className="action-button">
-                      Return to dashboard
-                    </Link>
-                    <Link to="/app/cards" className="ghost-button">
-                      Manage cards
-                    </Link>
-                  </div>
-                </div>
-              ) : null}
+            </div>
+          ) : null}
+
+          {!isLoading && !card && cards.length > 0 ? (
+            <div className="mt-8 rounded-[2rem] border border-slate-200 bg-slate-50 p-6 text-center">
+              <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+                Session complete
+              </div>
+              <h2 className="mt-4 text-2xl font-bold text-ink">
+                You’ve worked through every available card in this session.
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Highest-priority cards will surface first the next time you start learning.
+              </p>
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                <Link to="/app" className="action-button">
+                  Return to dashboard
+                </Link>
+                <Link to="/app/cards" className="ghost-button">
+                  Manage cards
+                </Link>
+              </div>
             </div>
           ) : null}
         </section>

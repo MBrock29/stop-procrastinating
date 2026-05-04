@@ -20,6 +20,7 @@ export interface LearningCard {
   source: 'manual' | 'ai'
   generationTopic: string | null
   isUserEdited: boolean
+  latestConfidence: ConfidenceRating | null
   isArchived: boolean
   lastReviewedAt: string | null
   nextReviewAt: string | null

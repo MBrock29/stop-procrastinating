@@ -10,6 +10,7 @@ interface LearningCardRow {
   source: 'manual' | 'ai'
   generation_topic: string | null
   is_user_edited: boolean
+  latest_confidence: 'know' | 'semi' | 'not_confident' | null
   is_archived: boolean
   last_reviewed_at: string | null
   next_review_at: string | null
@@ -37,6 +38,7 @@ function mapRow(row: LearningCardRow): LearningCard {
     source: row.source,
     generationTopic: row.generation_topic,
     isUserEdited: row.is_user_edited,
+    latestConfidence: row.latest_confidence,
     isArchived: row.is_archived,
     lastReviewedAt: row.last_reviewed_at,
     nextReviewAt: row.next_review_at,
@@ -102,6 +104,7 @@ export async function createLearningCard(userId: string, input: SaveLearningCard
       source: input.source ?? 'manual',
       generationTopic: input.generationTopic ?? null,
       isUserEdited: input.isUserEdited ?? false,
+      latestConfidence: null,
       isArchived: false,
       lastReviewedAt: null,
       nextReviewAt: null,
@@ -125,6 +128,7 @@ export async function createLearningCard(userId: string, input: SaveLearningCard
       source: input.source ?? 'manual',
       generation_topic: input.generationTopic ?? null,
       is_user_edited: input.isUserEdited ?? false,
+      latest_confidence: null,
     })
     .select()
     .single()
@@ -250,6 +254,7 @@ export async function saveReviewedLearningCard(userId: string, card: LearningCar
       source: card.source,
       generation_topic: card.generationTopic,
       is_user_edited: card.isUserEdited,
+      latest_confidence: card.latestConfidence,
       is_archived: card.isArchived,
       last_reviewed_at: card.lastReviewedAt,
       next_review_at: card.nextReviewAt,
@@ -283,6 +288,7 @@ export async function bulkCreateLearningCards(userId: string, inputs: SaveLearni
       source: input.source ?? 'manual',
       generationTopic: input.generationTopic ?? null,
       isUserEdited: input.isUserEdited ?? false,
+      latestConfidence: null,
       isArchived: false,
       lastReviewedAt: null,
       nextReviewAt: null,
@@ -307,6 +313,7 @@ export async function bulkCreateLearningCards(userId: string, inputs: SaveLearni
         source: input.source ?? 'manual',
         generation_topic: input.generationTopic ?? null,
         is_user_edited: input.isUserEdited ?? false,
+        latest_confidence: null,
       })),
     )
     .select()
