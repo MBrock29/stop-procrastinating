@@ -1,6 +1,10 @@
 import {
   EXTENSION_REQUEST_SYNC_MESSAGE,
+  EXTENSION_REQUEST_STATUS_MESSAGE,
+  EXTENSION_STATUS_RESPONSE_MESSAGE,
+  EXTENSION_GET_STATUS_MESSAGE,
   EXTENSION_SYNC_MESSAGE,
+  type ExtensionStatusPayload,
   type ExtensionSyncPayload,
 } from '../../src/shared/extension'
 
@@ -27,6 +31,35 @@ window.addEventListener('message', (event) => {
       type: EXTENSION_SYNC_MESSAGE,
       payload: event.data.payload,
     })
+  }
+
+  if (event.data?.type === EXTENSION_REQUEST_STATUS_MESSAGE) {
+    void chrome.runtime
+      .sendMessage({
+        type: EXTENSION_GET_STATUS_MESSAGE,
+      })
+      .then((payload: ExtensionStatusPayload) => {
+        window.postMessage(
+          {
+            source: 'stop-procrastinating-extension',
+            type: EXTENSION_STATUS_RESPONSE_MESSAGE,
+            requestId: event.data.requestId,
+            payload,
+          },
+          window.location.origin,
+        )
+      })
+      .catch(() => {
+        window.postMessage(
+          {
+            source: 'stop-procrastinating-extension',
+            type: EXTENSION_STATUS_RESPONSE_MESSAGE,
+            requestId: event.data.requestId,
+            payload: null,
+          },
+          window.location.origin,
+        )
+      })
   }
 })
 
