@@ -7,6 +7,7 @@ const navItems = [
   { to: '/app', label: 'Dashboard', end: true },
   { to: '/app/sites', label: 'Blocked sites', end: true },
   { to: '/app/cards', label: 'Learning cards', end: true },
+  { to: '/app/setup', label: 'Setup guide', end: true },
 ]
 
 export function AppShell() {

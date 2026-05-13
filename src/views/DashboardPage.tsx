@@ -54,7 +54,7 @@ export function DashboardPage() {
                 Synced {new Date(extensionStatus.details.lastSyncedAt).toLocaleString()}
               </div>
             ) : (
-              <Link to="/app/sites" className="mt-2 inline-block text-sm font-semibold text-reef">
+              <Link to="/app/setup" className="mt-2 inline-block text-sm font-semibold text-reef">
                 View extension setup guide
               </Link>
             )}
