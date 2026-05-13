@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   bulkCreateLearningCards,
   createLearningCard,
+  deleteLearningCard,
   getNextLearningCard,
   listLearningCards,
   setLearningCardArchivedState,
@@ -103,6 +104,14 @@ export function useLearningCards() {
 
       setCards((current) => current.map((item) => (item.id === cardId ? updated : item)))
       return updated
+    },
+    async removeCard(cardId: string) {
+      if (!user) {
+        throw new Error('You must be signed in to delete cards.')
+      }
+
+      await deleteLearningCard(user.id, cardId)
+      setCards((current) => current.filter((item) => item.id !== cardId))
     },
     async getNextCard() {
       if (!user) {

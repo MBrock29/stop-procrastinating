@@ -87,11 +87,13 @@ function CardListItem({
   card,
   isPending,
   onArchive,
+  onDelete,
   onUpdate,
 }: {
   card: LearningCard
   isPending: boolean
   onArchive: (cardId: string, nextArchivedState: boolean) => Promise<unknown>
+  onDelete: (cardId: string) => Promise<unknown>
   onUpdate: (cardId: string, draft: CardDraft) => Promise<unknown>
 }) {
   const [editing, setEditing] = useState(false)
@@ -125,10 +127,10 @@ function CardListItem({
           <ReviewStats card={card} />
           <div className="mt-3 text-sm text-slate-500">
             {card.isArchived
-              ? 'Archived'
+              ? 'Archived: hidden from learning sessions, but still saved here.'
               : card.nextReviewAt
                 ? `Next review: ${new Date(card.nextReviewAt).toLocaleString()}`
-                : 'Never reviewed yet'}
+                : 'Active in the learning queue'}
           </div>
         </>
       )}
@@ -154,6 +156,13 @@ function CardListItem({
         >
           {card.isArchived ? 'Restore' : 'Archive'}
         </button>
+        <button
+          type="button"
+          className="rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+          onClick={() => void onDelete(card.id)}
+        >
+          Delete
+        </button>
       </div>
     </article>
   )
@@ -168,6 +177,7 @@ export function CardsPage() {
     error,
     getNextCard,
     isLoading,
+    removeCard,
     updateCard,
   } = useLearningCards()
   const [draft, setDraft] = useState<CardDraft>(initialDraft)
@@ -284,6 +294,10 @@ export function CardsPage() {
           Cards are authored manually in v1. Reviews will push strong answers farther
           out and bring shaky ones back sooner.
         </p>
+        <div className="mt-4 rounded-3xl bg-slate-50 p-5 text-sm leading-6 text-slate-600">
+          Archiving keeps a card in your library but removes it from active learning sessions.
+          Deleting removes it permanently.
+        </div>
 
         {formError ? (
           <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -409,6 +423,7 @@ export function CardsPage() {
               card={card}
               isPending={pending}
               onArchive={archiveCard}
+              onDelete={removeCard}
               onUpdate={handleUpdate}
             />
           ))}

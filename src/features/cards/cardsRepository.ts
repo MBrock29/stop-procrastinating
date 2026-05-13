@@ -232,6 +232,26 @@ export async function setLearningCardArchivedState(
   return mapRow(data as LearningCardRow)
 }
 
+export async function deleteLearningCard(userId: string, cardId: string) {
+  const client = getSupabaseBrowserClient()
+
+  if (!client) {
+    const nextItems = readDemoCards(userId).filter((item) => item.id !== cardId)
+    writeDemoCards(userId, nextItems)
+    return
+  }
+
+  const { error } = await client
+    .from('learning_cards')
+    .delete()
+    .eq('id', cardId)
+    .eq('user_id', userId)
+
+  if (error) {
+    throw error
+  }
+}
+
 export async function getNextLearningCard(userId: string) {
   const cards = await listLearningCards(userId)
   return selectNextDueCard(cards)
