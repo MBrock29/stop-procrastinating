@@ -18,46 +18,36 @@ export function SetupGuidePage() {
 
         <div className="mt-8 space-y-5">
           <article className="rounded-3xl bg-slate-50 p-5">
-            <h3 className="text-2xl font-extrabold tracking-tight text-ink">Chrome</h3>
-            <ol className="mt-4 space-y-3 text-sm text-slate-600">
-              <li>1. Run `npm run build:extension` from the project root.</li>
-              <li>2. Open `chrome://extensions` in Chrome.</li>
-              <li>3. Turn on `Developer mode` in the top right.</li>
-              <li>4. Click `Load unpacked` and select `extension/dist`.</li>
-              <li>5. Return to this app and use `Sync browser extension` on Blocked sites.</li>
-              <li>6. Visit one of your blocked domains to confirm the redirect works.</li>
-            </ol>
-          </article>
-
-          <article className="rounded-3xl bg-slate-50 p-5">
-            <h3 className="text-2xl font-extrabold tracking-tight text-ink">Firefox</h3>
-            <p className="mt-4 text-sm text-slate-600">
-              Firefox is not connected by this build yet. The project currently ships as
-              a Chrome-first Manifest V3 extension, so it would need a Firefox add-on
-              package and compatibility pass before these steps would work there.
-            </p>
-          </article>
-
-          <article className="rounded-3xl bg-slate-50 p-5">
             <h3 className="text-2xl font-extrabold tracking-tight text-ink">
-              Internet Explorer
+              Current status
             </h3>
             <p className="mt-4 text-sm text-slate-600">
-              Internet Explorer is not supported. It does not support the modern
-              extension platform this project uses, so the extension cannot be connected
-              there.
+              You are right: a normal user cannot run `npm run build:extension`. That is
+              only for local development. To make this a proper end-user install, the
+              extension needs to be packaged and published through the Chrome Web Store,
+              or distributed as a signed release package.
             </p>
+          </article>
+
+          <article className="rounded-3xl bg-slate-50 p-5">
+            <h3 className="text-2xl font-extrabold tracking-tight text-ink">Chrome</h3>
+            <ol className="mt-4 space-y-3 text-sm text-slate-600">
+              <li>1. Install the extension from the Chrome Web Store once it is published.</li>
+              <li>2. Open the extension popup to confirm it is available in Chrome.</li>
+              <li>3. Return to this app and use `Sync browser extension` on Blocked sites.</li>
+              <li>4. Visit one of your blocked domains to confirm the redirect works.</li>
+            </ol>
           </article>
         </div>
       </section>
 
       <section className="panel px-6 py-6 sm:px-8">
-        <h3 className="text-2xl font-extrabold tracking-tight text-ink">After install</h3>
+        <h3 className="text-2xl font-extrabold tracking-tight text-ink">What needs building next</h3>
         <ul className="mt-4 space-y-3 text-sm text-slate-600">
-          <li>Open the extension popup to check that it has loaded.</li>
-          <li>Use the Blocked sites page to sync your active rules into the extension.</li>
-          <li>The dashboard will show `Connected` after the extension responds and has a recent sync.</li>
-          <li>If the status still shows `Not connected`, rebuild the extension and reload it in the browser.</li>
+          <li>Package the extension into a release build that can be distributed outside the repo.</li>
+          <li>Publish it to the Chrome Web Store so users can install it without developer tools.</li>
+          <li>Point the published extension at the deployed production app rather than localhost.</li>
+          <li>Keep the dashboard status check so users can immediately see whether the extension is connected.</li>
         </ul>
 
         <div className="mt-8 flex flex-wrap gap-3">
