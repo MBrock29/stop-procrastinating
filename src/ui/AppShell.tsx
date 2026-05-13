@@ -4,9 +4,9 @@ import { useAuth } from '../features/auth/useAuth'
 import { ExtensionSyncBridge } from '../features/extension/ExtensionSyncBridge'
 
 const navItems = [
-  { to: '/app', label: 'Dashboard' },
-  { to: '/app/sites', label: 'Blocked sites' },
-  { to: '/app/cards', label: 'Learning cards' },
+  { to: '/app', label: 'Dashboard', end: true },
+  { to: '/app/sites', label: 'Blocked sites', end: true },
+  { to: '/app/cards', label: 'Learning cards', end: true },
 ]
 
 export function AppShell() {
@@ -29,7 +29,7 @@ export function AppShell() {
             </p>
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight text-ink">
-                Build momentum, not browser drift.
+                Build momentum, little by little.
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">
                 Turn habit loops into fast learning reps with one intentional card at a
@@ -39,20 +39,21 @@ export function AppShell() {
           </div>
           <div className="flex flex-col gap-4 lg:items-end">
             <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              <div className="font-semibold text-ink">{user?.email ?? 'Unknown user'}</div>
-              <div className="mt-1">
-                {mode === 'supabase' ? 'Supabase session active' : 'Demo auth mode'}
+              <div className="font-semibold text-ink">
+                {mode === 'supabase' ? 'Logged in as:' : 'Demo mode:'}
               </div>
+              <div className="mt-1">{user?.email ?? 'Unknown user'}</div>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <nav className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <nav className="flex flex-wrap items-center gap-3">
                 {navItems.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
+                    end={item.end}
                     className={({ isActive }) =>
                       [
-                        'rounded-full px-4 py-2 text-sm font-semibold transition',
+                        'inline-flex min-h-[42px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition',
                         isActive
                           ? 'bg-reef text-white shadow-lg shadow-reef/20'
                           : 'bg-white text-slate-600 hover:bg-slate-100',
@@ -63,7 +64,11 @@ export function AppShell() {
                   </NavLink>
                 ))}
               </nav>
-              <button type="button" onClick={() => void handleSignOut()} className="ghost-button">
+              <button
+                type="button"
+                onClick={() => void handleSignOut()}
+                className="ghost-button min-h-[42px]"
+              >
                 Sign out
               </button>
             </div>

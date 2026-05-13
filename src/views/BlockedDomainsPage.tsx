@@ -42,11 +42,12 @@ export function BlockedDomainsPage() {
           Blocked sites
         </p>
         <h2 className="mt-3 text-3xl font-bold tracking-tight text-ink">
-          Build the domains your extension should intercept
+          Build your blocked sites list
         </h2>
         <p className="mt-4 max-w-xl text-slate-600">
-          Paste a full URL or plain hostname. We normalize it to a domain rule so one
-          entry can cover the main site and its subdomains.
+          You can add a full URL like `https://www.reddit.com/r/reactjs` or a plain
+          hostname like `reddit.com`. We normalise each entry into a domain rule so one
+          item can cover the main site and its subdomains.
         </p>
 
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
@@ -72,7 +73,7 @@ export function BlockedDomainsPage() {
         </form>
 
         <div className="mt-8 rounded-3xl bg-slate-50 p-5 text-sm text-slate-600">
-          <h3 className="text-base font-bold text-ink">Normalization examples</h3>
+          <h3 className="text-base font-bold text-ink">Normalisation examples</h3>
           <ul className="mt-3 space-y-2">
             <li>{'`reddit.com` -> `reddit.com`'}</li>
             <li>{'`www.reddit.com` -> `reddit.com`'}</li>
