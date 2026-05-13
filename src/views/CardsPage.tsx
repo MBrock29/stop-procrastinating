@@ -16,13 +16,11 @@ const initialDraft: CardDraft = {
 
 interface AiDraft {
   topic: string
-  seniority: string
   cardCount: number
 }
 
 const initialAiDraft: AiDraft = {
   topic: '',
-  seniority: 'mid-senior',
   cardCount: 10,
 }
 
@@ -249,7 +247,6 @@ export function CardsPage() {
     try {
       const generatedCards = await generateCardsWithAi({
         topic: aiDraft.topic.trim(),
-        seniority: aiDraft.seniority.trim(),
         cardCount: aiDraft.cardCount,
       })
 
@@ -335,33 +332,22 @@ export function CardsPage() {
             />
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-1">
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700">Seniority</span>
-              <input
-                value={aiDraft.seniority}
-                onChange={(event) =>
-                  setAiDraft({ ...aiDraft, seniority: event.target.value })
-                }
-                type="text"
-                placeholder="mid-senior"
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-reef focus:ring-4 focus:ring-reef/10"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700">Card count</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">
+                Card count (max 50)
+              </span>
               <input
                 value={aiDraft.cardCount}
                 onChange={(event) =>
                   setAiDraft({
                     ...aiDraft,
-                    cardCount: Math.max(1, Math.min(20, Number(event.target.value) || 1)),
+                    cardCount: Math.max(1, Math.min(50, Number(event.target.value) || 1)),
                   })
                 }
                 type="number"
                 min={1}
-                max={20}
+                max={50}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-reef focus:ring-4 focus:ring-reef/10"
               />
             </label>

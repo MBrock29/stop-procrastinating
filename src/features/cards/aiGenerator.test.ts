@@ -30,12 +30,10 @@ describe('generateCardsWithAi demo mode', () => {
 
     const cards = await generateCardsWithAi({
       topic: 'mid-senior React interview questions',
-      seniority: 'mid-senior',
       cardCount: 3,
     })
 
     expect(cards).toHaveLength(3)
-    expect(cards[0]?.question).toContain('mid-senior')
     expect(cards[0]?.question).toContain('mid-senior React interview questions')
     expect(getSession).not.toHaveBeenCalled()
   })

@@ -37,13 +37,11 @@ Deno.serve(async (request) => {
 
   const body = (await request.json()) as {
     topic?: string
-    seniority?: string
     cardCount?: number
   }
 
   const topic = body.topic?.trim()
-  const seniority = body.seniority?.trim() || 'mid-senior'
-  const cardCount = Math.max(1, Math.min(20, Number(body.cardCount ?? 10)))
+  const cardCount = Math.max(1, Math.min(50, Number(body.cardCount ?? 10)))
 
   if (!topic) {
     return jsonResponse({ error: 'A topic is required.' }, 400)
@@ -73,7 +71,7 @@ Deno.serve(async (request) => {
           content: [
             {
               type: 'input_text',
-              text: `Create ${cardCount} learning cards for the topic "${topic}" aimed at ${seniority} engineers. Focus on practical, interview-style or production-useful knowledge. Avoid duplicates. Return only the requested JSON schema.`,
+              text: `Create ${cardCount} learning cards for the topic "${topic}". Focus on practical, interview-style or production-useful knowledge. Avoid duplicates. Return only the requested JSON schema.`,
             },
           ],
         },
@@ -90,7 +88,7 @@ Deno.serve(async (request) => {
               cards: {
                 type: 'array',
                 minItems: 1,
-                maxItems: 20,
+                maxItems: 50,
                 items: {
                   type: 'object',
                   additionalProperties: false,

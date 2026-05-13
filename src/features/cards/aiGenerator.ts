@@ -3,7 +3,6 @@ import { getSupabaseBrowserClient } from '../../lib/supabase'
 
 export interface GenerateCardsInput {
   topic: string
-  seniority: string
   cardCount: number
 }
 
@@ -14,12 +13,11 @@ export interface GeneratedCardDraft {
 
 function createLocalCards(input: GenerateCardsInput) {
   const normalizedTopic = input.topic.trim()
-  const seniorityLabel = input.seniority.trim() || 'mid-level'
 
   return Array.from({ length: input.cardCount }, (_, index) => {
     const questionNumber = index + 1
     return {
-      question: `${seniorityLabel} ${normalizedTopic}: question ${questionNumber}`,
+      question: `${normalizedTopic}: question ${questionNumber}`,
       answer: `Key idea ${questionNumber} for ${normalizedTopic}: explain the trade-off, give a concrete example, and mention one common pitfall to avoid in production.`,
     }
   })
@@ -45,15 +43,27 @@ export async function generateCardsWithAi(input: GenerateCardsInput) {
   }
 
   const functionUrl = `${env.supabaseUrl}/functions/v1/generate-learning-cards`
-  const response = await fetch(functionUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-      apikey: env.supabaseAnonKey!,
-    },
-    body: JSON.stringify(input),
-  })
+  let response: Response
+
+  try {
+    response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: env.supabaseAnonKey!,
+      },
+      body: JSON.stringify(input),
+    })
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(
+        'Unable to reach the AI generation function. Check that the Supabase Edge Function is deployed and that your project URL/key are correct.',
+      )
+    }
+
+    throw error
+  }
 
   const payload = (await response.json()) as
     | { cards?: GeneratedCardDraft[]; error?: string }
