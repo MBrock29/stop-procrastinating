@@ -284,10 +284,10 @@ export function CardsPage() {
   return (
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
       <section className="panel px-6 py-6 sm:px-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+        <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
           Learning cards
         </p>
-        <h2 className="mt-3 text-3xl font-bold tracking-tight text-ink">
+        <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink">
           Build the prompts that will interrupt your scroll reflex
         </h2>
         <p className="mt-4 max-w-xl text-slate-600">
@@ -325,7 +325,7 @@ export function CardsPage() {
 
         <form className="mt-10 space-y-4 rounded-[2rem] border border-slate-200 bg-slate-50 p-5" onSubmit={handleGenerateCards}>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+            <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
               AI generate
             </p>
             <h3 className="mt-2 text-lg font-bold text-ink">Create a cheap cached batch once</h3>
@@ -388,10 +388,10 @@ export function CardsPage() {
       <section className="panel px-6 py-6 sm:px-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+            <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
               Card library
             </p>
-            <h3 className="mt-3 text-2xl font-bold tracking-tight text-ink">
+            <h3 className="mt-3 text-3xl font-extrabold tracking-tight text-ink">
               {cards.length} card{cards.length === 1 ? '' : 's'} in your library
             </h3>
           </div>

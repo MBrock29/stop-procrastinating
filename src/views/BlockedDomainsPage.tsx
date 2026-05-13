@@ -38,10 +38,10 @@ export function BlockedDomainsPage() {
   return (
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
       <section className="panel px-6 py-6 sm:px-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+        <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
           Blocked sites
         </p>
-        <h2 className="mt-3 text-3xl font-bold tracking-tight text-ink">
+        <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink">
           Build your blocked sites list
         </h2>
         <p className="mt-4 max-w-xl text-slate-600">
@@ -104,10 +104,10 @@ export function BlockedDomainsPage() {
       <section className="panel px-6 py-6 sm:px-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+            <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
               Active rules
             </p>
-            <h3 className="mt-3 text-2xl font-bold tracking-tight text-ink">
+            <h3 className="mt-3 text-3xl font-extrabold tracking-tight text-ink">
               {domains.length} domain{domains.length === 1 ? '' : 's'} configured
             </h3>
           </div>

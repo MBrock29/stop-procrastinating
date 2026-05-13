@@ -24,7 +24,7 @@ export function AppShell() {
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <header className="panel mb-6 flex flex-col gap-5 px-6 py-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+            <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
               Stop Procrastinating
             </p>
             <div>

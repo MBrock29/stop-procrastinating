@@ -8,17 +8,10 @@ export function DashboardPage() {
   return (
     <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
       <div className="panel px-6 py-6 sm:px-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+        <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
           Dashboard
         </p>
-        <h2 className="mt-3 text-3xl font-bold tracking-tight text-ink">
-          Your anti-drift command center
-        </h2>
-        <p className="mt-4 max-w-2xl text-slate-600">
-          This scaffold already separates the core surfaces we need for the product:
-          site rules, learning cards, and redirect-driven interrupts.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-3">
           <Link to="/interrupt?source=dashboard" className="action-button">
             Start learning session
           </Link>
