@@ -288,15 +288,15 @@ export function CardsPage() {
           Learning cards
         </p>
         <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink">
-          Build the prompts that will interrupt your scroll reflex
+          Build a library you will actually want to revisit
         </h2>
         <p className="mt-4 max-w-xl text-slate-600">
-          Cards are authored manually in v1. Reviews will push strong answers farther
-          out and bring shaky ones back sooner.
+          Add short questions and answers you want to keep fresh. These cards power
+          your learning sessions whenever you choose to review or get redirected here.
         </p>
         <div className="mt-4 rounded-3xl bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-          Archiving keeps a card in your library but removes it from active learning sessions.
-          Deleting removes it permanently.
+          Archive cards you want to keep without showing them in active sessions.
+          Delete cards you no longer need at all.
         </div>
 
         {formError ? (
@@ -307,14 +307,14 @@ export function CardsPage() {
 
         <CardEditor
           draft={draft}
-          heading="Add a new card"
+          heading="Add a card"
           isPending={pending}
           onChange={setDraft}
           onSubmit={handleCreate}
         />
 
         <button type="button" className="ghost-button mt-6" onClick={() => void handlePreviewNextCard()}>
-          Preview next review card
+          Preview your next card
         </button>
 
         {nextCardLabel ? (
@@ -328,10 +328,11 @@ export function CardsPage() {
             <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
               AI generate
             </p>
-            <h3 className="mt-2 text-lg font-bold text-ink">Create a cheap cached batch once</h3>
+            <h3 className="mt-2 text-lg font-bold text-ink">Generate a batch from a topic</h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Enter a topic like “mid-senior React interview questions” and the app
-              will generate a stored batch that reuses your existing review flow.
+              will create a saved set of cards you can review like any other item in
+              your library.
             </p>
           </div>
 
@@ -411,8 +412,8 @@ export function CardsPage() {
 
         {!isLoading && cards.length === 0 ? (
           <div className="mt-6 rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm text-slate-600">
-            No cards yet. Add a question you’d genuinely like to remember so the
-            redirect flow has something useful to show.
+            No cards yet. Add your first card or generate a topic-based batch so your
+            next learning session has something useful to show.
           </div>
         ) : null}
 
