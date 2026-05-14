@@ -6,9 +6,9 @@ const corsHeaders = {
 const aiProvider = Deno.env.get('AI_GENERATION_PROVIDER') ?? 'openai'
 const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
 const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY')
-const openAiModel = Deno.env.get('OPENAI_GENERATION_MODEL') ?? 'gpt-5.4-mini'
+const openAiModel = Deno.env.get('OPENAI_GENERATION_MODEL') ?? 'gpt-4.1-mini'
 const openRouterModel =
-  Deno.env.get('OPENROUTER_GENERATION_MODEL') ?? 'openai/gpt-5.4-mini'
+  Deno.env.get('OPENROUTER_GENERATION_MODEL') ?? 'openai/gpt-4.1-mini'
 const aiModel =
   Deno.env.get('AI_GENERATION_MODEL') ??
   (aiProvider === 'openrouter' ? openRouterModel : openAiModel)
