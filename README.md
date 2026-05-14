@@ -44,8 +44,8 @@ If `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are missing, the app still r
 4. Optional for AI generation in production:
 
 - set `OPENAI_API_KEY` in your Supabase edge-function secrets
-- optionally set `OPENAI_GENERATION_MODEL=gpt-5.4` for direct OpenAI usage
-- if you use OpenRouter, set `OPENROUTER_API_KEY` and `OPENROUTER_GENERATION_MODEL=openai/gpt-5.4`
+- optionally set `OPENAI_GENERATION_MODEL=gpt-5.4-mini` for direct OpenAI usage
+- if you use OpenRouter, set `OPENROUTER_API_KEY` and `OPENROUTER_GENERATION_MODEL=openai/gpt-5.4-mini`
 
 5. Start the app:
 
@@ -81,7 +81,7 @@ To enable AI generation with Supabase:
 
 ```bash
 supabase secrets set OPENAI_API_KEY=your-key
-supabase secrets set OPENAI_GENERATION_MODEL=gpt-5.4
+supabase secrets set OPENAI_GENERATION_MODEL=gpt-5.4-mini
 supabase functions deploy generate-learning-cards
 ```
 
