@@ -7,7 +7,7 @@ vi.mock('../../lib/env', () => ({
     appUrl: 'http://localhost:5173',
     supabaseUrl: 'https://example.supabase.co',
     supabaseAnonKey: 'anon-key',
-    openaiModel: 'gpt-4o-mini',
+    openaiModel: 'gpt-5.4',
   },
   hasSupabaseEnv: false,
 }))
