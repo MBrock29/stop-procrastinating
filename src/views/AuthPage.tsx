@@ -16,7 +16,7 @@ const planCards = [
     price: '£0',
     cadence: '/month',
     benefits: [
-      'Store up to 500 cards',
+      'Store up to 100 cards',
       'Generate up to 3 packs per month',
       'Generate up to 10 cards per pack',
       'Access to our basic model',
@@ -35,9 +35,9 @@ const planCards = [
     ],
   },
   {
-    title: 'BYOK',
-    price: '£0',
-    cadence: '/month',
+    title: 'Bring your own key',
+    price: 'Billed',
+    cadence: 'by your provider',
     benefits: [
       'Store up to 500 cards',
       'Generate unlimited packs per month',

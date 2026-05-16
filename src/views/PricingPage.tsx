@@ -18,6 +18,7 @@ interface PlanCardDefinition {
   eyebrow: string
   price: string
   cadenceLabel: string
+  priceClassName?: string
   summary: string
   benefits: string[]
   ctaLabel: string
@@ -82,7 +83,7 @@ export function PricingPage() {
         cadenceLabel: '/month',
         summary: 'A light plan for occasional topic packs.',
         benefits: [
-          'Store up to 500 cards',
+          'Store up to 100 cards',
           'Generate up to 3 packs per month',
           'Generate up to 10 cards per pack',
           'Access to the lighter hosted language learning model',
@@ -109,10 +110,11 @@ export function PricingPage() {
       },
       {
         tier: 'byok',
-        title: 'BYOK',
+        title: 'Bring your own key',
         eyebrow: 'Bring your own key',
-        price: '£0',
-        cadenceLabel: '/month',
+        price: 'Billed',
+        cadenceLabel: 'by your provider',
+        priceClassName: 'text-3xl sm:text-[2rem]',
         summary: 'Keep generation costs on your own provider account.',
         benefits: [
           'Store up to 500 cards',
@@ -300,7 +302,12 @@ export function PricingPage() {
                   {plan.title}
                 </h3>
                 <div className="mt-4 flex items-end gap-2">
-                  <span className="text-4xl font-extrabold tracking-tight text-ink dark:text-white">
+                  <span
+                    className={[
+                      'font-extrabold tracking-tight text-ink dark:text-white',
+                      plan.priceClassName ?? 'text-4xl',
+                    ].join(' ')}
+                  >
                     {plan.price}
                   </span>
                   <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
