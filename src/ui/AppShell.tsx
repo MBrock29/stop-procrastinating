@@ -47,14 +47,16 @@ export function AppShell() {
                   to="/app/settings"
                   className={({ isActive }) =>
                     [
-                      'inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition',
+                      'inline-flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition',
                       isActive
                         ? 'action-button shadow-lg shadow-reef/20'
                         : 'ghost-button',
                     ].join(' ')
                   }
+                  aria-label="Settings"
+                  title="Settings"
                 >
-                  Settings
+                  <span aria-hidden="true">⚙</span>
                 </NavLink>
                 <button
                   type="button"
@@ -107,6 +109,18 @@ export function AppShell() {
         <main className="flex-1">
           <Outlet />
         </main>
+
+        <footer className="px-2 py-6 text-center text-sm text-slate-500 dark:text-slate-300">
+          Made with love by{' '}
+          <a
+            href="https://x.com/MBrock29"
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-reef transition hover:underline"
+          >
+            MBrock29
+          </a>
+        </footer>
       </div>
     </div>
   )
