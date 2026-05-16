@@ -43,6 +43,23 @@ interface ByokCredentialPayload {
   error?: string
 }
 
+function formatAiSettingsError(error: {
+  message?: string
+  details?: string
+  hint?: string
+}) {
+  const combined = [error.message, error.details, error.hint].filter(Boolean).join(' ')
+
+  if (
+    combined.includes('user_ai_settings_preferred_model_check') ||
+    combined.includes('preferred_model')
+  ) {
+    return 'Your database is still using the older AI model list. Run the latest AI model migration, then try again.'
+  }
+
+  return error.message ?? 'Unable to save AI settings.'
+}
+
 function settingsStorageKey(userId: string) {
   return `stop-procrastinating.ai-settings.${userId}`
 }
@@ -223,12 +240,14 @@ export async function saveAiAccessSettings(
       byok_provider: input.byokProvider,
       preferred_model: input.preferredModel,
       updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'user_id',
     })
     .select()
     .single()
 
   if (error) {
-    throw error
+    throw new Error(formatAiSettingsError(error))
   }
 
   return mapSettingsRow(data as AiSettingsRow)

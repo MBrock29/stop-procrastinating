@@ -276,12 +276,6 @@ export function ByokPage() {
             />
           </label>
 
-          <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-4 text-sm muted-copy">
-            {settings.planTier === 'byok'
-              ? `BYOK is active on this account. New packs will use your ${settings.byokProvider} key with ${settings.preferredModel}.`
-              : 'BYOK is not active yet. Save a provider key, then switch this account over to your own provider usage.'}
-          </div>
-
           {formError ? (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               {formError}
