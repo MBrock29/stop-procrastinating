@@ -19,11 +19,18 @@ export function DashboardPage() {
 
   return (
     <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      <div className="panel px-6 py-6 sm:px-8">
-        <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
+      <div className="panel overflow-hidden px-6 py-6 sm:px-8">
+        <p className="section-kicker">
           Dashboard
         </p>
-        <div className="mt-4 flex flex-wrap gap-3">
+        <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-4xl">
+          Keep today’s learning loop simple.
+        </h2>
+        <p className="muted-copy mt-3 max-w-2xl text-sm leading-6 sm:text-base">
+          Jump into a review session, tune your library, or check whether your browser
+          extension is still in sync.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
           <Link to="/interrupt?source=dashboard" className="action-button">
             Start learning session
           </Link>
@@ -35,25 +42,25 @@ export function DashboardPage() {
           </Link>
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-3xl bg-slate-50 p-5">
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+          <div className="metric-card">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
               Active blocks
             </div>
-            <div className="mt-3 text-3xl font-bold text-ink">{activeCount}</div>
+            <div className="mt-3 text-3xl font-bold text-ink dark:text-white">{activeCount}</div>
           </div>
-          <div className="rounded-3xl bg-slate-50 p-5">
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+          <div className="metric-card">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
               Active cards
             </div>
-            <div className="mt-3 text-3xl font-bold text-ink">{activeCardsCount}</div>
+            <div className="mt-3 text-3xl font-bold text-ink dark:text-white">{activeCardsCount}</div>
           </div>
-          <div className="rounded-3xl bg-slate-50 p-5">
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+          <div className="metric-card">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
               Browser extension
             </div>
-            <div className="mt-3 text-lg font-bold text-ink">{extensionLabel}</div>
+            <div className="mt-3 text-lg font-bold text-ink dark:text-white">{extensionLabel}</div>
             {extensionStatus.status === 'connected' && extensionStatus.details?.lastSyncedAt ? (
-              <div className="mt-2 text-sm text-slate-500">
+              <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
                 Synced {new Date(extensionStatus.details.lastSyncedAt).toLocaleString()}
               </div>
             ) : (
@@ -65,12 +72,12 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="panel px-6 py-6">
-        <h3 className="text-lg font-bold text-ink">How learning works now</h3>
-        <ul className="mt-4 space-y-3 text-sm text-slate-600">
-          <li>Start a learning session any time from the dashboard.</li>
-          <li>Unmarked and not-confident cards show up first.</li>
-          <li>Semi-confident cards come after that, and confident cards last.</li>
+      <div className="panel px-6 py-6 sm:px-8">
+        <h3 className="text-lg font-bold text-ink dark:text-white">How sessions behave</h3>
+        <ul className="muted-copy mt-4 space-y-3 text-sm">
+          <li>Start a session any time without waiting for a blocked redirect.</li>
+          <li>New or shaky cards surface first so the important gaps get attention.</li>
+          <li>Confident cards stay in the library but drift toward the back of the queue.</li>
         </ul>
       </div>
     </section>

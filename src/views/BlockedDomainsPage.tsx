@@ -38,13 +38,11 @@ export function BlockedDomainsPage() {
   return (
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
       <section className="panel px-6 py-6 sm:px-8">
-        <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
-          Blocked sites
-        </p>
-        <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink">
+        <p className="section-kicker">Blocked sites</p>
+        <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink dark:text-white">
           Build your blocked sites list
         </h2>
-        <p className="mt-4 max-w-xl text-slate-600">
+        <p className="muted-copy mt-4 max-w-xl">
           You can add a full URL like `https://www.reddit.com/r/reactjs` or a plain
           hostname like `reddit.com`. We normalise each entry into a domain rule so one
           item can cover the main site and its subdomains.
@@ -52,14 +50,14 @@ export function BlockedDomainsPage() {
 
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-slate-700">
+            <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
               Domain or URL
             </span>
             <input
               name="domain"
               type="text"
               placeholder="https://www.reddit.com/r/reactjs"
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-reef focus:ring-4 focus:ring-reef/10"
+              className="app-input"
             />
           </label>
           {formError ? (
@@ -72,8 +70,8 @@ export function BlockedDomainsPage() {
           </button>
         </form>
 
-        <div className="mt-8 rounded-3xl bg-slate-50 p-5 text-sm text-slate-600">
-          <h3 className="text-base font-bold text-ink">Normalisation examples</h3>
+        <div className="soft-card mt-8 p-5 text-sm muted-copy">
+          <h3 className="text-base font-bold text-ink dark:text-white">Normalisation examples</h3>
           <ul className="mt-3 space-y-2">
             <li>{'`reddit.com` -> `reddit.com`'}</li>
             <li>{'`www.reddit.com` -> `reddit.com`'}</li>
@@ -85,10 +83,10 @@ export function BlockedDomainsPage() {
           </ul>
         </div>
 
-        <div className="mt-4 rounded-3xl bg-white p-5 text-sm text-slate-600">
+        <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm muted-copy">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-base font-bold text-ink">Extension sync</h3>
+              <h3 className="text-base font-bold text-ink dark:text-white">Extension sync</h3>
               <p className="mt-1">
                 If the extension is installed, this sends your active rules to it from the
                 app.
@@ -104,10 +102,8 @@ export function BlockedDomainsPage() {
       <section className="panel px-6 py-6 sm:px-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
-              Active rules
-            </p>
-            <h3 className="mt-3 text-3xl font-extrabold tracking-tight text-ink">
+            <p className="section-kicker">Active rules</p>
+            <h3 className="mt-3 text-3xl font-extrabold tracking-tight text-ink dark:text-white">
               {domains.length} domain{domains.length === 1 ? '' : 's'} configured
             </h3>
           </div>
@@ -120,13 +116,13 @@ export function BlockedDomainsPage() {
         ) : null}
 
         {isLoading ? (
-          <div className="mt-6 rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-600">
+          <div className="soft-card mt-6 px-4 py-8 text-center text-sm muted-copy">
             Loading your blocked domains…
           </div>
         ) : null}
 
         {!isLoading && domains.length === 0 ? (
-          <div className="mt-6 rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm text-slate-600">
+          <div className="soft-card mt-6 border-dashed px-5 py-8 text-sm muted-copy">
             No blocked domains yet. Add your first habit-trigger site to start shaping
             the redirect behavior.
           </div>
@@ -136,12 +132,12 @@ export function BlockedDomainsPage() {
           {domains.map((domain) => (
             <article
               key={domain.id}
-              className="rounded-3xl border border-slate-200 bg-white px-5 py-5"
+              className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-5 py-5"
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="text-lg font-bold text-ink">{domain.domain}</div>
-                  <div className="mt-1 text-sm text-slate-500">
+                  <div className="text-lg font-bold text-ink dark:text-white">{domain.domain}</div>
+                  <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
                     {domain.isActive ? 'Active and ready to sync' : 'Paused for now'}
                   </div>
                 </div>
