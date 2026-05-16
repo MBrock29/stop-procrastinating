@@ -232,6 +232,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setAuthError(null)
       },
+      async signUpWithPassword(email, password) {
+        if (!hasSupabaseEnv) {
+          setDemoUser(email)
+          setAuthError(null)
+          setUser({ id: 'demo-user', email })
+          setStatus('authenticated')
+          return
+        }
+
+        const client = getSupabaseBrowserClient()
+
+        if (!client) {
+          throw new Error('Supabase is not configured.')
+        }
+
+        const { data, error } = await client.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: env.appUrl,
+          },
+        })
+
+        if (error) {
+          throw error
+        }
+
+        setAuthError(null)
+
+        if (data.session) {
+          setSession(data.session)
+          setUser(mapSupabaseUser(data.session))
+          setStatus('authenticated')
+        }
+      },
       async signInWithGoogle() {
         if (!hasSupabaseEnv) {
           const email = 'demo@example.com'

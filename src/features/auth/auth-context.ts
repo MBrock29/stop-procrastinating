@@ -12,6 +12,7 @@ export interface AuthContextValue {
   session: Session | null
   authError: string | null
   signInWithPassword: (email: string, password: string) => Promise<void>
+  signUpWithPassword: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
 }
