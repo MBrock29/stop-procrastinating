@@ -248,9 +248,6 @@ export function ByokPage() {
                   ))}
                 </select>
               </label>
-              <div className="mt-3 text-sm text-slate-500 dark:text-slate-300">
-                {preferencePending ? 'Saving preference…' : 'Saved to your account'}
-              </div>
             </div>
           </div>
 
