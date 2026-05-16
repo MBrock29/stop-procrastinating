@@ -63,23 +63,26 @@ export function AuthPage() {
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl items-center">
         <div className="grid w-full gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <section className="panel overflow-hidden px-8 py-10 sm:px-10">
-            <p className="section-kicker">
-              Focus reclaim
+            <p className="text-lg font-extrabold uppercase tracking-[0.28em] text-reef/75 sm:text-xl">
+              Stop Procrastinating
             </p>
-            <h1 className="mt-4 max-w-2xl text-4xl font-extrabold tracking-tight text-ink dark:text-white sm:text-5xl">
+            <h1 className="mt-4 max-w-2xl text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-4xl">
               Turn drift into deliberate practice.
             </h1>
             <p className="muted-copy mt-5 max-w-2xl text-base leading-7 sm:text-lg">
-              This app pairs a browser extension with your own question-and-answer
-              cards so every impulse visit becomes a short, useful review moment.
+              This app pairs a Chrome browser extension with your own question-and-answer
+              cards so every impulse visit becomes a short, useful learning moment.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {[
-                'Block habit domains with one rule.',
-                'Show one tailored card per redirect.',
-                'Track confidence so weaker topics return sooner.',
+                'Easily block unproductive websites',
+                'Just one piece of learning per redirect',
+                'Rate cards to improve learning',
               ].map((item) => (
-                <div key={item} className="soft-card p-4 text-sm muted-copy">
+                <div
+                  key={item}
+                  className="soft-card flex min-h-[132px] items-center justify-center p-5 text-center text-sm muted-copy"
+                >
                   {item}
                 </div>
               ))}
