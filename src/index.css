@@ -96,6 +96,7 @@
   }
 
   .ghost-button {
+    border: 1px solid var(--app-border);
     border-color: var(--app-border);
     background: var(--app-surface-strong);
     color: var(--app-text);
