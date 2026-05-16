@@ -38,7 +38,7 @@ export function useExtensionStatus() {
 
         if (!cancelled) {
           setState({
-            status: details?.lastSyncedAt ? 'connected' : 'not_connected',
+            status: details ? 'connected' : 'not_connected',
             details,
             isStale: getIsStale(details),
             lastCheckedAt: new Date().toISOString(),
@@ -78,7 +78,7 @@ export function useExtensionStatus() {
       try {
         const details = await requestExtensionStatus()
         setState({
-          status: details?.lastSyncedAt ? 'connected' : 'not_connected',
+          status: details ? 'connected' : 'not_connected',
           details,
           isStale: getIsStale(details),
           lastCheckedAt: new Date().toISOString(),

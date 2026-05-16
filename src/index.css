@@ -150,6 +150,16 @@
   }
 
   .theme-toggle:hover {
+    background: #181411;
+    color: #f8fafc;
+  }
+
+  .dark .theme-toggle:hover {
+    background: #f8fafc;
+    color: #0b0b0b;
+  }
+
+  .theme-toggle:hover {
     background: var(--app-surface-muted);
   }
 
