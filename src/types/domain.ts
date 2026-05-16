@@ -6,6 +6,7 @@ export interface UserProfile {
 export type PlanTier = 'free' | 'pro' | 'byok'
 export type AiProvider = 'openai' | 'openrouter'
 export type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5.4-mini'
+export type RedirectBackMode = 'manual' | 'after_cards'
 
 export interface BlockedDomain {
   id: string
@@ -60,6 +61,8 @@ export interface AiAccessSettings {
   planTier: PlanTier
   byokProvider: AiProvider
   preferredModel: SupportedAiModel
+  redirectBackMode: RedirectBackMode
+  redirectBackCardCount: number
   createdAt: string
   updatedAt: string
 }

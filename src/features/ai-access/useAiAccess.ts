@@ -37,6 +37,8 @@ const fallbackSettings: AiAccessSettings = {
   planTier: 'free',
   byokProvider: 'openrouter',
   preferredModel: 'gpt-4.1-mini',
+  redirectBackMode: 'manual',
+  redirectBackCardCount: 1,
   createdAt: '',
   updatedAt: '',
 }
@@ -140,20 +142,33 @@ export function useAiAccess() {
         planTier,
         byokProvider: settings.byokProvider,
         preferredModel: settings.preferredModel,
+        redirectBackMode: settings.redirectBackMode,
+        redirectBackCardCount: settings.redirectBackCardCount,
       })
       setSettings(nextSettings)
       return nextSettings
     },
-    async updateSettings(input: {
-      planTier: PlanTier
-      byokProvider: AiAccessSettings['byokProvider']
-      preferredModel: SupportedAiModel
-    }) {
+    async updateSettings(
+      input: Partial<{
+        planTier: PlanTier
+        byokProvider: AiAccessSettings['byokProvider']
+        preferredModel: SupportedAiModel
+        redirectBackMode: AiAccessSettings['redirectBackMode']
+        redirectBackCardCount: number
+      }>,
+    ) {
       if (!user) {
         throw new Error('You must be signed in to update AI settings.')
       }
 
-      const nextSettings = await saveAiAccessSettings(user.id, input)
+      const nextSettings = await saveAiAccessSettings(user.id, {
+        planTier: input.planTier ?? settings.planTier,
+        byokProvider: input.byokProvider ?? settings.byokProvider,
+        preferredModel: input.preferredModel ?? settings.preferredModel,
+        redirectBackMode: input.redirectBackMode ?? settings.redirectBackMode,
+        redirectBackCardCount:
+          input.redirectBackCardCount ?? settings.redirectBackCardCount,
+      })
       setSettings(nextSettings)
       return nextSettings
     },

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { useAuth } from '../features/auth/useAuth'
@@ -9,7 +9,7 @@ import { useExtensionStatus } from '../features/extension/useExtensionStatus'
 export function SettingsPage() {
   const navigate = useNavigate()
   const { mode, session, signOut, user } = useAuth()
-  const { byokCredentialStatus, clearByokCredentials, settings } = useAiAccess()
+  const { byokCredentialStatus, clearByokCredentials, settings, updateSettings } = useAiAccess()
   const { domains } = useBlockedDomains()
   const { cards } = useLearningCards()
   const extensionStatus = useExtensionStatus()
@@ -22,6 +22,15 @@ export function SettingsPage() {
   const authProvider =
     session?.user.app_metadata.provider ??
     (mode === 'demo' ? 'demo' : 'email')
+  const [redirectBackMode, setRedirectBackMode] = useState(settings.redirectBackMode)
+  const [redirectBackCardCount, setRedirectBackCardCount] = useState(
+    String(settings.redirectBackCardCount),
+  )
+
+  useEffect(() => {
+    setRedirectBackMode(settings.redirectBackMode)
+    setRedirectBackCardCount(String(settings.redirectBackCardCount))
+  }, [settings.redirectBackMode, settings.redirectBackCardCount])
 
   async function handleClearByok() {
     setPending(true)
@@ -51,6 +60,31 @@ export function SettingsPage() {
     } catch (nextError) {
       const nextMessage =
         nextError instanceof Error ? nextError.message : 'Unable to sign out right now.'
+      setError(nextMessage)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function handleSaveRedirectSettings() {
+    setPending(true)
+    setError(null)
+    setMessage(null)
+
+    const parsedCardCount = Math.max(1, Math.min(20, Number(redirectBackCardCount) || 1))
+
+    try {
+      await updateSettings({
+        redirectBackMode,
+        redirectBackCardCount: parsedCardCount,
+      })
+      setRedirectBackCardCount(String(parsedCardCount))
+      setMessage('Redirect-back settings updated.')
+    } catch (nextError) {
+      const nextMessage =
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to update redirect-back settings.'
       setError(nextMessage)
     } finally {
       setPending(false)
@@ -131,6 +165,54 @@ export function SettingsPage() {
             <li>The browser extension stores synced blocked domains locally in Chrome so redirects can happen quickly.</li>
             <li>Using BYOK moves LLM request costs to your own provider account, but your product data still lives in Supabase.</li>
           </ul>
+        </div>
+
+        <div className="soft-card mt-6 p-5">
+          <h3 className="text-lg font-bold text-ink dark:text-white">Redirect back behavior</h3>
+          <p className="muted-copy mt-3 text-sm leading-6">
+            Choose whether redirected visits stay in the learning flow until you continue manually, or automatically send you back after a set number of reviewed cards.
+          </p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Return mode
+              </span>
+              <select
+                value={redirectBackMode}
+                onChange={(event) =>
+                  setRedirectBackMode(event.target.value as typeof settings.redirectBackMode)
+                }
+                className="app-select"
+              >
+                <option value="manual">Let me choose when to return</option>
+                <option value="after_cards">Return automatically after cards answered</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Cards before return
+              </span>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={redirectBackCardCount}
+                onChange={(event) => setRedirectBackCardCount(event.target.value)}
+                className="app-input"
+                disabled={redirectBackMode !== 'after_cards'}
+              />
+            </label>
+          </div>
+          <div className="mt-4">
+            <button
+              type="button"
+              className="action-button"
+              onClick={() => void handleSaveRedirectSettings()}
+              disabled={pending}
+            >
+              Save redirect settings
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">

@@ -1,6 +1,11 @@
 import { domainMatchesRule } from '../../src/utils/domains'
 import type { ExtensionStatusPayload } from '../../src/shared/extension'
 
+interface RedirectOptions {
+  allowOnceUrl?: string | null
+  allowOnceExpiresAt?: string | null
+}
+
 function isAppUrl(appBaseUrl: string, url: URL) {
   try {
     const appUrl = new URL(appBaseUrl)
@@ -10,10 +15,30 @@ function isAppUrl(appBaseUrl: string, url: URL) {
   }
 }
 
-export function resolveRedirectTarget(status: ExtensionStatusPayload, targetUrl: string) {
+function matchesAllowOnce(targetUrl: string, options?: RedirectOptions) {
+  if (!options?.allowOnceUrl || !options.allowOnceExpiresAt) {
+    return false
+  }
+
+  if (new Date(options.allowOnceExpiresAt).getTime() <= Date.now()) {
+    return false
+  }
+
+  return options.allowOnceUrl === targetUrl
+}
+
+export function resolveRedirectTarget(
+  status: ExtensionStatusPayload,
+  targetUrl: string,
+  options?: RedirectOptions,
+) {
   const nextUrl = new URL(targetUrl)
 
-  if (!status.blockedDomains.length || isAppUrl(status.appBaseUrl, nextUrl)) {
+  if (
+    !status.blockedDomains.length ||
+    isAppUrl(status.appBaseUrl, nextUrl) ||
+    matchesAllowOnce(targetUrl, options)
+  ) {
     return null
   }
 
@@ -27,6 +52,7 @@ export function resolveRedirectTarget(status: ExtensionStatusPayload, targetUrl:
   const interruptUrl = new URL('/interrupt', status.appBaseUrl)
   interruptUrl.searchParams.set('site', hostname)
   interruptUrl.searchParams.set('source', 'extension')
+  interruptUrl.searchParams.set('returnUrl', targetUrl)
 
   return interruptUrl.toString()
 }

@@ -5,6 +5,7 @@ import type {
   AiGenerationEvent,
   ByokCredentialStatus,
   PlanTier,
+  RedirectBackMode,
   SupportedAiModel,
 } from '../../types/domain'
 
@@ -13,6 +14,8 @@ interface AiSettingsRow {
   plan_tier: PlanTier
   byok_provider: 'openai' | 'openrouter'
   preferred_model: SupportedAiModel
+  redirect_back_mode: RedirectBackMode
+  redirect_back_card_count: number
   created_at: string
   updated_at: string
 }
@@ -77,6 +80,8 @@ function readDemoSettings(userId: string): AiAccessSettings {
       planTier: 'free',
       byokProvider: 'openrouter',
       preferredModel: 'gpt-4.1-mini',
+      redirectBackMode: 'manual',
+      redirectBackCardCount: 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -90,6 +95,8 @@ function readDemoSettings(userId: string): AiAccessSettings {
       planTier: 'free',
       byokProvider: 'openrouter',
       preferredModel: 'gpt-4.1-mini',
+      redirectBackMode: 'manual',
+      redirectBackCardCount: 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -120,6 +127,8 @@ function mapSettingsRow(row: AiSettingsRow): AiAccessSettings {
     planTier: row.plan_tier,
     byokProvider: row.byok_provider,
     preferredModel: row.preferred_model,
+    redirectBackMode: row.redirect_back_mode ?? 'manual',
+    redirectBackCardCount: row.redirect_back_card_count ?? 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -205,6 +214,8 @@ export async function getAiAccessSettings(userId: string) {
       planTier: 'free',
       byokProvider: 'openrouter',
       preferredModel: 'gpt-4.1-mini',
+      redirectBackMode: 'manual',
+      redirectBackCardCount: 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -216,7 +227,14 @@ export async function getAiAccessSettings(userId: string) {
 
 export async function saveAiAccessSettings(
   userId: string,
-  input: Pick<AiAccessSettings, 'planTier' | 'byokProvider' | 'preferredModel'>,
+  input: Pick<
+    AiAccessSettings,
+    | 'planTier'
+    | 'byokProvider'
+    | 'preferredModel'
+    | 'redirectBackMode'
+    | 'redirectBackCardCount'
+  >,
 ) {
   const client = getSupabaseBrowserClient()
 
@@ -239,6 +257,8 @@ export async function saveAiAccessSettings(
       plan_tier: input.planTier,
       byok_provider: input.byokProvider,
       preferred_model: input.preferredModel,
+      redirect_back_mode: input.redirectBackMode,
+      redirect_back_card_count: input.redirectBackCardCount,
       updated_at: new Date().toISOString(),
     }, {
       onConflict: 'user_id',

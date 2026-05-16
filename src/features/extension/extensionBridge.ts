@@ -1,10 +1,12 @@
 import { env } from '../../lib/env'
 import {
+  EXTENSION_ALLOW_ONCE_MESSAGE,
   EXTENSION_PRESENCE_MESSAGE,
   EXTENSION_REQUEST_SYNC_MESSAGE,
   EXTENSION_REQUEST_STATUS_MESSAGE,
   EXTENSION_STATUS_RESPONSE_MESSAGE,
   EXTENSION_SYNC_MESSAGE,
+  type ExtensionAllowOncePayload,
   type ExtensionStatusPayload,
   type ExtensionSyncPayload,
 } from '../../shared/extension'
@@ -23,6 +25,18 @@ export function syncExtensionRules(blockedDomains: string[]) {
       appBaseUrl: env.appUrl,
       blockedDomains,
     }),
+    window.location.origin,
+  )
+}
+
+export function allowExtensionReturnOnce(url: string) {
+  const payload: ExtensionAllowOncePayload = { url }
+  window.postMessage(
+    {
+      source: 'stop-procrastinating-app',
+      type: EXTENSION_ALLOW_ONCE_MESSAGE,
+      payload,
+    },
     window.location.origin,
   )
 }

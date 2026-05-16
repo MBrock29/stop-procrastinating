@@ -11,7 +11,7 @@ const baseStatus: ExtensionStatusPayload = {
 describe('resolveRedirectTarget', () => {
   it('redirects blocked domains to the interrupt route', () => {
     expect(resolveRedirectTarget(baseStatus, 'https://www.reddit.com/r/typescript')).toBe(
-      'https://focus.example.com/interrupt?site=www.reddit.com&source=extension',
+      'https://focus.example.com/interrupt?site=www.reddit.com&source=extension&returnUrl=https%3A%2F%2Fwww.reddit.com%2Fr%2Ftypescript',
     )
   })
 
@@ -21,5 +21,14 @@ describe('resolveRedirectTarget', () => {
 
   it('does not redirect the app origin itself', () => {
     expect(resolveRedirectTarget(baseStatus, 'https://focus.example.com/app')).toBeNull()
+  })
+
+  it('does not redirect a one-time allowed url', () => {
+    expect(
+      resolveRedirectTarget(baseStatus, 'https://www.reddit.com/r/typescript', {
+        allowOnceUrl: 'https://www.reddit.com/r/typescript',
+        allowOnceExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+      }),
+    ).toBeNull()
   })
 })

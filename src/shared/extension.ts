@@ -5,6 +5,7 @@ export const EXTENSION_CLEAR_STATUS_MESSAGE = 'STOP_PROCRASTINATING_CLEAR_RULES'
 export const EXTENSION_REQUEST_STATUS_MESSAGE = 'STOP_PROCRASTINATING_REQUEST_STATUS'
 export const EXTENSION_STATUS_RESPONSE_MESSAGE = 'STOP_PROCRASTINATING_STATUS_RESPONSE'
 export const EXTENSION_PRESENCE_MESSAGE = 'STOP_PROCRASTINATING_PRESENCE'
+export const EXTENSION_ALLOW_ONCE_MESSAGE = 'STOP_PROCRASTINATING_ALLOW_ONCE'
 
 export interface ExtensionSyncPayload {
   appBaseUrl: string
@@ -13,4 +14,8 @@ export interface ExtensionSyncPayload {
 
 export interface ExtensionStatusPayload extends ExtensionSyncPayload {
   lastSyncedAt: string | null
+}
+
+export interface ExtensionAllowOncePayload {
+  url: string
 }

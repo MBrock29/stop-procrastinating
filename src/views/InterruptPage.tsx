@@ -4,6 +4,7 @@ import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { listLearningCards } from '../features/cards/cardsRepository'
 import { sortCardsForReview } from '../features/cards/scheduling'
 import { useAuth } from '../features/auth/useAuth'
+import { allowExtensionReturnOnce } from '../features/extension/extensionBridge'
 import {
   completeInterruptSession,
   createInterruptSession,
@@ -17,6 +18,7 @@ export function InterruptPage() {
   const [searchParams] = useSearchParams()
   const site = searchParams.get('site')
   const source = searchParams.get('source') ?? 'manual'
+  const returnUrl = searchParams.get('returnUrl')
   const [session, setSession] = useState<InterruptSession | null>(null)
   const [cards, setCards] = useState<LearningCard[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -28,6 +30,34 @@ export function InterruptPage() {
   const card = cards[currentIndex] ?? null
   const reviewedCount = currentIndex
   const remainingCount = Math.max(cards.length - currentIndex - 1, 0)
+  const safeReturnUrl = (() => {
+    if (!returnUrl) {
+      return null
+    }
+
+    try {
+      const parsed = new URL(returnUrl)
+
+      if (site && parsed.hostname !== site) {
+        return null
+      }
+
+      return parsed.toString()
+    } catch {
+      return null
+    }
+  })()
+
+  function continueToOriginalSite() {
+    if (!safeReturnUrl) {
+      return
+    }
+
+    allowExtensionReturnOnce(safeReturnUrl)
+    window.setTimeout(() => {
+      window.location.href = safeReturnUrl
+    }, 75)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -93,11 +123,22 @@ export function InterruptPage() {
       )
       const prioritizedRemainder = sortCardsForReview(nextCards.slice(currentIndex + 1))
       const updatedCards = [...nextCards.slice(0, currentIndex + 1), ...prioritizedRemainder]
+      const nextReviewedCount = currentIndex + 1
 
       setCards(updatedCards)
       setAnswerRevealed(false)
 
-      if (currentIndex + 1 >= updatedCards.length) {
+      if (
+        safeReturnUrl &&
+        settings.redirectBackMode === 'after_cards' &&
+        nextReviewedCount >= settings.redirectBackCardCount
+      ) {
+        await completeInterruptSession(user.id, session.id)
+        continueToOriginalSite()
+        return
+      }
+
+      if (nextReviewedCount >= updatedCards.length) {
         await completeInterruptSession(user.id, session.id)
       } else {
         setCurrentIndex((value) => value + 1)
@@ -138,6 +179,15 @@ export function InterruptPage() {
             <Link to="/app" className="ghost-button">
               Return to dashboard
             </Link>
+            {safeReturnUrl ? (
+              <button
+                type="button"
+                onClick={continueToOriginalSite}
+                className="ghost-button"
+              >
+                Continue to site
+              </button>
+            ) : null}
             <Link to="/app/cards" className="ghost-button">
               Manage cards
             </Link>
@@ -188,6 +238,9 @@ export function InterruptPage() {
               <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
                 <span>{reviewedCount} reviewed</span>
                 <span>{remainingCount} remaining</span>
+                {safeReturnUrl && settings.redirectBackMode === 'after_cards' ? (
+                  <span>Returns after {settings.redirectBackCardCount} card{settings.redirectBackCardCount === 1 ? '' : 's'}</span>
+                ) : null}
               </div>
               <h2 className="mt-4 text-2xl font-bold leading-tight text-ink">
                 {card.question}
@@ -258,6 +311,15 @@ export function InterruptPage() {
                 <Link to="/app" className="action-button">
                   Return to dashboard
                 </Link>
+                {safeReturnUrl ? (
+                  <button
+                    type="button"
+                    onClick={continueToOriginalSite}
+                    className="ghost-button"
+                  >
+                    Continue to site
+                  </button>
+                ) : null}
                 <Link to="/app/cards" className="ghost-button">
                   Manage cards
                 </Link>
