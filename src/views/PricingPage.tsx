@@ -26,6 +26,20 @@ interface PlanCardDefinition {
   badge?: string
 }
 
+function looksLikeApiKey(provider: AiProvider, apiKey: string) {
+  const trimmed = apiKey.trim()
+
+  if (!trimmed) {
+    return false
+  }
+
+  if (provider === 'openai') {
+    return trimmed.startsWith('sk-')
+  }
+
+  return trimmed.startsWith('sk-or-') || trimmed.startsWith('sk_') || trimmed.startsWith('sk-')
+}
+
 export function PricingPage() {
   const {
     clearByokCredentials,
@@ -137,10 +151,23 @@ export function PricingPage() {
     setFormError(null)
     setSuccessMessage(null)
 
-    const nextApiKey = byokDraft.apiKey.trim() || localByokCredentials?.apiKey
+    const trimmedDraftKey = byokDraft.apiKey.trim()
+    const canReuseSavedKey =
+      Boolean(localByokCredentials?.apiKey) && localByokCredentials?.provider === byokDraft.provider
+    const nextApiKey = trimmedDraftKey || (canReuseSavedKey ? localByokCredentials?.apiKey : '')
 
     if (!nextApiKey) {
-      setFormError('Add your API key before switching to BYOK mode.')
+      setFormError(
+        canReuseSavedKey
+          ? 'Add your API key before switching to BYOK mode.'
+          : 'Add a provider key for the selected provider before switching to BYOK mode.',
+      )
+      setPending(false)
+      return
+    }
+
+    if (!looksLikeApiKey(byokDraft.provider, nextApiKey)) {
+      setFormError(`That does not look like a valid ${byokDraft.provider} API key.`)
       setPending(false)
       return
     }
@@ -160,6 +187,29 @@ export function PricingPage() {
     } catch (nextError) {
       const message =
         nextError instanceof Error ? nextError.message : 'Unable to save your BYOK settings.'
+      setFormError(message)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function handleClearByok() {
+    setPending(true)
+    setFormError(null)
+    setSuccessMessage(null)
+
+    try {
+      clearByokCredentials()
+
+      if (settings.planTier === 'byok') {
+        await setPlanTier('free')
+        setSuccessMessage('Saved BYOK key cleared. Switched back to the free plan.')
+      } else {
+        setSuccessMessage('Saved BYOK key cleared from this device.')
+      }
+    } catch (nextError) {
+      const message =
+        nextError instanceof Error ? nextError.message : 'Unable to clear your BYOK settings.'
       setFormError(message)
     } finally {
       setPending(false)
@@ -291,11 +341,17 @@ export function PricingPage() {
                 Your key stays on this device. When BYOK is active, generation requests use
                 that key so the cost lands on your provider account instead of the platform.
               </p>
+              <p className="muted-copy mt-2 max-w-2xl text-sm leading-6">
+                BYOK is browser-specific right now, so you would need to add the key again on a different device or browser.
+              </p>
             </div>
             <div className="soft-card px-4 py-3 text-sm">
               <div className="font-semibold text-ink dark:text-white">Saved locally</div>
               <div className="muted-copy mt-1">
                 {lastFour ? `Key ending ${lastFour}` : 'No local key saved yet'}
+              </div>
+              <div className="muted-copy mt-1">
+                {localByokCredentials ? `Provider: ${localByokCredentials.provider}` : 'Stored in this browser only'}
               </div>
             </div>
           </div>
@@ -364,6 +420,12 @@ export function PricingPage() {
             />
           </label>
 
+          <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-4 text-sm muted-copy">
+            {settings.planTier === 'byok'
+              ? `BYOK is active on this device. New packs will use your ${settings.byokProvider} key with ${settings.preferredModel}.`
+              : 'BYOK is not active yet. Save a provider, model, and key to switch this device over to your own account.'}
+          </div>
+
           {formError ? (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               {formError}
@@ -389,8 +451,8 @@ export function PricingPage() {
             <button
               type="button"
               className="ghost-button"
-              onClick={() => clearByokCredentials()}
-              disabled={!localByokCredentials}
+              onClick={() => void handleClearByok()}
+              disabled={!localByokCredentials || pending}
             >
               Clear saved key
             </button>
