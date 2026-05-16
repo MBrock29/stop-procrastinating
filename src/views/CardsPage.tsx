@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TIER_POLICIES } from '../features/ai-access/constants'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
@@ -50,7 +50,7 @@ function CardEditor({
           onChange={(event) => onChange({ ...draft, question: event.target.value })}
           rows={4}
           className="app-input"
-          placeholder="What is the difference between useEffect and useLayoutEffect?"
+          placeholder="What is a variable in programming?"
         />
       </label>
       <label className="block">
@@ -60,7 +60,7 @@ function CardEditor({
           onChange={(event) => onChange({ ...draft, answer: event.target.value })}
           rows={5}
           className="app-input"
-          placeholder="useLayoutEffect runs synchronously after DOM mutations but before paint..."
+          placeholder="A variable is a named value that can store data for later use in a program."
         />
       </label>
       <button type="submit" className="action-button" disabled={isPending}>
@@ -206,6 +206,8 @@ export function CardsPage() {
   const [aiError, setAiError] = useState<string | null>(null)
   const [aiSuccess, setAiSuccess] = useState<string | null>(null)
   const [expandedPackId, setExpandedPackId] = useState<string | null>(null)
+  const [visibleCardCount, setVisibleCardCount] = useState(10)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const aiCardLimit = tierPolicy.maxCardsPerPack
 
   const generatedPacks = useMemo<GeneratedPackSummary[]>(() => {
@@ -250,6 +252,42 @@ export function CardsPage() {
       cardCount: Math.max(1, Math.min(aiCardLimit, current.cardCount)),
     }))
   }, [aiCardLimit])
+
+  useEffect(() => {
+    setVisibleCardCount(10)
+  }, [cards.length])
+
+  useEffect(() => {
+    const sentinel = loadMoreRef.current
+
+    if (!sentinel || cards.length <= 10) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+
+        if (entry?.isIntersecting) {
+          setVisibleCardCount((current) => Math.min(current + 10, cards.length))
+        }
+      },
+      {
+        rootMargin: '200px 0px',
+      },
+    )
+
+    observer.observe(sentinel)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [cards.length])
+
+  const visibleCards = useMemo(
+    () => cards.slice(0, visibleCardCount),
+    [cards, visibleCardCount],
+  )
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -411,8 +449,8 @@ export function CardsPage() {
                   tierPolicy.monthlyPackLimit ?? 'unlimited'
                 } packs per month.`}
           </div>
-          <Link to="/app/byok" className="mt-3 inline-block font-semibold text-reef">
-            Manage plans and BYOK
+          <Link to="/app/pricing" className="mt-3 inline-block font-semibold text-reef">
+            Manage plans
           </Link>
         </div>
 
@@ -422,22 +460,14 @@ export function CardsPage() {
           </div>
         ) : null}
 
-        <CardEditor
-          draft={draft}
-          heading="Add a card"
-          isPending={pending}
-          onChange={setDraft}
-          onSubmit={handleCreate}
-        />
-
         <form className="soft-card mt-10 space-y-4 border p-5" onSubmit={handleGenerateCards}>
           <div>
-            <p className="section-kicker">AI generate</p>
+            <p className="section-kicker">AI generated packs</p>
             <h3 className="mt-2 text-lg font-bold text-ink dark:text-white">Generate a batch from a topic</h3>
             <p className="muted-copy mt-2 text-sm leading-6">
-              Enter a topic like “mid-senior React interview questions” and the app
-              will create a saved set of cards you can review like any other item in
-              your library.
+              Enter a topic such as “Senior level programming interview questions” or
+              “Common English-Spanish phrases with translation” and the app will create
+              a saved set of cards you can review like any other item in your library.
             </p>
             <p className="muted-copy mt-2 text-sm leading-6">
               This plan supports up to {aiCardLimit} cards per pack.
@@ -450,7 +480,7 @@ export function CardsPage() {
               value={aiDraft.topic}
               onChange={(event) => setAiDraft({ ...aiDraft, topic: event.target.value })}
               type="text"
-              placeholder="mid-senior React interview questions"
+              placeholder="Senior level programming interview questions"
               className="app-input"
             />
           </label>
@@ -492,6 +522,14 @@ export function CardsPage() {
             {pending ? 'Generating…' : 'Generate AI cards'}
           </button>
         </form>
+
+        <CardEditor
+          draft={draft}
+          heading="Manually add a card"
+          isPending={pending}
+          onChange={setDraft}
+          onSubmit={handleCreate}
+        />
 
         <div className="soft-card mt-6 p-5">
           <div>
@@ -594,7 +632,7 @@ export function CardsPage() {
         ) : null}
 
         <div className="mt-6 space-y-4">
-          {cards.map((card) => (
+          {visibleCards.map((card) => (
             <CardListItem
               key={card.id}
               card={card}
@@ -605,6 +643,12 @@ export function CardsPage() {
             />
           ))}
         </div>
+
+        {!isLoading && visibleCards.length < cards.length ? (
+          <div ref={loadMoreRef} className="mt-4 py-4 text-center text-sm text-slate-500 dark:text-slate-300">
+            Loading more cards…
+          </div>
+        ) : null}
       </section>
     </div>
   )
