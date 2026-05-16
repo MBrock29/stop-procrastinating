@@ -55,16 +55,16 @@ export function DashboardPage() {
         : 'Not connected'
 
   return (
-    <section className="space-y-6">
-      <div className="editorial-stage px-6 py-7 sm:px-8">
+    <section className="panel overflow-hidden px-6 py-6 sm:px-8">
         <p className="section-kicker">
           Dashboard
         </p>
-        <h2 className="mt-3 max-w-3xl text-3xl font-extrabold tracking-[-0.04em] text-ink dark:text-white sm:text-4xl">
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
           Keep today’s learning loop simple.
         </h2>
-        <p className="muted-copy mt-4 max-w-3xl text-sm leading-7 sm:text-base">
-          Jump into a review session, tune your library, and keep the redirect system healthy without hunting through the app.
+        <p className="muted-copy mt-3 max-w-2xl text-sm leading-6 sm:text-base">
+          Jump into a review session, tune your library, or check whether your browser
+          extension is still in sync.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link to="/interrupt?source=dashboard" className="action-button">
@@ -77,63 +77,58 @@ export function DashboardPage() {
             Plans and usage
           </Link>
         </div>
-        <div className="stat-ribbon mt-8">
-          <div className="stat-ribbon-item">
-            <div className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-300">
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="metric-card">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
               Active blocks
             </div>
-            <div className="text-3xl font-extrabold text-ink dark:text-white">{activeCount}</div>
+            <div className="mt-3 text-3xl font-bold text-ink dark:text-white">{activeCount}</div>
           </div>
-          <div className="stat-ribbon-item">
-            <div className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-300">
+          <div className="metric-card">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
               Active cards
             </div>
-            <div className="text-3xl font-extrabold text-ink dark:text-white">{activeCardsCount}</div>
+            <div className="mt-3 text-3xl font-bold text-ink dark:text-white">{activeCardsCount}</div>
           </div>
-          <div className="stat-ribbon-item">
-            <div className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-300">
-              Extension
+          <div className="metric-card">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
+              Browser extension
             </div>
-            <div className="text-2xl font-extrabold text-ink dark:text-white">{extensionLabel}</div>
+            <div className="mt-3 text-lg font-bold text-ink dark:text-white">{extensionLabel}</div>
             {extensionStatus.status === 'connected' && extensionStatus.details?.lastSyncedAt ? (
-              <div className="text-sm text-slate-500 dark:text-slate-300">
+              <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
                 Synced {new Date(extensionStatus.details.lastSyncedAt).toLocaleString()}
               </div>
             ) : (
-              <Link to="/app/setup" className="text-sm font-semibold text-reef">
+              <Link to="/app/setup" className="mt-2 inline-block text-sm font-semibold text-reef">
                 View extension setup guide
               </Link>
             )}
           </div>
         </div>
-      </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <section className="surface-strip px-6 py-6 sm:px-8">
+        <div className="soft-card mt-8 p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <span className="accent-label">Setup flow</span>
-              <h3 className="mt-4 text-2xl font-extrabold tracking-tight text-ink dark:text-white">
-                Get set up once, then let the system run.
-              </h3>
-              <p className="muted-copy mt-3 max-w-2xl text-sm leading-6">
-                These steps keep the product honest: a live card library, real blocked sites, and a browser that is ready to redirect.
+              <h3 className="text-lg font-bold text-ink dark:text-white">Get set up</h3>
+              <p className="muted-copy mt-2 text-sm leading-6">
+                Follow these steps once, then the habit-interrupt loop can take over.
               </p>
             </div>
             <div className="rounded-full bg-reef/10 px-4 py-2 text-sm font-semibold text-reef">
               {onboardingSteps.filter((step) => step.done).length}/{onboardingSteps.length} complete
             </div>
           </div>
-          <div className="mt-6 space-y-4">
+          <div className="mt-5 space-y-3">
             {onboardingSteps.map((step, index) => (
               <div
                 key={step.label}
-                className="spotlight-band"
+                className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-3">
-                      <div className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${step.done ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+                      <div className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${step.done ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
                         {step.done ? '✓' : index + 1}
                       </div>
                       <div className="text-base font-bold text-ink dark:text-white">{step.label}</div>
@@ -154,37 +149,7 @@ export function DashboardPage() {
               BYOK is selected, but there is no saved provider key on your account yet. Add one on the pricing page before generating more packs.
             </div>
           ) : null}
-        </section>
-
-        <aside className="space-y-6">
-          <div className="surface-strip px-6 py-6 sm:px-8">
-            <span className="accent-label">What to do now</span>
-            <div className="mt-4 space-y-4">
-              <div>
-                <div className="text-base font-bold text-ink dark:text-white">Need a fast win?</div>
-                <p className="muted-copy mt-2 text-sm leading-6">
-                  Start a manual learning session and rate a few cards so the queue begins adapting to your confidence.
-                </p>
-              </div>
-              <div>
-                <div className="text-base font-bold text-ink dark:text-white">Want redirects to feel reliable?</div>
-                <p className="muted-copy mt-2 text-sm leading-6">
-                  Keep the extension freshly synced whenever you change your blocked sites list.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="spotlight-band">
-            <div className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-300">
-              Today’s principle
-            </div>
-            <div className="mt-3 text-xl font-extrabold tracking-tight text-ink dark:text-white">
-              Don&apos;t wait for motivation. Make the next click useful.
-            </div>
-          </div>
-        </aside>
-      </div>
+        </div>
     </section>
   )
 }

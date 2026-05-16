@@ -23,38 +23,26 @@ export function AppShell() {
   return (
     <div className="min-h-screen bg-soft-grid bg-[size:36px_36px]">
       <ExtensionSyncBridge />
-      <div className="mx-auto flex min-h-screen w-full max-w-[88rem] flex-col px-4 py-5 sm:px-6 lg:px-8">
-        <header className="mb-6 space-y-4">
-          <div className="surface-strip px-4 py-3 sm:px-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="accent-label">Stop Procrastinating</span>
-                <div className="text-sm text-slate-500 dark:text-slate-300">
-                  {mode === 'supabase' ? 'Logged in as' : 'Demo mode'}{' '}
-                  <span className="font-semibold text-ink dark:text-white">{user?.email ?? 'Unknown user'}</span>
-                </div>
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
+        <header className="panel mb-6 overflow-hidden px-6 py-6 sm:px-8">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+            <div className="space-y-3">
+              <p className="section-kicker">
+              Stop Procrastinating
+              </p>
+              <div>
+                <h1 className="text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
+                Build momentum, little by little.
+                </h1>
+                <p className="muted-copy mt-2 max-w-2xl text-sm sm:text-base">
+                  Turn habit loops into short bursts of progress with one useful question
+                  at a time.
+                </p>
               </div>
+            </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <nav className="flex flex-wrap items-center gap-2">
-                  {navItems.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      end={item.end}
-                      className={({ isActive }) =>
-                        [
-                          'inline-flex min-h-[42px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition',
-                          isActive
-                            ? 'bg-reef text-white shadow-lg shadow-reef/20'
-                            : 'text-[var(--app-text)] hover:bg-[var(--app-surface-muted)]',
-                        ].join(' ')
-                      }
-                    >
-                      {item.label}
-                    </NavLink>
-                  ))}
-                </nav>
+            <div className="flex flex-col gap-4 xl:items-end">
+              <div className="flex flex-wrap items-center gap-3 xl:justify-end">
                 <NavLink
                   to="/app/settings"
                   className={({ isActive }) =>
@@ -62,7 +50,7 @@ export function AppShell() {
                       'inline-flex min-h-[42px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition',
                       isActive
                         ? 'bg-reef text-white shadow-lg shadow-reef/20'
-                        : 'text-[var(--app-text)] hover:bg-[var(--app-surface-muted)]',
+                        : 'border border-[var(--app-border)] bg-[var(--app-surface-strong)] text-[var(--app-text)] hover:bg-[var(--app-surface-muted)]',
                     ].join(' ')
                   }
                 >
@@ -80,29 +68,33 @@ export function AppShell() {
                   Sign out
                 </button>
               </div>
-            </div>
-          </div>
 
-          <div className="editorial-stage px-6 py-6 sm:px-8">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="section-kicker">Build momentum</p>
-                <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-ink dark:text-white sm:text-4xl">
-                  Little by little turns out to be enough.
-                </h1>
-                <p className="muted-copy mt-4 max-w-2xl text-sm leading-7 sm:text-base">
-                  Keep the loop visible: what you want to learn, what you want to block, and whether the browser is ready to redirect you back into progress.
-                </p>
+              <div className="soft-card px-4 py-3 text-sm">
+                <div className="font-semibold text-ink dark:text-white">
+                  {mode === 'supabase' ? 'Logged in as:' : 'Demo mode:'}
+                </div>
+                <div className="muted-copy mt-1">{user?.email ?? 'Unknown user'}</div>
               </div>
 
-              <div className="spotlight-band max-w-sm">
-                <div className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-300">
-                  Focus principle
-                </div>
-                <div className="mt-3 text-base font-bold leading-7 text-ink dark:text-white">
-                  Don&apos;t fight the urge with willpower alone. Catch it, redirect it, and spend the moment on something useful.
-                </div>
-              </div>
+              <nav className="flex flex-wrap items-center gap-3 xl:justify-end">
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) =>
+                      [
+                        'inline-flex min-h-[42px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition',
+                        isActive
+                          ? 'bg-reef text-white shadow-lg shadow-reef/20'
+                          : 'border border-[var(--app-border)] bg-[var(--app-surface-strong)] text-[var(--app-text)] hover:bg-[var(--app-surface-muted)]',
+                      ].join(' ')
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </nav>
             </div>
           </div>
         </header>
