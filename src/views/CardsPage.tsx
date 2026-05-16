@@ -177,6 +177,7 @@ interface GeneratedPackSummary {
   count: number
   createdAt: string
   cardIds: string[]
+  questions: string[]
 }
 
 export function CardsPage() {
@@ -204,20 +205,24 @@ export function CardsPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [aiError, setAiError] = useState<string | null>(null)
   const [aiSuccess, setAiSuccess] = useState<string | null>(null)
+  const [expandedPackId, setExpandedPackId] = useState<string | null>(null)
   const aiCardLimit = tierPolicy.maxCardsPerPack
 
   const generatedPacks = useMemo<GeneratedPackSummary[]>(() => {
     const packMap = new Map<string, GeneratedPackSummary>()
 
     cards
-      .filter((card) => card.source === 'ai' && card.generationBatchId)
+      .filter((card) => card.source === 'ai')
       .forEach((card) => {
-        const batchId = card.generationBatchId!
+        const batchId =
+          card.generationBatchId ??
+          `legacy:${card.generationTopic ?? 'Generated pack'}:${card.createdAt.slice(0, 16)}`
         const existing = packMap.get(batchId)
 
         if (existing) {
           existing.count += 1
           existing.cardIds.push(card.id)
+          existing.questions.push(card.question)
           if (card.createdAt > existing.createdAt) {
             existing.createdAt = card.createdAt
           }
@@ -230,6 +235,7 @@ export function CardsPage() {
           count: 1,
           createdAt: card.createdAt,
           cardIds: [card.id],
+          questions: [card.question],
         })
       })
 
@@ -363,6 +369,14 @@ export function CardsPage() {
 
     try {
       await removeCards(cardIds)
+      setExpandedPackId((current) => {
+        if (!current) {
+          return current
+        }
+
+        const stillExists = generatedPacks.some((pack) => pack.batchId === current && !pack.cardIds.every((id) => cardIds.includes(id)))
+        return stillExists ? current : null
+      })
     } catch (nextError) {
       const message =
         nextError instanceof Error ? nextError.message : 'Unable to delete those cards.'
@@ -479,6 +493,76 @@ export function CardsPage() {
             {pending ? 'Generating…' : 'Generate AI cards'}
           </button>
         </form>
+
+        <div className="soft-card mt-6 p-5">
+          <div>
+            <h3 className="text-lg font-bold text-ink dark:text-white">Added packs</h3>
+            <p className="muted-copy mt-2 text-sm leading-6">
+              Open a pack to see the questions it added, or delete the whole pack from your learning card library.
+            </p>
+          </div>
+
+          {generatedPacks.length === 0 ? (
+            <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
+              No AI packs yet. Generate a topic-based pack to see it listed here.
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {generatedPacks.map((pack) => {
+                const isExpanded = expandedPackId === pack.batchId
+
+                return (
+                  <div
+                    key={pack.batchId}
+                    className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <button
+                        type="button"
+                        className="min-w-0 text-left"
+                        onClick={() =>
+                          setExpandedPackId((current) =>
+                            current === pack.batchId ? null : pack.batchId,
+                          )
+                        }
+                      >
+                        <div className="text-base font-bold text-ink dark:text-white">
+                          {pack.topic} ({pack.count})
+                        </div>
+                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
+                          Generated {new Date(pack.createdAt).toLocaleString()}
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+                        onClick={() => void handleBulkDelete(pack.cardIds)}
+                        disabled={pending}
+                      >
+                        Delete pack
+                      </button>
+                    </div>
+
+                    {isExpanded ? (
+                      <div className="mt-4 border-t border-[var(--app-border)] pt-4">
+                        <div className="text-sm font-semibold text-ink dark:text-white">
+                          Questions in this pack
+                        </div>
+                        <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                          {pack.questions.map((question) => (
+                            <li key={`${pack.batchId}-${question}`} className="rounded-2xl bg-[var(--app-surface-muted)] px-3 py-3">
+                              {question}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="panel px-6 py-6 sm:px-8">
@@ -490,44 +574,6 @@ export function CardsPage() {
             </h3>
           </div>
         </div>
-
-        {generatedPacks.length > 0 ? (
-          <div className="soft-card mt-6 p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h4 className="text-base font-bold text-ink dark:text-white">Generated packs</h4>
-                <p className="muted-copy mt-1 text-sm">
-                  Remove a whole AI-generated pack in one action.
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 space-y-3">
-              {generatedPacks.map((pack) => (
-                <div
-                  key={pack.batchId}
-                  className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <div className="text-base font-bold text-ink dark:text-white">{pack.topic}</div>
-                      <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                        {pack.count} cards · generated {new Date(pack.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
-                      onClick={() => void handleBulkDelete(pack.cardIds)}
-                      disabled={pending}
-                    >
-                      Delete pack
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
 
         {error ? (
           <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
