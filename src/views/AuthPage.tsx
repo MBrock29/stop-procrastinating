@@ -1,6 +1,4 @@
-import type { FormEvent } from 'react'
-import { useState } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth'
 import { useTheme } from '../features/theme/ThemeContext'
 
@@ -12,181 +10,91 @@ const flowSteps = [
   "Cards you're more confident with stay in the library with lower priority.",
 ]
 
+const planCards = [
+  {
+    title: 'Free',
+    price: '£0',
+    cadence: '/month',
+    benefits: [
+      'Store up to 500 cards',
+      'Generate up to 3 packs per month',
+      'Generate up to 10 cards per pack',
+      'Access to the lighter hosted learning model',
+    ],
+  },
+  {
+    title: 'Pro',
+    price: '£1.99',
+    cadence: '/month',
+    badge: '£19.99/year available',
+    benefits: [
+      'Store up to 500 cards',
+      'Generate up to 100 packs per month',
+      'Generate up to 500 cards per pack',
+      'Access to the stronger hosted learning model',
+    ],
+  },
+  {
+    title: 'BYOK',
+    price: '£0',
+    cadence: '/month',
+    benefits: [
+      'Store up to 500 cards',
+      'Generate unlimited packs per month',
+      'Generate up to 500 cards per pack',
+      'Choose between gpt-4.1-mini and gpt-5.4-mini',
+    ],
+  },
+]
+
 export function AuthPage() {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const { authError, signInWithGoogle, signInWithPassword, signUpWithPassword, status } =
-    useAuth()
+  const { status } = useAuth()
   const { theme, toggleTheme } = useTheme()
-  const [error, setError] = useState<string | null>(null)
-  const [authMode, setAuthMode] = useState<'signin' | 'register'>('signin')
-  const [pending, setPending] = useState(false)
-  const redirect = searchParams.get('redirect') ?? '/app'
 
   if (status === 'authenticated') {
-    return <Navigate to={redirect} replace />
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError(null)
-    setPending(true)
-
-    const formData = new FormData(event.currentTarget)
-    const email = String(formData.get('email') ?? '')
-    const password = String(formData.get('password') ?? '')
-
-    try {
-      if (authMode === 'register') {
-        await signUpWithPassword(email, password)
-      } else {
-        await signInWithPassword(email, password)
-      }
-      navigate(redirect)
-    } catch (nextError) {
-      const message =
-        nextError instanceof Error
-          ? nextError.message
-          : authMode === 'register'
-            ? 'Unable to create your account right now.'
-            : 'Unable to sign in right now.'
-      setError(message)
-    } finally {
-      setPending(false)
-    }
-  }
-
-  async function handleGoogleSignIn() {
-    setError(null)
-    setPending(true)
-
-    try {
-      await signInWithGoogle()
-    } catch (nextError) {
-      const message =
-        nextError instanceof Error ? nextError.message : 'Unable to start Google sign-in.'
-      setError(message)
-      setPending(false)
-    }
+    return <Navigate to="/app" replace />
   }
 
   return (
     <div className="min-h-screen bg-soft-grid bg-[size:36px_36px] px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-6xl justify-end pb-4">
+      <div className="mx-auto flex w-full max-w-6xl justify-end gap-3 pb-4">
+        <Link to="/login" className="ghost-button px-4 py-2 text-sm">
+          Sign in
+        </Link>
         <button type="button" onClick={toggleTheme} className="theme-toggle">
           <span>{theme === 'light' ? 'Dark theme' : 'Light theme'}</span>
           <span aria-hidden="true">{theme === 'light' ? '◐' : '◑'}</span>
         </button>
       </div>
-      <div className="mx-auto max-w-6xl">
-        <div className="grid w-full items-start gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="panel overflow-hidden px-8 py-8 sm:px-10 sm:py-9">
-            <p className="text-lg font-extrabold uppercase tracking-[0.28em] text-reef/75 sm:text-xl">
-              Stop Procrastinating
-            </p>
-            <h1 className="mt-4 max-w-2xl text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-4xl">
-              Turn drift into deliberate practice.
-            </h1>
-            <p className="muted-copy mt-5 max-w-2xl text-base leading-7 sm:text-lg">
-              This app pairs a Chrome browser extension with your own question-and-answer
-              cards so every impulse visit becomes a short, useful learning moment.
-            </p>
-          </section>
 
-          <section className="panel px-6 py-7 sm:px-8">
-            <div className="mx-auto max-w-md">
-              <div className="flex rounded-full border border-slate-200/70 bg-white/70 p-1 dark:border-white/10 dark:bg-white/5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('signin')
-                    setError(null)
-                  }}
-                  className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    authMode === 'signin'
-                      ? 'bg-reef text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-300'
-                  }`}
-                >
-                  Sign in
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('register')
-                    setError(null)
-                  }}
-                  className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    authMode === 'register'
-                      ? 'bg-reef text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-300'
-                  }`}
-                >
-                  Register
-                </button>
-              </div>
-
-              <h2 className="mt-6 text-2xl font-bold text-ink dark:text-white">
-                {authMode === 'register' ? 'Create your focus space' : 'Sign in to your focus space'}
-              </h2>
-
-              <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-                <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Email</span>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    placeholder="you@example.com"
-                    className="app-input"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                    Password
-                  </span>
-                  <input
-                    type="password"
-                    name="password"
-                    required
-                    placeholder="••••••••"
-                    className="app-input"
-                  />
-                </label>
-                {error ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    {error}
-                  </div>
-                ) : null}
-                {authError ? (
-                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
-                    {authError}
-                  </div>
-                ) : null}
-                <button type="submit" className="action-button w-full">
-                  {pending
-                    ? authMode === 'register'
-                      ? 'Creating account…'
-                      : 'Signing in…'
-                    : authMode === 'register'
-                      ? 'Create account'
-                      : 'Continue'}
-                </button>
-              </form>
-
-              <button
-                type="button"
-                onClick={() => void handleGoogleSignIn()}
-                className="google-button mt-4 w-full"
-                disabled={pending}
-              >
-                Continue with Google
-              </button>
+      <div className="mx-auto max-w-6xl space-y-8">
+        <section className="panel overflow-hidden px-8 py-9 sm:px-10 sm:py-10">
+          <p className="text-lg font-extrabold uppercase tracking-[0.28em] text-reef/75 sm:text-xl">
+            Stop Procrastinating
+          </p>
+          <div className="mt-4 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <h1 className="text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-5xl">
+                Turn drift into deliberate practice.
+              </h1>
+              <p className="muted-copy mt-5 max-w-2xl text-base leading-7 sm:text-lg">
+                This app pairs a Chrome browser extension with your own question-and-answer
+                cards so every impulse visit becomes a short, useful learning moment.
+              </p>
             </div>
-          </section>
-        </div>
 
-        <section className="mt-8">
+            <div className="flex flex-wrap gap-3">
+              <Link to="/login?mode=register" className="action-button">
+                Create account
+              </Link>
+              <Link to="/login" className="ghost-button">
+                Sign in
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section>
           <div className="px-1">
             <p className="section-kicker">How It Works</p>
             <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
@@ -210,6 +118,57 @@ export function AuthPage() {
                   </p>
                 </div>
               </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <div className="px-1">
+            <p className="section-kicker">Pricing</p>
+            <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
+              Choose the plan that fits your pace.
+            </h2>
+          </div>
+          <div className="mt-6 grid gap-4 xl:grid-cols-3">
+            {planCards.map((plan) => (
+              <article
+                key={plan.title}
+                className={[
+                  'relative flex h-full flex-col overflow-hidden rounded-[2rem] border p-6',
+                  plan.title === 'Pro'
+                    ? 'border-amber-300/50 bg-gradient-to-br from-amber-50 via-white to-cyan-50 dark:from-amber-950/30 dark:via-slate-950 dark:to-cyan-950/20'
+                    : 'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
+                ].join(' ')}
+              >
+                {plan.badge ? (
+                  <div className="absolute right-4 top-4 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-900">
+                    {plan.badge}
+                  </div>
+                ) : null}
+
+                <h3 className="text-2xl font-extrabold tracking-tight text-ink dark:text-white">
+                  {plan.title}
+                </h3>
+                <div className="mt-4 flex items-end gap-2">
+                  <span className="text-4xl font-extrabold tracking-tight text-ink dark:text-white">
+                    {plan.price}
+                  </span>
+                  <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
+                    {plan.cadence}
+                  </span>
+                </div>
+
+                <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-200">
+                  {plan.benefits.map((benefit) => (
+                    <li key={benefit} className="flex items-start gap-3">
+                      <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-reef/12 text-xs font-bold text-reef">
+                        ✓
+                      </span>
+                      <span>{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
             ))}
           </div>
         </section>

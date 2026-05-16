@@ -7,6 +7,7 @@ import { BlockedDomainsPage } from './views/BlockedDomainsPage'
 import { CardsPage } from './views/CardsPage'
 import { DashboardPage } from './views/DashboardPage'
 import { InterruptPage } from './views/InterruptPage'
+import { LoginPage } from './views/LoginPage'
 import { NotFoundPage } from './views/NotFoundPage'
 import { PricingPage } from './views/PricingPage'
 import { SettingsPage } from './views/SettingsPage'
@@ -20,6 +21,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <AuthPage />,
+      },
+      {
+        path: 'login',
+        element: <LoginPage />,
       },
       {
         element: <ProtectedRoute />,
