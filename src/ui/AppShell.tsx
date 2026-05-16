@@ -2,7 +2,6 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth'
 import { ExtensionSyncBridge } from '../features/extension/ExtensionSyncBridge'
-import { useTheme } from '../features/theme/ThemeContext'
 
 const navItems = [
   { to: '/app', label: 'Dashboard', end: true },
@@ -13,7 +12,6 @@ const navItems = [
 export function AppShell() {
   const navigate = useNavigate()
   const { mode, signOut, user } = useAuth()
-  const { theme, toggleTheme } = useTheme()
 
   async function handleSignOut() {
     await signOut()
@@ -47,7 +45,7 @@ export function AppShell() {
                   to="/app/settings"
                   className={({ isActive }) =>
                     [
-                      'inline-flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition',
+                      'inline-flex h-11 w-11 items-center justify-center rounded-full text-[1.45rem] font-semibold transition',
                       isActive
                         ? 'action-button shadow-lg shadow-reef/20'
                         : 'ghost-button',
@@ -58,15 +56,6 @@ export function AppShell() {
                 >
                   <span aria-hidden="true">⚙</span>
                 </NavLink>
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="theme-toggle"
-                  aria-label={theme === 'light' ? 'Enable dark theme' : 'Enable light theme'}
-                  title={theme === 'light' ? 'Dark theme' : 'Light theme'}
-                >
-                  <span aria-hidden="true">{theme === 'light' ? '◐' : '◑'}</span>
-                </button>
                 <button
                   type="button"
                   onClick={() => void handleSignOut()}

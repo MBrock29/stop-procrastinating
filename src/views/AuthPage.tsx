@@ -1,6 +1,5 @@
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth'
-import { useTheme } from '../features/theme/ThemeContext'
 
 const flowSteps = [
   'Install the Chrome extension.',
@@ -49,7 +48,6 @@ const planCards = [
 
 export function AuthPage() {
   const { status } = useAuth()
-  const { theme, toggleTheme } = useTheme()
 
   if (status === 'authenticated') {
     return <Navigate to="/app" replace />
@@ -64,15 +62,6 @@ export function AuthPage() {
         <Link to="/login" className="ghost-button px-4 py-2 text-sm">
           Sign in
         </Link>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="theme-toggle"
-          aria-label={theme === 'light' ? 'Enable dark theme' : 'Enable light theme'}
-          title={theme === 'light' ? 'Dark theme' : 'Light theme'}
-        >
-          <span aria-hidden="true">{theme === 'light' ? '◐' : '◑'}</span>
-        </button>
       </div>
 
       <div className="mx-auto max-w-6xl space-y-8">

@@ -2,14 +2,12 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth'
-import { useTheme } from '../features/theme/ThemeContext'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { authError, signInWithGoogle, signInWithPassword, signUpWithPassword, status } =
     useAuth()
-  const { theme, toggleTheme } = useTheme()
   const [error, setError] = useState<string | null>(null)
   const [authMode, setAuthMode] = useState<'signin' | 'register'>(
     searchParams.get('mode') === 'register' ? 'register' : 'signin',
@@ -70,15 +68,6 @@ export function LoginPage() {
         <Link to="/" className="text-sm font-semibold text-slate-600 transition hover:text-reef dark:text-slate-300">
           ← Back to home
         </Link>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="theme-toggle"
-          aria-label={theme === 'light' ? 'Enable dark theme' : 'Enable light theme'}
-          title={theme === 'light' ? 'Dark theme' : 'Light theme'}
-        >
-          <span aria-hidden="true">{theme === 'light' ? '◐' : '◑'}</span>
-        </button>
       </div>
 
       <div className="mx-auto max-w-xl">
