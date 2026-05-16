@@ -79,54 +79,21 @@ export function AuthPage() {
         </button>
       </div>
       <div className="mx-auto max-w-6xl">
-        <div className="grid w-full items-stretch gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="grid gap-6 lg:grid-rows-[auto_1fr]">
-            <section className="panel overflow-hidden px-8 py-8 sm:px-10 sm:py-9">
-              <p className="text-lg font-extrabold uppercase tracking-[0.28em] text-reef/75 sm:text-xl">
-                Stop Procrastinating
-              </p>
-              <h1 className="mt-4 max-w-2xl text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-4xl">
-                Turn drift into deliberate practice.
-              </h1>
-              <p className="muted-copy mt-5 max-w-2xl text-base leading-7 sm:text-lg">
-                This app pairs a Chrome browser extension with your own question-and-answer
-                cards so every impulse visit becomes a short, useful learning moment.
-              </p>
-            </section>
+        <div className="grid w-full items-start gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <section className="panel overflow-hidden px-8 py-8 sm:px-10 sm:py-9">
+            <p className="text-lg font-extrabold uppercase tracking-[0.28em] text-reef/75 sm:text-xl">
+              Stop Procrastinating
+            </p>
+            <h1 className="mt-4 max-w-2xl text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-4xl">
+              Turn drift into deliberate practice.
+            </h1>
+            <p className="muted-copy mt-5 max-w-2xl text-base leading-7 sm:text-lg">
+              This app pairs a Chrome browser extension with your own question-and-answer
+              cards so every impulse visit becomes a short, useful learning moment.
+            </p>
+          </section>
 
-            <section className="soft-card px-5 py-5 sm:px-6">
-              <div className="flex items-baseline justify-between gap-4">
-                <p className="section-kicker text-sm sm:text-base">How It Works</p>
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                  5 steps
-                </span>
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                {flowSteps.map((step, index) => (
-                  <div key={step} className="relative">
-                    {index < flowSteps.length - 1 ? (
-                      <div className="absolute left-[calc(100%-0.4rem)] top-5 hidden h-px w-5 bg-gradient-to-r from-reef/40 to-sky-400/25 xl:block" />
-                    ) : null}
-                    <div className="h-full rounded-[1.35rem] border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-reef text-xs font-bold text-white shadow-sm shadow-reef/20">
-                          {index + 1}
-                        </span>
-                        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-reef/70">
-                          Step {index + 1}
-                        </span>
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-200">
-                        {step}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          <section className="panel h-full px-6 py-7 sm:px-8">
+          <section className="panel px-6 py-7 sm:px-8">
             <div className="mx-auto max-w-md">
               <div className="flex rounded-full border border-slate-200/70 bg-white/70 p-1 dark:border-white/10 dark:bg-white/5">
                 <button
@@ -218,6 +185,34 @@ export function AuthPage() {
             </div>
           </section>
         </div>
+
+        <section className="mt-8">
+          <div className="px-1">
+            <p className="section-kicker">How It Works</p>
+            <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
+              Five small steps from distraction to progress.
+            </h2>
+          </div>
+          <div className="mt-6 grid gap-4 lg:grid-cols-5">
+            {flowSteps.map((step, index) => (
+              <div key={step} className="relative">
+                {index < flowSteps.length - 1 ? (
+                  <div className="absolute left-[calc(50%+1.75rem)] right-[-1rem] top-7 hidden h-px bg-gradient-to-r from-reef/40 to-sky-400/25 lg:block" />
+                ) : null}
+                <div className="soft-card relative h-full min-h-[150px] px-5 py-5">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-reef text-sm font-bold text-white shadow-sm shadow-reef/20">
+                      {index + 1}
+                    </span>
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-slate-700 dark:text-slate-200 sm:text-base">
+                    {step}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   )
