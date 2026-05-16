@@ -80,16 +80,14 @@ export function AuthPage() {
           <p className="text-lg font-extrabold uppercase tracking-[0.28em] text-reef sm:text-xl">
             Stop Procrastinating
           </p>
-          <div className="mt-4 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <h1 className="text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-5xl">
-                Turn drift into deliberate practice.
-              </h1>
-              <p className="muted-copy mt-5 max-w-2xl text-base leading-7 sm:text-lg">
-                This app pairs a Chrome browser extension with your own question-and-answer
-                cards so every impulse visit becomes a short, useful learning moment.
-              </p>
-            </div>
+          <div className="mt-4">
+            <h1 className="text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-5xl">
+              Turn drift into deliberate practice.
+            </h1>
+            <p className="muted-copy mt-5 w-full text-base leading-7 sm:text-lg">
+              This app pairs a Chrome browser extension with your own question-and-answer
+              cards so every impulse visit becomes a short, useful learning moment.
+            </p>
           </div>
         </section>
 
@@ -140,7 +138,7 @@ export function AuthPage() {
                 ].join(' ')}
               >
                 {plan.badge ? (
-                  <div className="absolute right-4 top-4 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-900">
+                  <div className="absolute right-4 top-4 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900">
                     {plan.badge}
                   </div>
                 ) : null}
