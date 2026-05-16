@@ -171,7 +171,7 @@ export function PricingPage() {
     : null
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+    <div className="space-y-6">
       <section className="panel overflow-hidden px-6 py-6 sm:px-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -398,84 +398,91 @@ export function PricingPage() {
         </form>
       </section>
 
-      <section className="panel px-6 py-6 sm:px-8">
-        <p className="section-kicker">Usage</p>
-        <h3 className="mt-3 text-3xl font-extrabold tracking-tight text-ink dark:text-white">
-          Track monthly generation at a glance
-        </h3>
-        <p className="muted-copy mt-3 text-sm leading-6">
-          Use this page to see how close a hosted plan is to its limit and how much
-          generation cost is landing on the platform versus your own BYOK setup.
-        </p>
+      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <section className="panel px-6 py-6 sm:px-8">
+          <p className="section-kicker">Usage</p>
+          <h3 className="mt-3 text-3xl font-extrabold tracking-tight text-ink dark:text-white">
+            Track monthly generation at a glance
+          </h3>
+          <p className="muted-copy mt-3 text-sm leading-6">
+            See how close a hosted plan is to its limit and how much generation cost is
+            landing on the platform versus your own BYOK setup.
+          </p>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="metric-card">
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
-              Current plan
-            </div>
-            <div className="mt-3 text-2xl font-extrabold text-ink dark:text-white">
-              {TIER_POLICIES[settings.planTier].label}
-            </div>
-          </div>
-          <div className="metric-card">
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
-              Packs used
-            </div>
-            <div className="mt-3 text-2xl font-extrabold text-ink dark:text-white">
-              {usage.currentMonthPacksUsed}
-              {TIER_POLICIES[settings.planTier].monthlyPackLimit != null
-                ? ` / ${TIER_POLICIES[settings.planTier].monthlyPackLimit}`
-                : ''}
-            </div>
-          </div>
-          <div className="metric-card">
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
-              Cards generated
-            </div>
-            <div className="mt-3 text-2xl font-extrabold text-ink dark:text-white">
-              {usage.currentMonthCardsGenerated}
-            </div>
-          </div>
-          <div className="metric-card">
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
-              Platform spend
-            </div>
-            <div className="mt-3 text-2xl font-extrabold text-ink dark:text-white">
-              £{usage.currentMonthPlatformCostUsd.toFixed(4)}
-            </div>
-            {usage.currentMonthByokCostUsd > 0 ? (
-              <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
-                BYOK estimate: £{usage.currentMonthByokCostUsd.toFixed(4)}
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="metric-card">
+              <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
+                Current plan
               </div>
-            ) : null}
+              <div className="mt-3 text-2xl font-extrabold text-ink dark:text-white">
+                {TIER_POLICIES[settings.planTier].label}
+              </div>
+            </div>
+            <div className="metric-card">
+              <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
+                Packs used
+              </div>
+              <div className="mt-3 text-2xl font-extrabold text-ink dark:text-white">
+                {usage.currentMonthPacksUsed}
+                {TIER_POLICIES[settings.planTier].monthlyPackLimit != null
+                  ? ` / ${TIER_POLICIES[settings.planTier].monthlyPackLimit}`
+                  : ''}
+              </div>
+            </div>
+            <div className="metric-card">
+              <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
+                Cards generated
+              </div>
+              <div className="mt-3 text-2xl font-extrabold text-ink dark:text-white">
+                {usage.currentMonthCardsGenerated}
+              </div>
+            </div>
+            <div className="metric-card">
+              <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
+                Platform spend
+              </div>
+              <div className="mt-3 text-2xl font-extrabold text-ink dark:text-white">
+                £{usage.currentMonthPlatformCostUsd.toFixed(4)}
+              </div>
+              {usage.currentMonthByokCostUsd > 0 ? (
+                <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+                  BYOK estimate: £{usage.currentMonthByokCostUsd.toFixed(4)}
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
 
-        <div className="soft-card mt-6 px-5 py-4 text-sm">
-          <div className="font-semibold text-ink dark:text-white">
-            {usage.lastGeneratedAt ? 'Last request' : 'No requests yet'}
+          <div className="soft-card mt-6 px-5 py-4 text-sm">
+            <div className="font-semibold text-ink dark:text-white">
+              {usage.lastGeneratedAt ? 'Last request' : 'No requests yet'}
+            </div>
+            <div className="muted-copy mt-1">
+              {usage.lastGeneratedAt
+                ? new Date(usage.lastGeneratedAt).toLocaleString()
+                : 'Generate your first pack to start seeing usage here.'}
+            </div>
           </div>
-          <div className="muted-copy mt-1">
-            {usage.lastGeneratedAt
-              ? new Date(usage.lastGeneratedAt).toLocaleString()
-              : 'Generate your first pack to start seeing usage here.'}
-          </div>
-        </div>
+        </section>
 
-        <div className="mt-8">
+        <section className="panel px-6 py-6 sm:px-8">
           <div className="flex items-center justify-between gap-4">
-            <h4 className="text-lg font-bold text-ink dark:text-white">Recent requests</h4>
+            <div>
+              <p className="section-kicker">History</p>
+              <h4 className="mt-3 text-3xl font-extrabold tracking-tight text-ink dark:text-white">
+                Recent requests
+              </h4>
+            </div>
             <Link to="/app/cards" className="text-sm font-semibold text-reef">
               Go to cards
             </Link>
           </div>
 
           {events.length === 0 ? (
-            <div className="soft-card mt-4 px-5 py-8 text-sm muted-copy">
+            <div className="soft-card mt-6 px-5 py-8 text-sm muted-copy">
               No AI generation activity yet.
             </div>
           ) : (
-            <div className="mt-4 space-y-3">
+            <div className="mt-6 space-y-3">
               {events.slice(0, 8).map((event) => (
                 <article
                   key={event.id}
@@ -502,8 +509,8 @@ export function PricingPage() {
               ))}
             </div>
           )}
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   )
 }
