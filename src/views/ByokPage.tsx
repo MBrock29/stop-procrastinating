@@ -437,16 +437,16 @@ export function ByokPage() {
                   key={event.id}
                   className='rounded-[1.75rem] border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-5 py-4'
                 >
-                  <div className='flex flex-wrap items-center justify-between gap-3'>
-                    <div>
+                  <div className='flex items-start justify-between gap-4'>
+                    <div className='max-w-[50%] min-w-0'>
                       <div className='text-xs font-bold uppercase tracking-[0.2em] text-reef'>
                         {event.planTier} · {event.model}
                       </div>
-                      <div className='mt-1 text-base font-bold text-ink dark:text-white'>
+                      <div className='mt-1 break-words text-base font-bold text-ink dark:text-white'>
                         {event.topic}
                       </div>
                     </div>
-                    <div className='text-right text-sm text-slate-500 dark:text-slate-300'>
+                    <div className='shrink-0 text-right text-sm text-slate-500 dark:text-slate-300'>
                       <div>{event.cardCount} cards</div>
                       <div>{new Date(event.createdAt).toLocaleString()}</div>
                     </div>

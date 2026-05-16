@@ -42,7 +42,7 @@ const appBaseUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173'
 const byokEncryptionKey = Deno.env.get('BYOK_ENCRYPTION_KEY')
 
 const FREE_MONTHLY_PACK_LIMIT = 3
-const PRO_MONTHLY_PACK_LIMIT = 100
+const PRO_MONTHLY_PACK_LIMIT = 25
 const FREE_MAX_CARDS = 10
 const PRO_MAX_CARDS = 100
 const BYOK_MAX_CARDS = 100

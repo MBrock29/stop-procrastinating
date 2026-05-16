@@ -59,7 +59,7 @@ export function PricingPage() {
         summary: 'Higher-volume generation and the stronger hosted model.',
         benefits: [
           'Store up to 500 cards',
-          'Generate up to 100 packs per month',
+          'Generate up to 25 packs per month',
           'Generate up to 100 cards per pack',
           'Access to the stronger hosted language learning model',
         ],

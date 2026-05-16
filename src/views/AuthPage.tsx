@@ -29,7 +29,7 @@ const planCards = [
     badge: 'Annual discount available',
     benefits: [
       'Store up to 500 cards',
-      'Generate up to 100 packs per month',
+      'Generate up to 25 packs per month',
       'Generate up to 100 cards per pack',
       'Access to our strongest model',
     ],

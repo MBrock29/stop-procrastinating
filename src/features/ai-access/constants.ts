@@ -22,7 +22,7 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
   pro: {
     label: 'Pro',
     description: 'Higher-output packs on the stronger hosted model.',
-    monthlyPackLimit: 100,
+    monthlyPackLimit: 25,
     maxCardsPerPack: 100,
     defaultModel: 'gpt-5.4-mini',
   },
