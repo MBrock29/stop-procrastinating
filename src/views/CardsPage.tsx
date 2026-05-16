@@ -395,8 +395,8 @@ export function CardsPage() {
       <section className="panel px-6 py-6 sm:px-8">
         <p className="section-kicker">Learning cards</p>
         <p className="muted-copy mt-4 max-w-xl">
-          Add short questions and answers you want to keep fresh. These cards power
-          your learning sessions whenever you choose to review or get redirected here.
+          Add short questions with the generator below. These cards power your
+          learning sessions whenever you choose to review or get redirected here.
         </p>
         <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm leading-6 muted-copy">
           <div className="font-semibold text-ink dark:text-white">
