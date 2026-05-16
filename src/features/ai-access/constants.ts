@@ -1,0 +1,41 @@
+import type { AiProvider, PlanTier, SupportedAiModel } from '../../types/domain'
+
+export interface TierPolicy {
+  label: string
+  description: string
+  monthlyPackLimit: number | null
+  maxCardsPerPack: number
+  defaultModel: SupportedAiModel
+}
+
+export const SUPPORTED_AI_MODELS: SupportedAiModel[] = ['gpt-4o-mini', 'gpt-5.4-mini']
+export const SUPPORTED_AI_PROVIDERS: AiProvider[] = ['openai', 'openrouter']
+
+export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
+  free: {
+    label: 'Free',
+    description: 'A light monthly allowance on the cheapest model.',
+    monthlyPackLimit: 3,
+    maxCardsPerPack: 10,
+    defaultModel: 'gpt-4o-mini',
+  },
+  pro: {
+    label: 'Pro',
+    description: 'Higher-output packs on the stronger hosted model.',
+    monthlyPackLimit: 100,
+    maxCardsPerPack: 500,
+    defaultModel: 'gpt-5.4-mini',
+  },
+  byok: {
+    label: 'Bring your own key',
+    description: 'Use your own provider key and choose between the supported models.',
+    monthlyPackLimit: null,
+    maxCardsPerPack: 500,
+    defaultModel: 'gpt-4o-mini',
+  },
+}
+
+export const FREE_PLAN_MODEL: SupportedAiModel = 'gpt-4o-mini'
+export const PRO_PLAN_MODEL: SupportedAiModel = 'gpt-5.4-mini'
+
+export const AI_REQUEST_COOLDOWN_SECONDS = 10

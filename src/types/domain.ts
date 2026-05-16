@@ -3,6 +3,10 @@ export interface UserProfile {
   email: string
 }
 
+export type PlanTier = 'free' | 'pro' | 'byok'
+export type AiProvider = 'openai' | 'openrouter'
+export type SupportedAiModel = 'gpt-4o-mini' | 'gpt-5.4-mini'
+
 export interface BlockedDomain {
   id: string
   userId: string
@@ -48,4 +52,32 @@ export interface CardReview {
   interruptSessionId: string
   confidence: ConfidenceRating
   reviewedAt: string
+}
+
+export interface AiAccessSettings {
+  userId: string
+  planTier: PlanTier
+  byokProvider: AiProvider
+  preferredModel: SupportedAiModel
+  createdAt: string
+  updatedAt: string
+}
+
+export type AiGenerationStatus = 'success' | 'limit_exceeded' | 'rate_limited' | 'blocked' | 'failed'
+
+export interface AiGenerationEvent {
+  id: string
+  userId: string
+  topic: string
+  planTier: PlanTier
+  provider: AiProvider
+  model: string
+  cardCount: number
+  status: AiGenerationStatus
+  inputTokens: number | null
+  outputTokens: number | null
+  estimatedCostUsd: number | null
+  usedByok: boolean
+  failureReason: string | null
+  createdAt: string
 }
