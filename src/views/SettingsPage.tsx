@@ -103,9 +103,11 @@ export function SettingsPage() {
                   ? 'Pro'
                   : 'Free'}
             </div>
-            <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
-              Preferred model: {settings.preferredModel}
-            </div>
+            {settings.planTier === 'byok' ? (
+              <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+                Preferred model: {settings.preferredModel}
+              </div>
+            ) : null}
           </div>
           <div className="metric-card">
             <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
@@ -132,10 +134,10 @@ export function SettingsPage() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link to="/app/pricing" className="ghost-button">
+          <Link to="/app/pricing" className="action-button">
             Manage plans
           </Link>
-          <Link to="/app/setup" className="ghost-button">
+          <Link to="/app/setup" className="action-button">
             Open setup guide
           </Link>
         </div>
@@ -181,7 +183,7 @@ export function SettingsPage() {
                 : 'If you want cross-device BYOK, add your provider key on the pricing page.'}
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
-              <Link to="/app/pricing" className="ghost-button">
+              <Link to="/app/pricing" className="action-button">
                 Open BYOK settings
               </Link>
               <button
@@ -204,7 +206,7 @@ export function SettingsPage() {
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
-              className="ghost-button"
+              className="action-button"
               onClick={() => void handleSignOutEverywhere()}
               disabled={pending}
             >
