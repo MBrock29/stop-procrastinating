@@ -31,6 +31,16 @@ interface SaveLearningCardInput {
   isUserEdited?: boolean
 }
 
+function isMissingGenerationBatchIdColumn(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string' &&
+    error.message.includes('generation_batch_id')
+  )
+}
+
 function mapRow(row: LearningCardRow): LearningCard {
   return {
     id: row.id,
@@ -123,26 +133,34 @@ export async function createLearningCard(userId: string, input: SaveLearningCard
     return nextCard
   }
 
-  const { data, error } = await client
+  const basePayload = {
+    user_id: userId,
+    question: input.question,
+    answer: input.answer,
+    source: input.source ?? 'manual',
+    generation_topic: input.generationTopic ?? null,
+    is_user_edited: input.isUserEdited ?? false,
+    latest_confidence: null,
+  }
+
+  let response = await client
     .from('learning_cards')
     .insert({
-      user_id: userId,
-      question: input.question,
-      answer: input.answer,
-      source: input.source ?? 'manual',
-      generation_topic: input.generationTopic ?? null,
+      ...basePayload,
       generation_batch_id: input.generationBatchId ?? null,
-      is_user_edited: input.isUserEdited ?? false,
-      latest_confidence: null,
     })
     .select()
     .single()
 
-  if (error) {
-    throw error
+  if (response.error && isMissingGenerationBatchIdColumn(response.error)) {
+    response = await client.from('learning_cards').insert(basePayload).select().single()
   }
 
-  return mapRow(data as LearningCardRow)
+  if (response.error) {
+    throw response.error
+  }
+
+  return mapRow(response.data as LearningCardRow)
 }
 
 export async function updateLearningCard(
@@ -295,34 +313,48 @@ export async function saveReviewedLearningCard(userId: string, card: LearningCar
     return card
   }
 
-  const { data, error } = await client
+  const basePayload = {
+    question: card.question,
+    answer: card.answer,
+    source: card.source,
+    generation_topic: card.generationTopic,
+    is_user_edited: card.isUserEdited,
+    latest_confidence: card.latestConfidence,
+    is_archived: card.isArchived,
+    last_reviewed_at: card.lastReviewedAt,
+    next_review_at: card.nextReviewAt,
+    know_count: card.knowCount,
+    semi_count: card.semiCount,
+    not_confident_count: card.notConfidentCount,
+    updated_at: card.updatedAt,
+  }
+
+  let response = await client
     .from('learning_cards')
     .update({
-      question: card.question,
-      answer: card.answer,
-      source: card.source,
-      generation_topic: card.generationTopic,
+      ...basePayload,
       generation_batch_id: card.generationBatchId,
-      is_user_edited: card.isUserEdited,
-      latest_confidence: card.latestConfidence,
-      is_archived: card.isArchived,
-      last_reviewed_at: card.lastReviewedAt,
-      next_review_at: card.nextReviewAt,
-      know_count: card.knowCount,
-      semi_count: card.semiCount,
-      not_confident_count: card.notConfidentCount,
-      updated_at: card.updatedAt,
     })
     .eq('id', card.id)
     .eq('user_id', userId)
     .select()
     .single()
 
-  if (error) {
-    throw error
+  if (response.error && isMissingGenerationBatchIdColumn(response.error)) {
+    response = await client
+      .from('learning_cards')
+      .update(basePayload)
+      .eq('id', card.id)
+      .eq('user_id', userId)
+      .select()
+      .single()
   }
 
-  return mapRow(data as LearningCardRow)
+  if (response.error) {
+    throw response.error
+  }
+
+  return mapRow(response.data as LearningCardRow)
 }
 
 export async function bulkCreateLearningCards(userId: string, inputs: SaveLearningCardInput[]) {
@@ -354,25 +386,33 @@ export async function bulkCreateLearningCards(userId: string, inputs: SaveLearni
     return nextCards
   }
 
-  const { data, error } = await client
+  const basePayload = inputs.map((input) => ({
+    user_id: userId,
+    question: input.question,
+    answer: input.answer,
+    source: input.source ?? 'manual',
+    generation_topic: input.generationTopic ?? null,
+    is_user_edited: input.isUserEdited ?? false,
+    latest_confidence: null,
+  }))
+
+  let response = await client
     .from('learning_cards')
     .insert(
-      inputs.map((input) => ({
-        user_id: userId,
-        question: input.question,
-        answer: input.answer,
-        source: input.source ?? 'manual',
-        generation_topic: input.generationTopic ?? null,
+      inputs.map((input, index) => ({
+        ...basePayload[index],
         generation_batch_id: input.generationBatchId ?? null,
-        is_user_edited: input.isUserEdited ?? false,
-        latest_confidence: null,
       })),
     )
     .select()
 
-  if (error) {
-    throw error
+  if (response.error && isMissingGenerationBatchIdColumn(response.error)) {
+    response = await client.from('learning_cards').insert(basePayload).select()
   }
 
-  return (data ?? []).map((item) => mapRow(item as LearningCardRow))
+  if (response.error) {
+    throw response.error
+  }
+
+  return (response.data ?? []).map((item) => mapRow(item as LearningCardRow))
 }
