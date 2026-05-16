@@ -91,16 +91,12 @@ function CardListItem({
   isPending,
   onArchive,
   onDelete,
-  onToggleSelected,
-  selected,
   onUpdate,
 }: {
   card: LearningCard
   isPending: boolean
   onArchive: (cardId: string, nextArchivedState: boolean) => Promise<unknown>
   onDelete: (cardId: string) => Promise<unknown>
-  onToggleSelected: (cardId: string) => void
-  selected: boolean
   onUpdate: (cardId: string, draft: CardDraft) => Promise<unknown>
 }) {
   const [editing, setEditing] = useState(false)
@@ -117,17 +113,6 @@ function CardListItem({
 
   return (
     <article className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-5 py-5">
-      <div className="flex items-start justify-between gap-4">
-        <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={() => onToggleSelected(card.id)}
-            className="h-4 w-4 rounded border-slate-300 text-reef focus:ring-reef"
-          />
-          Select
-        </label>
-      </div>
       {editing ? (
         <CardEditor
           draft={localDraft}
@@ -219,7 +204,6 @@ export function CardsPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [aiError, setAiError] = useState<string | null>(null)
   const [aiSuccess, setAiSuccess] = useState<string | null>(null)
-  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([])
   const aiCardLimit = tierPolicy.maxCardsPerPack
 
   const generatedPacks = useMemo<GeneratedPackSummary[]>(() => {
@@ -260,10 +244,6 @@ export function CardsPage() {
       cardCount: Math.max(1, Math.min(aiCardLimit, current.cardCount)),
     }))
   }, [aiCardLimit])
-
-  useEffect(() => {
-    setSelectedCardIds((current) => current.filter((cardId) => cards.some((card) => card.id === cardId)))
-  }, [cards])
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -383,7 +363,6 @@ export function CardsPage() {
 
     try {
       await removeCards(cardIds)
-      setSelectedCardIds((current) => current.filter((cardId) => !cardIds.includes(cardId)))
     } catch (nextError) {
       const message =
         nextError instanceof Error ? nextError.message : 'Unable to delete those cards.'
@@ -391,12 +370,6 @@ export function CardsPage() {
     } finally {
       setPending(false)
     }
-  }
-
-  function handleToggleSelected(cardId: string) {
-    setSelectedCardIds((current) =>
-      current.includes(cardId) ? current.filter((id) => id !== cardId) : [...current, cardId],
-    )
   }
 
   return (
@@ -516,28 +489,6 @@ export function CardsPage() {
               {cards.length} card{cards.length === 1 ? '' : 's'} in your library
             </h3>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() =>
-                setSelectedCardIds((current) =>
-                  current.length === cards.length ? [] : cards.map((card) => card.id),
-                )
-              }
-              disabled={cards.length === 0}
-            >
-              {selectedCardIds.length === cards.length && cards.length > 0 ? 'Clear selection' : 'Select all'}
-            </button>
-            <button
-              type="button"
-              className="rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
-              onClick={() => void handleBulkDelete(selectedCardIds)}
-              disabled={selectedCardIds.length === 0 || pending}
-            >
-              Delete selected
-            </button>
-          </div>
         </div>
 
         {generatedPacks.length > 0 ? (
@@ -605,8 +556,6 @@ export function CardsPage() {
               isPending={pending}
               onArchive={archiveCard}
               onDelete={removeCard}
-              onToggleSelected={handleToggleSelected}
-              selected={selectedCardIds.includes(card.id)}
               onUpdate={handleUpdate}
             />
           ))}
