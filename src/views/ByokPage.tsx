@@ -228,8 +228,8 @@ export function ByokPage() {
             <p className="muted-copy mt-2 leading-6">
               Change the model here without replacing your saved provider key. The new preference is saved automatically.
             </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-              <label className="block">
+            <div className="mt-4">
+              <label className="inline-block">
                 <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                   BYOK model
                 </span>
@@ -238,7 +238,7 @@ export function ByokPage() {
                   onChange={(event) =>
                     void handleByokModelChange(event.target.value as SupportedAiModel)
                   }
-                  className="app-select"
+                  className="app-select min-w-[14rem] w-auto pr-10"
                   disabled={preferencePending || isLoading}
                 >
                   {SUPPORTED_AI_MODELS.map((model) => (
@@ -248,7 +248,7 @@ export function ByokPage() {
                   ))}
                 </select>
               </label>
-              <div className="text-sm text-slate-500 dark:text-slate-300">
+              <div className="mt-3 text-sm text-slate-500 dark:text-slate-300">
                 {preferencePending ? 'Saving preference…' : 'Saved to your account'}
               </div>
             </div>
