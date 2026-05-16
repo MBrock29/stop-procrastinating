@@ -11,18 +11,18 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    --app-text: #10203b;
-    --app-muted: #5f6f8f;
-    --app-border: rgba(148, 163, 184, 0.26);
-    --app-surface: rgba(255, 255, 255, 0.82);
-    --app-surface-strong: rgba(255, 255, 255, 0.94);
-    --app-surface-muted: rgba(241, 245, 249, 0.9);
-    --app-surface-contrast: #0f172a;
+    --app-text: #1c1a17;
+    --app-muted: #6d675f;
+    --app-border: rgba(92, 78, 63, 0.14);
+    --app-surface: rgba(255, 252, 247, 0.84);
+    --app-surface-strong: rgba(255, 253, 249, 0.95);
+    --app-surface-muted: rgba(244, 238, 229, 0.92);
+    --app-surface-contrast: #181411;
     --app-background:
-      radial-gradient(circle at 12% 18%, rgba(245, 158, 11, 0.18), transparent 28%),
-      radial-gradient(circle at 82% 0%, rgba(14, 165, 233, 0.22), transparent 30%),
-      linear-gradient(180deg, #fff8ef 0%, #eef6ff 52%, #f5f7fb 100%);
-    --app-shadow: 0 26px 70px rgba(15, 23, 42, 0.12);
+      radial-gradient(circle at 10% 12%, rgba(183, 197, 169, 0.18), transparent 24%),
+      radial-gradient(circle at 88% 2%, rgba(214, 192, 162, 0.2), transparent 24%),
+      linear-gradient(180deg, #f8f4ed 0%, #f4f1eb 50%, #f2efe9 100%);
+    --app-shadow: 0 22px 54px rgba(59, 46, 33, 0.09);
     color: var(--app-text);
     background: var(--app-background);
   }
@@ -100,14 +100,14 @@
   }
 
   .google-button {
-    border: 1px solid rgba(37, 99, 235, 0.18);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.94));
-    color: #1e3a8a;
-    @apply inline-flex items-center justify-center rounded-full px-5 py-3 font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-200;
+    border: 1px solid rgba(92, 78, 63, 0.14);
+    background: rgba(255, 253, 249, 0.96);
+    color: #2f3e2f;
+    @apply inline-flex items-center justify-center rounded-full px-5 py-3 font-semibold transition focus:outline-none focus:ring-2 focus:ring-stone-200;
   }
 
   .google-button:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(219, 234, 254, 0.98));
+    background: rgba(250, 246, 239, 0.98);
   }
 
   .dark .google-button {
@@ -124,7 +124,7 @@
     border: 1px solid var(--app-border);
     background: var(--app-surface-strong);
     color: var(--app-text);
-    @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition;
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-full text-base font-semibold transition;
   }
 
   .theme-toggle:hover {

@@ -58,11 +58,19 @@ export function AuthPage() {
   return (
     <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-6xl justify-end gap-3 pb-4">
+        <Link to="/login?mode=register" className="action-button px-4 py-2 text-sm">
+          Create account
+        </Link>
         <Link to="/login" className="ghost-button px-4 py-2 text-sm">
           Sign in
         </Link>
-        <button type="button" onClick={toggleTheme} className="theme-toggle">
-          <span>{theme === 'light' ? 'Dark theme' : 'Light theme'}</span>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="theme-toggle"
+          aria-label={theme === 'light' ? 'Enable dark theme' : 'Enable light theme'}
+          title={theme === 'light' ? 'Dark theme' : 'Light theme'}
+        >
           <span aria-hidden="true">{theme === 'light' ? '◐' : '◑'}</span>
         </button>
       </div>
@@ -81,15 +89,6 @@ export function AuthPage() {
                 This app pairs a Chrome browser extension with your own question-and-answer
                 cards so every impulse visit becomes a short, useful learning moment.
               </p>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <Link to="/login?mode=register" className="action-button">
-                Create account
-              </Link>
-              <Link to="/login" className="ghost-button">
-                Sign in
-              </Link>
             </div>
           </div>
         </section>

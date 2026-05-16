@@ -70,8 +70,13 @@ export function LoginPage() {
         <Link to="/" className="text-sm font-semibold text-slate-600 transition hover:text-reef dark:text-slate-300">
           ← Back to home
         </Link>
-        <button type="button" onClick={toggleTheme} className="theme-toggle">
-          <span>{theme === 'light' ? 'Dark theme' : 'Light theme'}</span>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="theme-toggle"
+          aria-label={theme === 'light' ? 'Enable dark theme' : 'Enable light theme'}
+          title={theme === 'light' ? 'Dark theme' : 'Light theme'}
+        >
           <span aria-hidden="true">{theme === 'light' ? '◐' : '◑'}</span>
         </button>
       </div>

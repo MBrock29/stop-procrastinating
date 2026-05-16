@@ -56,8 +56,13 @@ export function AppShell() {
                 >
                   Settings
                 </NavLink>
-                <button type="button" onClick={toggleTheme} className="theme-toggle">
-                  <span>{theme === 'light' ? 'Dark theme' : 'Light theme'}</span>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="theme-toggle"
+                  aria-label={theme === 'light' ? 'Enable dark theme' : 'Enable light theme'}
+                  title={theme === 'light' ? 'Dark theme' : 'Light theme'}
+                >
                   <span aria-hidden="true">{theme === 'light' ? '◐' : '◑'}</span>
                 </button>
                 <button
