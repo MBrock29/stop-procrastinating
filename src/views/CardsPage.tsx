@@ -394,17 +394,6 @@ export function CardsPage() {
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
       <section className="panel px-6 py-6 sm:px-8">
         <p className="section-kicker">Learning cards</p>
-        <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
-          Build a library you will actually want to revisit
-        </h2>
-        <p className="muted-copy mt-4 max-w-xl">
-          Add short questions and answers you want to keep fresh. These cards power
-          your learning sessions whenever you choose to review or get redirected here.
-        </p>
-        <div className="soft-card mt-4 p-5 text-sm leading-6 muted-copy">
-          Archive cards you want to keep without showing them in active sessions.
-          Delete cards you no longer need at all.
-        </div>
         <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm leading-6 muted-copy">
           <div className="font-semibold text-ink dark:text-white">
             Current AI plan: {TIER_POLICIES[settings.planTier].label}
@@ -434,7 +423,7 @@ export function CardsPage() {
             <p className="muted-copy mt-2 text-sm leading-6">
               Enter a topic such as “Senior level programming interview questions” or
               “Common English-Spanish phrases with translation” and the app will create
-              a saved set of cards you can review like any other item in your library.
+              a saved set of cards.
             </p>
             <p className="muted-copy mt-2 text-sm leading-6">
               This plan supports up to {aiCardLimit} cards per pack.
@@ -455,7 +444,7 @@ export function CardsPage() {
           <div className="grid gap-4 sm:grid-cols-1">
             <label className="block">
               <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Card count (max {aiCardLimit})
+                Card count
               </span>
               <input
                 value={aiDraft.cardCount}
