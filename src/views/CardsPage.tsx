@@ -14,12 +14,12 @@ interface CardDraft {
 
 interface AiDraft {
   topic: string
-  cardCount: number
+  cardCount: string
 }
 
 const initialAiDraft: AiDraft = {
   topic: '',
-  cardCount: 10,
+  cardCount: '10',
 }
 
 function CardEditor({
@@ -240,10 +240,22 @@ export function CardsPage() {
   }, [cards])
 
   useEffect(() => {
-    setAiDraft((current) => ({
-      ...current,
-      cardCount: Math.max(1, Math.min(aiCardLimit, current.cardCount)),
-    }))
+    setAiDraft((current) => {
+      if (!current.cardCount.trim()) {
+        return current
+      }
+
+      const parsed = Number(current.cardCount)
+
+      if (!Number.isFinite(parsed)) {
+        return current
+      }
+
+      return {
+        ...current,
+        cardCount: String(Math.max(1, Math.min(aiCardLimit, parsed))),
+      }
+    })
   }, [aiCardLimit])
 
   useEffect(() => {
@@ -281,6 +293,22 @@ export function CardsPage() {
     () => cards.slice(0, visibleCardCount),
     [cards, visibleCardCount],
   )
+  const parsedCardCount = Number(aiDraft.cardCount)
+  const isCardCountEmpty = aiDraft.cardCount.trim().length === 0
+  const hasValidCardCount =
+    !isCardCountEmpty &&
+    Number.isInteger(parsedCardCount) &&
+    parsedCardCount >= 1 &&
+    parsedCardCount <= aiCardLimit
+  const cardCountError = isCardCountEmpty
+    ? 'Enter how many cards you want to generate.'
+    : !Number.isInteger(parsedCardCount)
+      ? 'Enter a whole number.'
+      : parsedCardCount < 1
+        ? 'Card count must be at least 1.'
+        : parsedCardCount > aiCardLimit
+          ? `Card count cannot be more than ${aiCardLimit} on this plan.`
+          : null
 
   async function handleUpdate(cardId: string, nextDraft: CardDraft) {
     if (!nextDraft.question.trim() || !nextDraft.answer.trim()) {
@@ -313,6 +341,11 @@ export function CardsPage() {
       return
     }
 
+    if (!hasValidCardCount) {
+      setAiError(cardCountError ?? 'Enter a valid card count.')
+      return
+    }
+
     setPending(true)
     setAiError(null)
     setAiSuccess(null)
@@ -325,7 +358,7 @@ export function CardsPage() {
       const generationBatchId = crypto.randomUUID()
       const generation = await generateCardsWithAi({
         topic: aiDraft.topic.trim(),
-        cardCount: aiDraft.cardCount,
+        cardCount: parsedCardCount,
         requestedModel: settings.planTier === 'byok' ? settings.preferredModel : null,
         byokProvider: settings.planTier === 'byok' ? settings.byokProvider : null,
       })
@@ -455,14 +488,17 @@ export function CardsPage() {
                 onChange={(event) =>
                   setAiDraft({
                     ...aiDraft,
-                    cardCount: Math.max(1, Math.min(aiCardLimit, Number(event.target.value) || 1)),
+                    cardCount: event.target.value,
                   })
                 }
                 type="number"
-                min={1}
-                max={aiCardLimit}
                 className="app-input"
               />
+              {cardCountError ? (
+                <p className="mt-2 text-sm font-medium text-amber-700 dark:text-amber-300">
+                  {cardCountError}
+                </p>
+              ) : null}
             </label>
           </div>
 
@@ -478,7 +514,11 @@ export function CardsPage() {
             </div>
           ) : null}
 
-          <button type="submit" className="action-button" disabled={pending}>
+          <button
+            type="submit"
+            className="action-button"
+            disabled={pending || !hasValidCardCount}
+          >
             {pending ? 'Generating…' : 'Generate AI cards'}
           </button>
         </form>
