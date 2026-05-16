@@ -176,7 +176,7 @@ export function PricingPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="section-kicker">Pricing</p>
-            <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink dark:text-white sm:text-5xl">
+            <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
               Keep the plan simple and the limits clear.
             </h2>
             <p className="muted-copy mt-4 max-w-2xl text-sm leading-6 sm:text-base">
@@ -401,7 +401,7 @@ export function PricingPage() {
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <section className="panel px-6 py-6 sm:px-8">
           <p className="section-kicker">Usage</p>
-          <h3 className="mt-3 text-3xl font-extrabold tracking-tight text-ink dark:text-white">
+          <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
             Track monthly generation at a glance
           </h3>
           <p className="muted-copy mt-3 text-sm leading-6">
@@ -468,7 +468,7 @@ export function PricingPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="section-kicker">History</p>
-              <h4 className="mt-3 text-3xl font-extrabold tracking-tight text-ink dark:text-white">
+              <h4 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
                 Recent requests
               </h4>
             </div>

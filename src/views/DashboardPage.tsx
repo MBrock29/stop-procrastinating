@@ -23,7 +23,7 @@ export function DashboardPage() {
         <p className="section-kicker">
           Dashboard
         </p>
-        <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-4xl">
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
           Keep today’s learning loop simple.
         </h2>
         <p className="muted-copy mt-3 max-w-2xl text-sm leading-6 sm:text-base">

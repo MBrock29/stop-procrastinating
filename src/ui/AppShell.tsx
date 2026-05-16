@@ -31,7 +31,7 @@ export function AppShell() {
               Stop Procrastinating
               </p>
               <div>
-                <h1 className="text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-4xl">
+                <h1 className="text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
                 Build momentum, little by little.
                 </h1>
                 <p className="muted-copy mt-2 max-w-2xl text-sm sm:text-base">
