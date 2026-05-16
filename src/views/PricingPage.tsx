@@ -65,7 +65,7 @@ export function PricingPage() {
         ],
         ctaLabel: 'Billing coming soon',
         ctaKind: 'coming-soon',
-        badge: billingCadence === 'yearly' ? '12 months for the price of 10' : undefined,
+        badge: billingCadence === 'yearly' ? 'Best value' : undefined,
       },
       {
         tier: 'byok',
@@ -81,7 +81,7 @@ export function PricingPage() {
           'Generate up to 500 cards per pack',
           'Choose either gpt-4.1-mini or gpt-5.4-mini',
         ],
-        ctaLabel: settings.planTier === 'byok' ? 'Current plan' : 'Configure below',
+        ctaLabel: settings.planTier === 'byok' ? 'Current plan' : 'Configure here',
         ctaKind: 'scroll',
       },
     ]
@@ -108,18 +108,7 @@ export function PricingPage() {
   return (
     <div className="space-y-6">
       <section className="panel overflow-hidden px-6 py-6 sm:px-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="section-kicker">Pricing</p>
-            <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
-              Keep the plan simple and the limits clear.
-            </h2>
-            <p className="muted-copy mt-4 max-w-2xl text-sm leading-6 sm:text-base">
-              Hosted plans use the platform key with strict limits. BYOK keeps the
-              generation spend on your own account while preserving the same review flow.
-            </p>
-          </div>
-
+        <div className="flex justify-end">
           <div className="soft-card inline-flex p-1">
             {(['monthly', 'yearly'] as BillingCadence[]).map((cadence) => (
               <button
@@ -175,27 +164,29 @@ export function PricingPage() {
                 <div className="text-xs font-bold uppercase tracking-[0.28em] text-reef">
                   {plan.eyebrow}
                 </div>
-                <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white">
-                  {plan.title}
-                </h3>
-                <div className="mt-4 flex items-end gap-2">
-                  <span
-                    className={[
-                      'font-extrabold tracking-tight text-ink dark:text-white',
-                      plan.priceClassName ?? 'text-4xl',
-                    ].join(' ')}
-                  >
-                    {plan.price}
-                  </span>
-                  {plan.cadenceLabel ? (
-                    <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
-                      {plan.cadenceLabel}
+                <div className="min-h-[9.5rem]">
+                  <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white">
+                    {plan.title}
+                  </h3>
+                  <div className="mt-4 flex items-end gap-2">
+                    <span
+                      className={[
+                        'font-extrabold tracking-tight text-ink dark:text-white',
+                        plan.priceClassName ?? 'text-4xl',
+                      ].join(' ')}
+                    >
+                      {plan.price}
                     </span>
-                  ) : null}
+                    {plan.cadenceLabel ? (
+                      <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
+                        {plan.cadenceLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="muted-copy mt-4 text-sm leading-6">{plan.summary}</p>
                 </div>
-                <p className="muted-copy mt-4 text-sm leading-6">{plan.summary}</p>
 
-                <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-200">
+                <ul className="mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200">
                   {plan.benefits.map((benefit) => (
                     <li key={benefit} className="flex items-start gap-3">
                       <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-reef/12 text-xs font-bold text-reef">
