@@ -30,15 +30,15 @@
   .dark {
     --app-text: #f8fafc;
     --app-muted: #b6c0d1;
-    --app-border: rgba(255, 255, 255, 0.08);
-    --app-surface: rgba(10, 10, 10, 0.82);
-    --app-surface-strong: rgba(14, 14, 14, 0.94);
-    --app-surface-muted: rgba(22, 22, 22, 0.94);
+    --app-border: rgba(255, 255, 255, 0.12);
+    --app-surface: rgba(20, 20, 20, 0.84);
+    --app-surface-strong: rgba(28, 28, 28, 0.94);
+    --app-surface-muted: rgba(38, 38, 38, 0.96);
     --app-surface-contrast: #f8fafc;
     --app-background:
       radial-gradient(circle at 14% 14%, rgba(245, 158, 11, 0.12), transparent 28%),
       radial-gradient(circle at 88% 0%, rgba(20, 184, 166, 0.12), transparent 28%),
-      linear-gradient(180deg, #020202 0%, #090909 52%, #111111 100%);
+      linear-gradient(180deg, #000000 0%, #050505 52%, #0b0b0b 100%);
     --app-shadow: 0 26px 90px rgba(0, 0, 0, 0.52);
   }
 
