@@ -8,7 +8,7 @@ const corsHeaders = {
 
 type PlanTier = 'free' | 'pro' | 'byok'
 type AiProvider = 'openai' | 'openrouter'
-type SupportedAiModel = 'gpt-4o-mini' | 'gpt-5.4-mini'
+type SupportedAiModel = 'gpt-4o-mini' | 'gpt-4.1-mini' | 'gpt-5.4-mini'
 type EventStatus = 'success' | 'limit_exceeded' | 'rate_limited' | 'blocked' | 'failed'
 
 interface UserAiSettingsRow {
@@ -40,11 +40,18 @@ const FREE_MAX_CARDS = 10
 const PRO_MAX_CARDS = 500
 const BYOK_MAX_CARDS = 500
 const REQUEST_COOLDOWN_MS = 10_000
+const OWNER_OVERRIDE_EMAILS = new Set(['mbrock19@gmail.com'])
+const OWNER_OVERRIDE_MAX_CARDS = 500
+const OWNER_OVERRIDE_MODEL: SupportedAiModel = 'gpt-4.1-mini'
 
 const MODEL_COSTS: Record<SupportedAiModel, { input: number; output: number }> = {
   'gpt-4o-mini': {
     input: 0.15,
     output: 0.6,
+  },
+  'gpt-4.1-mini': {
+    input: 0.4,
+    output: 1.6,
   },
   'gpt-5.4-mini': {
     input: 0.75,
@@ -56,6 +63,10 @@ const MODEL_ALIASES: Record<SupportedAiModel, Record<AiProvider, string>> = {
   'gpt-4o-mini': {
     openai: 'gpt-4o-mini',
     openrouter: 'openai/gpt-4o-mini',
+  },
+  'gpt-4.1-mini': {
+    openai: 'gpt-4.1-mini',
+    openrouter: 'openai/gpt-4.1-mini',
   },
   'gpt-5.4-mini': {
     openai: 'gpt-5.4-mini',
@@ -130,11 +141,15 @@ function sanitizeProvider(value: string | null): AiProvider | null {
 }
 
 function sanitizeModel(value: string | null | undefined): SupportedAiModel | null {
-  if (value === 'gpt-4o-mini' || value === 'gpt-5.4-mini') {
+  if (value === 'gpt-4o-mini' || value === 'gpt-4.1-mini' || value === 'gpt-5.4-mini') {
     return value
   }
 
   return null
+}
+
+function hasOwnerOverride(email: string | null | undefined) {
+  return Boolean(email && OWNER_OVERRIDE_EMAILS.has(email.toLowerCase()))
 }
 
 function estimateCostUsd(model: SupportedAiModel, usage: AiUsageRecord) {
@@ -466,7 +481,14 @@ Deno.serve(async (request) => {
     .maybeSingle()
 
   const settings = (settingsData as UserAiSettingsRow | null) ?? getDefaultSettings()
-  const policy = getTierPolicy(settings.plan_tier)
+  const isOwnerOverride = hasOwnerOverride(user.email)
+  const policy = isOwnerOverride
+    ? {
+        monthlyPackLimit: null,
+        maxCardsPerPack: OWNER_OVERRIDE_MAX_CARDS,
+        defaultModel: OWNER_OVERRIDE_MODEL,
+      }
+    : getTierPolicy(settings.plan_tier)
 
   if (!topic) {
     return jsonResponse({ error: 'A topic is required.' }, 400)
@@ -482,7 +504,7 @@ Deno.serve(async (request) => {
     .limit(1)
     .maybeSingle()
 
-  if (lastEventData?.created_at) {
+  if (!isOwnerOverride && lastEventData?.created_at) {
     const lastCreatedAt = new Date(lastEventData.created_at).getTime()
 
     if (Date.now() - lastCreatedAt < REQUEST_COOLDOWN_MS) {
@@ -491,7 +513,11 @@ Deno.serve(async (request) => {
         topic,
         planTier: settings.plan_tier,
         provider: settings.plan_tier === 'byok' ? settings.byok_provider : platformProvider,
-        model: settings.plan_tier === 'pro' ? 'gpt-5.4-mini' : settings.preferred_model,
+        model: isOwnerOverride
+          ? OWNER_OVERRIDE_MODEL
+          : settings.plan_tier === 'pro'
+            ? 'gpt-5.4-mini'
+            : settings.preferred_model,
         cardCount: requestedCardCount,
         status: 'rate_limited',
         usedByok: settings.plan_tier === 'byok',
@@ -512,7 +538,7 @@ Deno.serve(async (request) => {
     .eq('status', 'success')
     .gte('created_at', getStartOfMonth())
 
-  if (policy.monthlyPackLimit != null && (monthlySuccessCount ?? 0) >= policy.monthlyPackLimit) {
+  if (!isOwnerOverride && policy.monthlyPackLimit != null && (monthlySuccessCount ?? 0) >= policy.monthlyPackLimit) {
     await insertGenerationEvent(client, {
       userId: user.id,
       topic,
@@ -542,7 +568,11 @@ Deno.serve(async (request) => {
       topic,
       planTier: settings.plan_tier,
       provider: settings.plan_tier === 'byok' ? settings.byok_provider : platformProvider,
-      model: settings.plan_tier === 'pro' ? 'gpt-5.4-mini' : settings.preferred_model,
+      model: isOwnerOverride
+        ? OWNER_OVERRIDE_MODEL
+        : settings.plan_tier === 'pro'
+          ? 'gpt-5.4-mini'
+          : settings.preferred_model,
       cardCount: requestedCardCount,
       status: 'blocked',
       usedByok: settings.plan_tier === 'byok',
@@ -562,7 +592,9 @@ Deno.serve(async (request) => {
   const effectiveProvider =
     settings.plan_tier === 'byok' ? byokProviderHeader ?? settings.byok_provider : platformProvider
   const canonicalModel =
-    settings.plan_tier === 'free'
+    isOwnerOverride
+      ? OWNER_OVERRIDE_MODEL
+      : settings.plan_tier === 'free'
       ? 'gpt-4o-mini'
       : settings.plan_tier === 'pro'
         ? 'gpt-5.4-mini'
