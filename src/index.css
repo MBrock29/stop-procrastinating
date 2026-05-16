@@ -90,14 +90,14 @@
 
   .ghost-button {
     border-color: var(--app-border);
-    background: rgba(236, 228, 216, 0.96);
+    background: var(--app-surface-strong);
     color: var(--app-text);
     @apply inline-flex items-center justify-center rounded-full px-5 py-3 font-semibold transition focus:outline-none focus:ring-2 focus:ring-slate-200;
   }
 
   .ghost-button:hover {
     border-color: rgba(92, 78, 63, 0.24);
-    background: rgba(228, 219, 206, 0.98);
+    background: rgba(237, 231, 221, 0.96);
   }
 
   .dark .ghost-button:hover {
