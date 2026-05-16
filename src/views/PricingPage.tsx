@@ -60,7 +60,7 @@ export function PricingPage() {
         benefits: [
           'Store up to 500 cards',
           'Generate up to 100 packs per month',
-          'Generate up to 500 cards per pack',
+          'Generate up to 100 cards per pack',
           'Access to the stronger hosted language learning model',
         ],
         ctaLabel: 'Billing coming soon',
@@ -78,7 +78,7 @@ export function PricingPage() {
         benefits: [
           'Store up to 500 cards',
           'Generate unlimited packs per month',
-          'Generate up to 500 cards per pack',
+          'Generate up to 100 cards per pack',
           'Choose either gpt-4.1-mini or gpt-5.4-mini',
         ],
         ctaLabel: settings.planTier === 'byok' ? 'Current plan' : 'Configure here',

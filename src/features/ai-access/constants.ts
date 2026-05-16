@@ -23,14 +23,14 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
     label: 'Pro',
     description: 'Higher-output packs on the stronger hosted model.',
     monthlyPackLimit: 100,
-    maxCardsPerPack: 500,
+    maxCardsPerPack: 100,
     defaultModel: 'gpt-5.4-mini',
   },
   byok: {
     label: 'Bring your own key',
     description: 'Use your own provider key and choose between the supported models.',
     monthlyPackLimit: null,
-    maxCardsPerPack: 500,
+    maxCardsPerPack: 100,
     defaultModel: 'gpt-4.1-mini',
   },
 }

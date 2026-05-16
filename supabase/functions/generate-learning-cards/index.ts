@@ -44,11 +44,11 @@ const byokEncryptionKey = Deno.env.get('BYOK_ENCRYPTION_KEY')
 const FREE_MONTHLY_PACK_LIMIT = 3
 const PRO_MONTHLY_PACK_LIMIT = 100
 const FREE_MAX_CARDS = 10
-const PRO_MAX_CARDS = 500
-const BYOK_MAX_CARDS = 500
+const PRO_MAX_CARDS = 100
+const BYOK_MAX_CARDS = 100
 const REQUEST_COOLDOWN_MS = 10_000
 const OWNER_OVERRIDE_EMAILS = new Set(['mbrock19@gmail.com'])
-const OWNER_OVERRIDE_MAX_CARDS = 500
+const OWNER_OVERRIDE_MAX_CARDS = 100
 const OWNER_OVERRIDE_DEFAULT_MODEL: SupportedAiModel = 'gpt-4.1-mini'
 
 const MODEL_COSTS: Record<SupportedAiModel, { input: number; output: number }> = {

@@ -30,7 +30,7 @@ const planCards = [
     benefits: [
       'Store up to 500 cards',
       'Generate up to 100 packs per month',
-      'Generate up to 500 cards per pack',
+      'Generate up to 100 cards per pack',
       'Access to our strongest model',
     ],
   },
@@ -41,7 +41,7 @@ const planCards = [
     benefits: [
       'Store up to 500 cards',
       'Generate unlimited packs per month',
-      'Generate up to 500 cards per pack',
+      'Generate up to 100 cards per pack',
       'Choose your own model',
     ],
   },
