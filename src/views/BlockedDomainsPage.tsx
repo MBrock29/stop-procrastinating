@@ -1,13 +1,17 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains'
 import { syncExtensionRules } from '../features/extension/extensionBridge'
+import { useExtensionStatus } from '../features/extension/useExtensionStatus'
 
 export function BlockedDomainsPage() {
   const { addDomain, domains, error, isLoading, removeDomain, toggleDomain } =
     useBlockedDomains()
+  const extensionStatus = useExtensionStatus()
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
   const activeDomains = domains.filter((item) => item.isActive).map((item) => item.domain)
 
@@ -32,7 +36,17 @@ export function BlockedDomainsPage() {
   }
 
   function handleManualSync() {
+    setSyncMessage(null)
     syncExtensionRules(activeDomains)
+    window.setTimeout(() => {
+      void extensionStatus.refresh().then(() => {
+        setSyncMessage(
+          activeDomains.length === 0
+            ? 'Extension checked. No active domains are currently available to sync.'
+            : 'Sync request sent. If Chrome is open with the extension installed, it should now have your latest active rules.',
+        )
+      })
+    }, 600)
   }
 
   return (
@@ -88,14 +102,34 @@ export function BlockedDomainsPage() {
             <div>
               <h3 className="text-base font-bold text-ink dark:text-white">Extension sync</h3>
               <p className="mt-1">
-                If the extension is installed, this sends your active rules to it from the
-                app.
+                {extensionStatus.status === 'connected'
+                  ? extensionStatus.isStale
+                    ? 'The extension is connected, but the last sync looks old. Send the latest rules again.'
+                    : 'The extension is connected. Use this if you want to push your latest active rules again.'
+                  : 'If the extension is installed, this sends your active rules to it from the app.'}
               </p>
+              {extensionStatus.details?.lastSyncedAt ? (
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+                  Last synced {new Date(extensionStatus.details.lastSyncedAt).toLocaleString()}
+                </p>
+              ) : null}
             </div>
             <button type="button" className="ghost-button" onClick={handleManualSync}>
               Sync browser extension
             </button>
           </div>
+          {syncMessage ? (
+            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              {syncMessage}
+            </div>
+          ) : null}
+          {extensionStatus.status !== 'connected' ? (
+            <div className="mt-4 text-sm">
+              <Link to="/app/setup" className="font-semibold text-reef">
+                Open the setup guide
+              </Link>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -125,6 +159,14 @@ export function BlockedDomainsPage() {
           <div className="soft-card mt-6 border-dashed px-5 py-8 text-sm muted-copy">
             No blocked domains yet. Add your first habit-trigger site to start shaping
             the redirect behavior.
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link to="/app/cards" className="ghost-button">
+                Prepare learning cards
+              </Link>
+              <Link to="/app/setup" className="ghost-button">
+                Open setup guide
+              </Link>
+            </div>
           </div>
         ) : null}
 
