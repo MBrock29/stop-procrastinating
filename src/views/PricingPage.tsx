@@ -7,7 +7,6 @@ import type { AiProvider, PlanTier, SupportedAiModel } from '../types/domain'
 
 interface ByokDraft {
   provider: AiProvider
-  model: SupportedAiModel
   apiKey: string
 }
 
@@ -55,21 +54,20 @@ export function PricingPage() {
   } = useAiAccess()
   const [billingCadence, setBillingCadence] = useState<BillingCadence>('monthly')
   const [pending, setPending] = useState(false)
+  const [preferencePending, setPreferencePending] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [byokDraft, setByokDraft] = useState<ByokDraft>({
     provider: settings.byokProvider,
-    model: settings.preferredModel,
     apiKey: '',
   })
 
   useEffect(() => {
     setByokDraft((current) => ({
       provider: settings.byokProvider,
-      model: settings.preferredModel,
       apiKey: current.apiKey,
     }))
-  }, [settings.byokProvider, settings.preferredModel])
+  }, [settings.byokProvider])
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
     const proPrice = billingCadence === 'monthly' ? '£1.99' : '£19.99'
@@ -178,7 +176,7 @@ export function PricingPage() {
       await updateSettings({
         planTier: 'byok',
         byokProvider: byokDraft.provider,
-        preferredModel: byokDraft.model,
+        preferredModel: settings.preferredModel,
       })
       setByokDraft((current) => ({ ...current, apiKey: '' }))
       setSuccessMessage('BYOK mode is active on your account.')
@@ -211,6 +209,31 @@ export function PricingPage() {
       setFormError(message)
     } finally {
       setPending(false)
+    }
+  }
+
+  async function handleByokModelChange(nextModel: SupportedAiModel) {
+    if (nextModel === settings.preferredModel) {
+      return
+    }
+
+    setPreferencePending(true)
+    setFormError(null)
+    setSuccessMessage(null)
+
+    try {
+      await updateSettings({
+        planTier: settings.planTier,
+        byokProvider: settings.byokProvider,
+        preferredModel: nextModel,
+      })
+      setSuccessMessage(`BYOK model updated to ${nextModel}.`)
+    } catch (nextError) {
+      const message =
+        nextError instanceof Error ? nextError.message : 'Unable to update your BYOK model.'
+      setFormError(message)
+    } finally {
+      setPreferencePending(false)
     }
   }
 
@@ -375,28 +398,37 @@ export function PricingPage() {
                 ))}
               </select>
             </label>
+          </div>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Model
-              </span>
-              <select
-                value={byokDraft.model}
-                onChange={(event) =>
-                  setByokDraft((current) => ({
-                    ...current,
-                    model: event.target.value as SupportedAiModel,
-                  }))
-                }
-                className="app-select"
-              >
-                {SUPPORTED_AI_MODELS.map((model) => (
-                  <option key={model} value={model}>
-                    {model}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-4 text-sm">
+            <div className="font-semibold text-ink dark:text-white">Model preference</div>
+            <p className="muted-copy mt-2 leading-6">
+              Change the model here without replacing your saved provider key. The new preference is saved automatically.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  BYOK model
+                </span>
+                <select
+                  value={settings.preferredModel}
+                  onChange={(event) =>
+                    void handleByokModelChange(event.target.value as SupportedAiModel)
+                  }
+                  className="app-select"
+                  disabled={preferencePending || isLoading}
+                >
+                  {SUPPORTED_AI_MODELS.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="text-sm text-slate-500 dark:text-slate-300">
+                {preferencePending ? 'Saving preference…' : 'Saved to your account'}
+              </div>
+            </div>
           </div>
 
           <label className="mt-4 block">
@@ -420,7 +452,7 @@ export function PricingPage() {
           <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-4 text-sm muted-copy">
             {settings.planTier === 'byok'
               ? `BYOK is active on this account. New packs will use your ${settings.byokProvider} key with ${settings.preferredModel}.`
-              : 'BYOK is not active yet. Save a provider, model, and key to switch this account over to your own provider usage.'}
+              : 'BYOK is not active yet. Save a provider key, then switch this account over to your own provider usage.'}
           </div>
 
           {formError ? (
