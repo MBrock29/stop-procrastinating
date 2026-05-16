@@ -23,6 +23,7 @@ export interface LearningCard {
   answer: string
   source: 'manual' | 'ai'
   generationTopic: string | null
+  generationBatchId: string | null
   isUserEdited: boolean
   latestConfidence: ConfidenceRating | null
   isArchived: boolean

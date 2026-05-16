@@ -49,7 +49,7 @@ export async function generateCardsWithAi(input: GenerateCardsInput) {
         planTier: 'free' as PlanTier,
         provider: 'openai' as AiProvider,
         model: env.openaiModel,
-        monthlyPacksUsed: 0,
+        monthlyPacksUsed: 1,
         monthlyPackLimit: 3,
         maxCardsPerPack: 10,
         usedByok: false,

@@ -3,6 +3,7 @@ import {
   bulkCreateLearningCards,
   createLearningCard,
   deleteLearningCard,
+  deleteLearningCards,
   getNextLearningCard,
   listLearningCards,
   setLearningCardArchivedState,
@@ -16,6 +17,7 @@ interface SaveLearningCardInput {
   answer: string
   source?: 'manual' | 'ai'
   generationTopic?: string | null
+  generationBatchId?: string | null
   isUserEdited?: boolean
 }
 
@@ -112,6 +114,14 @@ export function useLearningCards() {
 
       await deleteLearningCard(user.id, cardId)
       setCards((current) => current.filter((item) => item.id !== cardId))
+    },
+    async removeCards(cardIds: string[]) {
+      if (!user) {
+        throw new Error('You must be signed in to delete cards.')
+      }
+
+      await deleteLearningCards(user.id, cardIds)
+      setCards((current) => current.filter((item) => !cardIds.includes(item.id)))
     },
     async getNextCard() {
       if (!user) {

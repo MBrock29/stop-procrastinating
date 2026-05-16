@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TIER_POLICIES } from '../features/ai-access/constants'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
@@ -91,12 +91,16 @@ function CardListItem({
   isPending,
   onArchive,
   onDelete,
+  onToggleSelected,
+  selected,
   onUpdate,
 }: {
   card: LearningCard
   isPending: boolean
   onArchive: (cardId: string, nextArchivedState: boolean) => Promise<unknown>
   onDelete: (cardId: string) => Promise<unknown>
+  onToggleSelected: (cardId: string) => void
+  selected: boolean
   onUpdate: (cardId: string, draft: CardDraft) => Promise<unknown>
 }) {
   const [editing, setEditing] = useState(false)
@@ -113,6 +117,17 @@ function CardListItem({
 
   return (
     <article className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-5 py-5">
+      <div className="flex items-start justify-between gap-4">
+        <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => onToggleSelected(card.id)}
+            className="h-4 w-4 rounded border-slate-300 text-reef focus:ring-reef"
+          />
+          Select
+        </label>
+      </div>
       {editing ? (
         <CardEditor
           draft={localDraft}
@@ -171,17 +186,31 @@ function CardListItem({
   )
 }
 
+interface GeneratedPackSummary {
+  batchId: string
+  topic: string
+  count: number
+  createdAt: string
+  cardIds: string[]
+}
+
 export function CardsPage() {
-  const { localByokCredentials, refresh: refreshAiAccess, settings, tierPolicy } = useAiAccess()
+  const {
+    localByokCredentials,
+    refresh: refreshAiAccess,
+    settings,
+    tierPolicy,
+    usage,
+  } = useAiAccess()
   const {
     addGeneratedCards,
     archiveCard,
     cards,
     createCard,
     error,
-    getNextCard,
     isLoading,
     removeCard,
+    removeCards,
     updateCard,
   } = useLearningCards()
   const [draft, setDraft] = useState<CardDraft>(initialDraft)
@@ -190,8 +219,40 @@ export function CardsPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [aiError, setAiError] = useState<string | null>(null)
   const [aiSuccess, setAiSuccess] = useState<string | null>(null)
-  const [nextCardLabel, setNextCardLabel] = useState<string | null>(null)
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([])
   const aiCardLimit = tierPolicy.maxCardsPerPack
+
+  const generatedPacks = useMemo<GeneratedPackSummary[]>(() => {
+    const packMap = new Map<string, GeneratedPackSummary>()
+
+    cards
+      .filter((card) => card.source === 'ai' && card.generationBatchId)
+      .forEach((card) => {
+        const batchId = card.generationBatchId!
+        const existing = packMap.get(batchId)
+
+        if (existing) {
+          existing.count += 1
+          existing.cardIds.push(card.id)
+          if (card.createdAt > existing.createdAt) {
+            existing.createdAt = card.createdAt
+          }
+          return
+        }
+
+        packMap.set(batchId, {
+          batchId,
+          topic: card.generationTopic ?? 'Generated pack',
+          count: 1,
+          createdAt: card.createdAt,
+          cardIds: [card.id],
+        })
+      })
+
+    return Array.from(packMap.values()).sort((left, right) =>
+      right.createdAt.localeCompare(left.createdAt),
+    )
+  }, [cards])
 
   useEffect(() => {
     setAiDraft((current) => ({
@@ -199,6 +260,10 @@ export function CardsPage() {
       cardCount: Math.max(1, Math.min(aiCardLimit, current.cardCount)),
     }))
   }, [aiCardLimit])
+
+  useEffect(() => {
+    setSelectedCardIds((current) => current.filter((cardId) => cards.some((card) => card.id === cardId)))
+  }, [cards])
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -249,11 +314,6 @@ export function CardsPage() {
     }
   }
 
-  async function handlePreviewNextCard() {
-    const card = await getNextCard()
-    setNextCardLabel(card ? card.question : 'No active cards are available yet.')
-  }
-
   async function handleGenerateCards(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -271,6 +331,7 @@ export function CardsPage() {
         throw new Error('Add your own API key on the pricing page before using BYOK mode.')
       }
 
+      const generationBatchId = crypto.randomUUID()
       const generation = await generateCardsWithAi({
         topic: aiDraft.topic.trim(),
         cardCount: aiDraft.cardCount,
@@ -285,15 +346,20 @@ export function CardsPage() {
           answer: card.answer,
           source: 'ai',
           generationTopic: aiDraft.topic.trim(),
+          generationBatchId,
           isUserEdited: false,
         })),
       )
 
       await refreshAiAccess()
+      const nextPacksUsed =
+        generation.meta.monthlyPacksUsed > 0
+          ? generation.meta.monthlyPacksUsed
+          : usage.currentMonthPacksUsed + 1
       setAiSuccess(
         `Generated ${generation.cards.length} cards with ${generation.meta.model}. ${
           generation.meta.monthlyPackLimit != null
-            ? `${generation.meta.monthlyPacksUsed}/${generation.meta.monthlyPackLimit} packs used this month.`
+            ? `${nextPacksUsed}/${generation.meta.monthlyPackLimit} packs used this month.`
             : 'This request used your own key.'
         }`,
       )
@@ -305,6 +371,32 @@ export function CardsPage() {
     } finally {
       setPending(false)
     }
+  }
+
+  async function handleBulkDelete(cardIds: string[]) {
+    if (cardIds.length === 0) {
+      return
+    }
+
+    setPending(true)
+    setFormError(null)
+
+    try {
+      await removeCards(cardIds)
+      setSelectedCardIds((current) => current.filter((cardId) => !cardIds.includes(cardId)))
+    } catch (nextError) {
+      const message =
+        nextError instanceof Error ? nextError.message : 'Unable to delete those cards.'
+      setFormError(message)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  function handleToggleSelected(cardId: string) {
+    setSelectedCardIds((current) =>
+      current.includes(cardId) ? current.filter((id) => id !== cardId) : [...current, cardId],
+    )
   }
 
   return (
@@ -351,16 +443,6 @@ export function CardsPage() {
           onChange={setDraft}
           onSubmit={handleCreate}
         />
-
-        <button type="button" className="ghost-button mt-6" onClick={() => void handlePreviewNextCard()}>
-          Preview your next card
-        </button>
-
-        {nextCardLabel ? (
-          <div className="soft-card mt-4 p-5 text-sm text-slate-700 dark:text-slate-200">
-            {nextCardLabel}
-          </div>
-        ) : null}
 
         <form className="soft-card mt-10 space-y-4 border p-5" onSubmit={handleGenerateCards}>
           <div>
@@ -434,7 +516,67 @@ export function CardsPage() {
               {cards.length} card{cards.length === 1 ? '' : 's'} in your library
             </h3>
           </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() =>
+                setSelectedCardIds((current) =>
+                  current.length === cards.length ? [] : cards.map((card) => card.id),
+                )
+              }
+              disabled={cards.length === 0}
+            >
+              {selectedCardIds.length === cards.length && cards.length > 0 ? 'Clear selection' : 'Select all'}
+            </button>
+            <button
+              type="button"
+              className="rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+              onClick={() => void handleBulkDelete(selectedCardIds)}
+              disabled={selectedCardIds.length === 0 || pending}
+            >
+              Delete selected
+            </button>
+          </div>
         </div>
+
+        {generatedPacks.length > 0 ? (
+          <div className="soft-card mt-6 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h4 className="text-base font-bold text-ink dark:text-white">Generated packs</h4>
+                <p className="muted-copy mt-1 text-sm">
+                  Remove a whole AI-generated pack in one action.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              {generatedPacks.map((pack) => (
+                <div
+                  key={pack.batchId}
+                  className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-base font-bold text-ink dark:text-white">{pack.topic}</div>
+                      <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
+                        {pack.count} cards · generated {new Date(pack.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+                      onClick={() => void handleBulkDelete(pack.cardIds)}
+                      disabled={pending}
+                    >
+                      Delete pack
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {error ? (
           <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -463,6 +605,8 @@ export function CardsPage() {
               isPending={pending}
               onArchive={archiveCard}
               onDelete={removeCard}
+              onToggleSelected={handleToggleSelected}
+              selected={selectedCardIds.includes(card.id)}
               onUpdate={handleUpdate}
             />
           ))}

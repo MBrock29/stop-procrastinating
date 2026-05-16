@@ -10,6 +10,7 @@ function createCard(overrides: Partial<LearningCard> = {}): LearningCard {
     answer: 'Answer',
     source: 'manual',
     generationTopic: null,
+    generationBatchId: null,
     isUserEdited: false,
     latestConfidence: null,
     isArchived: false,
