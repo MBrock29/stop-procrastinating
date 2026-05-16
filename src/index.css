@@ -13,14 +13,10 @@
     -moz-osx-font-smoothing: grayscale;
     --app-text: #10203b;
     --app-muted: #5f6f8f;
-    --app-border: rgba(244, 114, 182, 0.14);
-    --app-surface: rgba(255, 255, 255, 0.84);
-    --app-surface-strong: rgba(255, 253, 250, 0.96);
-    --app-surface-muted: linear-gradient(
-      135deg,
-      rgba(255, 245, 234, 0.95) 0%,
-      rgba(244, 247, 255, 0.94) 100%
-    );
+    --app-border: rgba(148, 163, 184, 0.26);
+    --app-surface: rgba(255, 255, 255, 0.82);
+    --app-surface-strong: rgba(255, 255, 255, 0.94);
+    --app-surface-muted: rgba(241, 245, 249, 0.9);
     --app-surface-contrast: #0f172a;
     --app-background:
       radial-gradient(circle at 12% 18%, rgba(245, 158, 11, 0.18), transparent 28%),
