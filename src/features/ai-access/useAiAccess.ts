@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { getSupabaseBrowserClient } from '../../lib/supabase'
 import { useAuth } from '../auth/useAuth'
 import { TIER_POLICIES } from './constants'
 import {
+  deleteStoredByokCredential,
   getAiAccessSettings,
+  getStoredByokCredentialStatus,
   listAiGenerationEvents,
+  saveStoredByokCredential,
   saveAiAccessSettings,
 } from './aiAccessRepository'
 import {
@@ -12,7 +16,13 @@ import {
   writeLocalByokCredentials,
   type LocalByokCredentials,
 } from './localByok'
-import type { AiAccessSettings, AiGenerationEvent, PlanTier, SupportedAiModel } from '../../types/domain'
+import type {
+  AiAccessSettings,
+  AiGenerationEvent,
+  ByokCredentialStatus,
+  PlanTier,
+  SupportedAiModel,
+} from '../../types/domain'
 
 interface UsageSnapshot {
   currentMonthPacksUsed: number
@@ -57,7 +67,7 @@ export function useAiAccess() {
   const { user } = useAuth()
   const [settings, setSettings] = useState<AiAccessSettings>(fallbackSettings)
   const [events, setEvents] = useState<AiGenerationEvent[]>([])
-  const [localByokCredentials, setLocalByokCredentials] = useState<LocalByokCredentials | null>(null)
+  const [byokCredentialStatus, setByokCredentialStatus] = useState<ByokCredentialStatus | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -65,7 +75,7 @@ export function useAiAccess() {
     if (!user) {
       setSettings(fallbackSettings)
       setEvents([])
-      setLocalByokCredentials(null)
+      setByokCredentialStatus(null)
       setIsLoading(false)
       return
     }
@@ -74,14 +84,27 @@ export function useAiAccess() {
     setError(null)
 
     try {
-      const [nextSettings, nextEvents] = await Promise.all([
+      const browserClient = getSupabaseBrowserClient()
+      const localByokCredential = browserClient ? null : readLocalByokCredentials(user.id)
+      const [nextSettings, nextEvents, nextByokCredentialStatus] = await Promise.all([
         getAiAccessSettings(user.id),
         listAiGenerationEvents(user.id),
+        browserClient
+          ? getStoredByokCredentialStatus()
+          : Promise.resolve(
+              localByokCredential
+                ? {
+                    provider: localByokCredential.provider,
+                    lastFour: localByokCredential.apiKey.slice(-4),
+                    updatedAt: new Date().toISOString(),
+                  }
+                : null,
+            ),
       ])
 
       setSettings(nextSettings)
       setEvents(nextEvents)
-      setLocalByokCredentials(readLocalByokCredentials(user.id))
+      setByokCredentialStatus(nextByokCredentialStatus)
     } catch (nextError) {
       const message =
         nextError instanceof Error ? nextError.message : 'Unable to load plan settings.'
@@ -103,7 +126,7 @@ export function useAiAccess() {
     events,
     usage,
     tierPolicy,
-    localByokCredentials,
+    byokCredentialStatus,
     error,
     isLoading,
     refresh,
@@ -138,16 +161,39 @@ export function useAiAccess() {
         throw new Error('You must be signed in to save BYOK credentials.')
       }
 
-      writeLocalByokCredentials(user.id, credentials)
-      setLocalByokCredentials(credentials)
+      const browserClient = getSupabaseBrowserClient()
+
+      if (!browserClient) {
+        writeLocalByokCredentials(user.id, credentials)
+        setByokCredentialStatus({
+          provider: credentials.provider,
+          lastFour: credentials.apiKey.slice(-4),
+          updatedAt: new Date().toISOString(),
+        })
+        return
+      }
+
+      return saveStoredByokCredential(credentials).then((nextStatus) => {
+        setByokCredentialStatus(nextStatus)
+        return nextStatus
+      })
     },
     clearByokCredentials() {
       if (!user) {
         return
       }
 
-      clearLocalByokCredentials(user.id)
-      setLocalByokCredentials(null)
+      const browserClient = getSupabaseBrowserClient()
+
+      if (!browserClient) {
+        clearLocalByokCredentials(user.id)
+        setByokCredentialStatus(null)
+        return
+      }
+
+      return deleteStoredByokCredential().then(() => {
+        setByokCredentialStatus(null)
+      })
     },
   }
 }

@@ -42,11 +42,11 @@ function looksLikeApiKey(provider: AiProvider, apiKey: string) {
 
 export function PricingPage() {
   const {
+    byokCredentialStatus,
     clearByokCredentials,
     error,
     events,
     isLoading,
-    localByokCredentials,
     settings,
     setPlanTier,
     saveByokCredentials,
@@ -153,37 +153,35 @@ export function PricingPage() {
 
     const trimmedDraftKey = byokDraft.apiKey.trim()
     const canReuseSavedKey =
-      Boolean(localByokCredentials?.apiKey) && localByokCredentials?.provider === byokDraft.provider
-    const nextApiKey = trimmedDraftKey || (canReuseSavedKey ? localByokCredentials?.apiKey : '')
-
-    if (!nextApiKey) {
+      Boolean(byokCredentialStatus) && byokCredentialStatus?.provider === byokDraft.provider
+    if (!trimmedDraftKey && !canReuseSavedKey) {
       setFormError(
-        canReuseSavedKey
-          ? 'Add your API key before switching to BYOK mode.'
-          : 'Add a provider key for the selected provider before switching to BYOK mode.',
+        'Add a provider key for the selected provider before switching to BYOK mode.',
       )
       setPending(false)
       return
     }
 
-    if (!looksLikeApiKey(byokDraft.provider, nextApiKey)) {
+    if (trimmedDraftKey && !looksLikeApiKey(byokDraft.provider, trimmedDraftKey)) {
       setFormError(`That does not look like a valid ${byokDraft.provider} API key.`)
       setPending(false)
       return
     }
 
     try {
-      saveByokCredentials({
-        provider: byokDraft.provider,
-        apiKey: nextApiKey,
-      })
+      if (trimmedDraftKey) {
+        await saveByokCredentials({
+          provider: byokDraft.provider,
+          apiKey: trimmedDraftKey,
+        })
+      }
       await updateSettings({
         planTier: 'byok',
         byokProvider: byokDraft.provider,
         preferredModel: byokDraft.model,
       })
       setByokDraft((current) => ({ ...current, apiKey: '' }))
-      setSuccessMessage('BYOK mode is active on this device.')
+      setSuccessMessage('BYOK mode is active on your account.')
     } catch (nextError) {
       const message =
         nextError instanceof Error ? nextError.message : 'Unable to save your BYOK settings.'
@@ -199,13 +197,13 @@ export function PricingPage() {
     setSuccessMessage(null)
 
     try {
-      clearByokCredentials()
+      await clearByokCredentials()
 
       if (settings.planTier === 'byok') {
         await setPlanTier('free')
         setSuccessMessage('Saved BYOK key cleared. Switched back to the free plan.')
       } else {
-        setSuccessMessage('Saved BYOK key cleared from this device.')
+        setSuccessMessage('Saved BYOK key cleared from your account.')
       }
     } catch (nextError) {
       const message =
@@ -216,9 +214,7 @@ export function PricingPage() {
     }
   }
 
-  const lastFour = localByokCredentials?.apiKey
-    ? localByokCredentials.apiKey.slice(-4)
-    : null
+  const lastFour = byokCredentialStatus?.lastFour ?? null
 
   return (
     <div className="space-y-6">
@@ -338,20 +334,21 @@ export function PricingPage() {
                 Bring your own provider key
               </h3>
               <p className="muted-copy mt-2 max-w-2xl text-sm leading-6">
-                Your key stays on this device. When BYOK is active, generation requests use
-                that key so the cost lands on your provider account instead of the platform.
+                Your key is stored against your account in encrypted form. When BYOK is active,
+                generation requests use that key so the cost lands on your provider account instead
+                of the platform.
               </p>
               <p className="muted-copy mt-2 max-w-2xl text-sm leading-6">
-                BYOK is browser-specific right now, so you would need to add the key again on a different device or browser.
+                Once saved, the same BYOK setup can work across your devices when you sign in to the same account.
               </p>
             </div>
             <div className="soft-card px-4 py-3 text-sm">
-              <div className="font-semibold text-ink dark:text-white">Saved locally</div>
+              <div className="font-semibold text-ink dark:text-white">Saved on your account</div>
               <div className="muted-copy mt-1">
-                {lastFour ? `Key ending ${lastFour}` : 'No local key saved yet'}
+                {lastFour ? `Key ending ${lastFour}` : 'No BYOK key saved yet'}
               </div>
               <div className="muted-copy mt-1">
-                {localByokCredentials ? `Provider: ${localByokCredentials.provider}` : 'Stored in this browser only'}
+                {byokCredentialStatus ? `Provider: ${byokCredentialStatus.provider}` : 'No BYOK key stored yet'}
               </div>
             </div>
           </div>
@@ -415,15 +412,15 @@ export function PricingPage() {
                 }))
               }
               type="password"
-              placeholder={lastFour ? `Saved on this device (ends with ${lastFour})` : 'Paste your provider key'}
+              placeholder={lastFour ? `Saved on your account (ends with ${lastFour})` : 'Paste your provider key'}
               className="app-input"
             />
           </label>
 
           <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-4 text-sm muted-copy">
             {settings.planTier === 'byok'
-              ? `BYOK is active on this device. New packs will use your ${settings.byokProvider} key with ${settings.preferredModel}.`
-              : 'BYOK is not active yet. Save a provider, model, and key to switch this device over to your own account.'}
+              ? `BYOK is active on this account. New packs will use your ${settings.byokProvider} key with ${settings.preferredModel}.`
+              : 'BYOK is not active yet. Save a provider, model, and key to switch this account over to your own provider usage.'}
           </div>
 
           {formError ? (
@@ -452,7 +449,7 @@ export function PricingPage() {
               type="button"
               className="ghost-button"
               onClick={() => void handleClearByok()}
-              disabled={!localByokCredentials || pending}
+              disabled={!byokCredentialStatus || pending}
             >
               Clear saved key
             </button>

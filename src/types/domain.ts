@@ -64,6 +64,12 @@ export interface AiAccessSettings {
   updatedAt: string
 }
 
+export interface ByokCredentialStatus {
+  provider: AiProvider
+  lastFour: string
+  updatedAt: string
+}
+
 export type AiGenerationStatus = 'success' | 'limit_exceeded' | 'rate_limited' | 'blocked' | 'failed'
 
 export interface AiGenerationEvent {

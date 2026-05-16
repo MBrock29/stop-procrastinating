@@ -182,7 +182,7 @@ interface GeneratedPackSummary {
 
 export function CardsPage() {
   const {
-    localByokCredentials,
+    byokCredentialStatus,
     refresh: refreshAiAccess,
     settings,
     tierPolicy,
@@ -313,7 +313,7 @@ export function CardsPage() {
     setAiSuccess(null)
 
     try {
-      if (settings.planTier === 'byok' && !localByokCredentials?.apiKey) {
+      if (settings.planTier === 'byok' && !byokCredentialStatus) {
         throw new Error('Add your own API key on the pricing page before using BYOK mode.')
       }
 
@@ -323,7 +323,6 @@ export function CardsPage() {
         cardCount: aiDraft.cardCount,
         requestedModel: settings.planTier === 'byok' ? settings.preferredModel : null,
         byokProvider: settings.planTier === 'byok' ? settings.byokProvider : null,
-        byokApiKey: settings.planTier === 'byok' ? localByokCredentials?.apiKey ?? null : null,
       })
 
       await addGeneratedCards(

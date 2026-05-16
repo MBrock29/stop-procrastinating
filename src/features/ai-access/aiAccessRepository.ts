@@ -1,5 +1,12 @@
+import { env } from '../../lib/env'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
-import type { AiAccessSettings, AiGenerationEvent, PlanTier, SupportedAiModel } from '../../types/domain'
+import type {
+  AiAccessSettings,
+  AiGenerationEvent,
+  ByokCredentialStatus,
+  PlanTier,
+  SupportedAiModel,
+} from '../../types/domain'
 
 interface AiSettingsRow {
   user_id: string
@@ -25,6 +32,15 @@ interface AiGenerationEventRow {
   used_byok: boolean
   failure_reason: string | null
   created_at: string
+}
+
+interface ByokCredentialPayload {
+  credential: {
+    provider: 'openai' | 'openrouter'
+    lastFour: string
+    updatedAt: string
+  } | null
+  error?: string
 }
 
 function settingsStorageKey(userId: string) {
@@ -109,6 +125,44 @@ function mapEventRow(row: AiGenerationEventRow): AiGenerationEvent {
     failureReason: row.failure_reason,
     createdAt: row.created_at,
   }
+}
+
+async function callManageByokCredentials<T>(method: 'GET' | 'POST' | 'DELETE', body?: unknown) {
+  const client = getSupabaseBrowserClient()
+
+  if (!client) {
+    throw new Error('Supabase is not configured.')
+  }
+
+  const {
+    data: { session },
+  } = await client.auth.getSession()
+
+  if (!session?.access_token) {
+    throw new Error('You must be signed in to manage your BYOK key.')
+  }
+
+  const response = await fetch(`${env.supabaseUrl}/functions/v1/manage-byok-credentials`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: env.supabaseAnonKey!,
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  })
+
+  if (response.status === 204) {
+    return null as T
+  }
+
+  const payload = (await response.json()) as (ByokCredentialPayload & { error?: string }) | undefined
+
+  if (!response.ok) {
+    throw new Error(payload?.error ?? 'Unable to manage your BYOK key.')
+  }
+
+  return payload as T
 }
 
 export async function getAiAccessSettings(userId: string) {
@@ -204,4 +258,21 @@ export async function listAiGenerationEvents(userId: string) {
   }
 
   return (data ?? []).map((item) => mapEventRow(item as AiGenerationEventRow))
+}
+
+export async function getStoredByokCredentialStatus(): Promise<ByokCredentialStatus | null> {
+  const payload = await callManageByokCredentials<ByokCredentialPayload>('GET')
+  return payload?.credential ?? null
+}
+
+export async function saveStoredByokCredential(input: {
+  provider: 'openai' | 'openrouter'
+  apiKey: string
+}): Promise<ByokCredentialStatus | null> {
+  const payload = await callManageByokCredentials<ByokCredentialPayload>('POST', input)
+  return payload?.credential ?? null
+}
+
+export async function deleteStoredByokCredential() {
+  await callManageByokCredentials<null>('DELETE')
 }
