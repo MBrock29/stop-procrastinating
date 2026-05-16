@@ -36,7 +36,7 @@ const fallbackSettings: AiAccessSettings = {
   userId: '',
   planTier: 'free',
   byokProvider: 'openrouter',
-  preferredModel: 'gpt-4o-mini',
+  preferredModel: 'gpt-4.1-mini',
   createdAt: '',
   updatedAt: '',
 }

@@ -9,7 +9,7 @@ const corsHeaders = {
 
 type PlanTier = 'free' | 'pro' | 'byok'
 type AiProvider = 'openai' | 'openrouter'
-type SupportedAiModel = 'gpt-4o-mini' | 'gpt-4.1-mini' | 'gpt-5.4-mini'
+type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5.4-mini'
 type EventStatus = 'success' | 'limit_exceeded' | 'rate_limited' | 'blocked' | 'failed'
 
 interface UserAiSettingsRow {
@@ -52,10 +52,6 @@ const OWNER_OVERRIDE_MAX_CARDS = 500
 const OWNER_OVERRIDE_DEFAULT_MODEL: SupportedAiModel = 'gpt-4.1-mini'
 
 const MODEL_COSTS: Record<SupportedAiModel, { input: number; output: number }> = {
-  'gpt-4o-mini': {
-    input: 0.15,
-    output: 0.6,
-  },
   'gpt-4.1-mini': {
     input: 0.4,
     output: 1.6,
@@ -67,10 +63,6 @@ const MODEL_COSTS: Record<SupportedAiModel, { input: number; output: number }> =
 }
 
 const MODEL_ALIASES: Record<SupportedAiModel, Record<AiProvider, string>> = {
-  'gpt-4o-mini': {
-    openai: 'gpt-4o-mini',
-    openrouter: 'openai/gpt-4o-mini',
-  },
   'gpt-4.1-mini': {
     openai: 'gpt-4.1-mini',
     openrouter: 'openai/gpt-4.1-mini',
@@ -111,7 +103,7 @@ function getDefaultSettings(): UserAiSettingsRow {
   return {
     plan_tier: 'free',
     byok_provider: 'openrouter',
-    preferred_model: 'gpt-4o-mini',
+    preferred_model: 'gpt-4.1-mini',
   }
 }
 
@@ -127,14 +119,14 @@ function getTierPolicy(planTier: PlanTier) {
       return {
         monthlyPackLimit: null,
         maxCardsPerPack: BYOK_MAX_CARDS,
-        defaultModel: 'gpt-4o-mini' as SupportedAiModel,
+        defaultModel: 'gpt-4.1-mini' as SupportedAiModel,
       }
     case 'free':
     default:
       return {
         monthlyPackLimit: FREE_MONTHLY_PACK_LIMIT,
         maxCardsPerPack: FREE_MAX_CARDS,
-        defaultModel: 'gpt-4o-mini' as SupportedAiModel,
+        defaultModel: 'gpt-4.1-mini' as SupportedAiModel,
       }
   }
 }
@@ -148,7 +140,7 @@ function sanitizeProvider(value: string | null): AiProvider | null {
 }
 
 function sanitizeModel(value: string | null | undefined): SupportedAiModel | null {
-  if (value === 'gpt-4o-mini' || value === 'gpt-4.1-mini' || value === 'gpt-5.4-mini') {
+  if (value === 'gpt-4.1-mini' || value === 'gpt-5.4-mini') {
     return value
   }
 
@@ -165,7 +157,7 @@ function resolveCanonicalModel(
   isOwnerOverride: boolean,
 ) {
   if (settings.plan_tier === 'byok') {
-    return requestedModel ?? settings.preferred_model ?? 'gpt-4o-mini'
+    return requestedModel ?? settings.preferred_model ?? 'gpt-4.1-mini'
   }
 
   if (isOwnerOverride) {
@@ -173,14 +165,14 @@ function resolveCanonicalModel(
   }
 
   if (settings.plan_tier === 'free') {
-    return 'gpt-4o-mini'
+    return 'gpt-4.1-mini'
   }
 
   if (settings.plan_tier === 'pro') {
     return 'gpt-5.4-mini'
   }
 
-  return requestedModel ?? settings.preferred_model ?? 'gpt-4o-mini'
+  return requestedModel ?? settings.preferred_model ?? 'gpt-4.1-mini'
 }
 
 function estimateCostUsd(model: SupportedAiModel, usage: AiUsageRecord) {

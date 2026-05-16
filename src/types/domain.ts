@@ -5,7 +5,7 @@ export interface UserProfile {
 
 export type PlanTier = 'free' | 'pro' | 'byok'
 export type AiProvider = 'openai' | 'openrouter'
-export type SupportedAiModel = 'gpt-4o-mini' | 'gpt-5.4-mini'
+export type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5.4-mini'
 
 export interface BlockedDomain {
   id: string

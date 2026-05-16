@@ -59,7 +59,7 @@ function readDemoSettings(userId: string): AiAccessSettings {
       userId,
       planTier: 'free',
       byokProvider: 'openrouter',
-      preferredModel: 'gpt-4o-mini',
+      preferredModel: 'gpt-4.1-mini',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -72,7 +72,7 @@ function readDemoSettings(userId: string): AiAccessSettings {
       userId,
       planTier: 'free',
       byokProvider: 'openrouter',
-      preferredModel: 'gpt-4o-mini',
+      preferredModel: 'gpt-4.1-mini',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -187,7 +187,7 @@ export async function getAiAccessSettings(userId: string) {
       userId,
       planTier: 'free',
       byokProvider: 'openrouter',
-      preferredModel: 'gpt-4o-mini',
+      preferredModel: 'gpt-4.1-mini',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
