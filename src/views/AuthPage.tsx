@@ -145,27 +145,29 @@ export function AuthPage() {
                   </div>
                 ) : null}
 
-                <h3 className="text-2xl font-extrabold tracking-tight text-ink dark:text-white">
-                  {plan.title}
-                </h3>
-                <div className="mt-4 flex items-end gap-2">
-                  <span
-                    className={
-                      plan.title === 'Bring your own key'
-                        ? 'text-sm font-semibold text-slate-500 dark:text-slate-300'
-                        : 'text-4xl font-extrabold tracking-tight text-ink dark:text-white'
-                    }
-                  >
-                    {plan.price}
-                  </span>
-                  {plan.cadence ? (
-                    <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
-                      {plan.cadence}
+                <div className="min-h-[7.5rem]">
+                  <h3 className="text-2xl font-extrabold tracking-tight text-ink dark:text-white">
+                    {plan.title}
+                  </h3>
+                  <div className="mt-4 flex items-end gap-2">
+                    <span
+                      className={
+                        plan.title === 'Bring your own key'
+                          ? 'text-sm font-semibold text-slate-500 dark:text-slate-300'
+                          : 'text-4xl font-extrabold tracking-tight text-ink dark:text-white'
+                      }
+                    >
+                      {plan.price}
                     </span>
-                  ) : null}
+                    {plan.cadence ? (
+                      <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
+                        {plan.cadence}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
 
-                <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-200">
+                <ul className="mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200">
                   {plan.benefits.map((benefit) => (
                     <li key={benefit} className="flex items-start gap-3">
                       <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef">
@@ -176,7 +178,7 @@ export function AuthPage() {
                   ))}
                 </ul>
 
-                <div className="mt-6">
+                <div className="mt-auto pt-6">
                   <Link to="/login" className="action-button min-h-[44px] w-full px-4 py-2 text-sm">
                     Get started
                   </Link>
