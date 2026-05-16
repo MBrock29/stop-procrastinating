@@ -1,5 +1,8 @@
 import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { TIER_POLICIES } from '../features/ai-access/constants'
+import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { generateCardsWithAi } from '../features/cards/aiGenerator'
 import { useLearningCards } from '../features/cards/useLearningCards'
 import type { LearningCard } from '../types/domain'
@@ -169,6 +172,7 @@ function CardListItem({
 }
 
 export function CardsPage() {
+  const { localByokCredentials, refresh: refreshAiAccess, settings, tierPolicy } = useAiAccess()
   const {
     addGeneratedCards,
     archiveCard,
@@ -187,6 +191,14 @@ export function CardsPage() {
   const [aiError, setAiError] = useState<string | null>(null)
   const [aiSuccess, setAiSuccess] = useState<string | null>(null)
   const [nextCardLabel, setNextCardLabel] = useState<string | null>(null)
+  const aiCardLimit = tierPolicy.maxCardsPerPack
+
+  useEffect(() => {
+    setAiDraft((current) => ({
+      ...current,
+      cardCount: Math.max(1, Math.min(aiCardLimit, current.cardCount)),
+    }))
+  }, [aiCardLimit])
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -255,13 +267,20 @@ export function CardsPage() {
     setAiSuccess(null)
 
     try {
-      const generatedCards = await generateCardsWithAi({
+      if (settings.planTier === 'byok' && !localByokCredentials?.apiKey) {
+        throw new Error('Add your own API key on the pricing page before using BYOK mode.')
+      }
+
+      const generation = await generateCardsWithAi({
         topic: aiDraft.topic.trim(),
         cardCount: aiDraft.cardCount,
+        requestedModel: settings.planTier === 'byok' ? settings.preferredModel : null,
+        byokProvider: settings.planTier === 'byok' ? settings.byokProvider : null,
+        byokApiKey: settings.planTier === 'byok' ? localByokCredentials?.apiKey ?? null : null,
       })
 
       await addGeneratedCards(
-        generatedCards.map((card) => ({
+        generation.cards.map((card) => ({
           question: card.question,
           answer: card.answer,
           source: 'ai',
@@ -270,7 +289,14 @@ export function CardsPage() {
         })),
       )
 
-      setAiSuccess(`Generated ${generatedCards.length} cards for "${aiDraft.topic.trim()}".`)
+      await refreshAiAccess()
+      setAiSuccess(
+        `Generated ${generation.cards.length} cards with ${generation.meta.model}. ${
+          generation.meta.monthlyPackLimit != null
+            ? `${generation.meta.monthlyPacksUsed}/${generation.meta.monthlyPackLimit} packs used this month.`
+            : 'This request used your own key.'
+        }`,
+      )
       setAiDraft(initialAiDraft)
     } catch (nextError) {
       const message =
@@ -297,6 +323,21 @@ export function CardsPage() {
         <div className="mt-4 rounded-3xl bg-slate-50 p-5 text-sm leading-6 text-slate-600">
           Archive cards you want to keep without showing them in active sessions.
           Delete cards you no longer need at all.
+        </div>
+        <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-5 text-sm leading-6 text-slate-600">
+          <div className="font-semibold text-ink">
+            Current AI plan: {TIER_POLICIES[settings.planTier].label}
+          </div>
+          <div className="mt-1">
+            {settings.planTier === 'byok'
+              ? `Using ${settings.preferredModel} through ${settings.byokProvider}.`
+              : `${tierPolicy.maxCardsPerPack} cards per pack, ${
+                  tierPolicy.monthlyPackLimit ?? 'unlimited'
+                } packs per month.`}
+          </div>
+          <Link to="/app/pricing" className="mt-3 inline-block font-semibold text-reef">
+            Manage plans and BYOK
+          </Link>
         </div>
 
         {formError ? (
@@ -334,6 +375,9 @@ export function CardsPage() {
               will create a saved set of cards you can review like any other item in
               your library.
             </p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              This plan supports up to {aiCardLimit} cards per pack.
+            </p>
           </div>
 
           <label className="block">
@@ -350,19 +394,19 @@ export function CardsPage() {
           <div className="grid gap-4 sm:grid-cols-1">
             <label className="block">
               <span className="mb-2 block text-sm font-semibold text-slate-700">
-                Card count (max 50)
+                Card count (max {aiCardLimit})
               </span>
               <input
                 value={aiDraft.cardCount}
                 onChange={(event) =>
                   setAiDraft({
                     ...aiDraft,
-                    cardCount: Math.max(1, Math.min(50, Number(event.target.value) || 1)),
+                    cardCount: Math.max(1, Math.min(aiCardLimit, Number(event.target.value) || 1)),
                   })
                 }
                 type="number"
                 min={1}
-                max={50}
+                max={aiCardLimit}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-reef focus:ring-4 focus:ring-reef/10"
               />
             </label>

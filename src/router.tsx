@@ -8,6 +8,7 @@ import { CardsPage } from './views/CardsPage'
 import { DashboardPage } from './views/DashboardPage'
 import { InterruptPage } from './views/InterruptPage'
 import { NotFoundPage } from './views/NotFoundPage'
+import { PricingPage } from './views/PricingPage'
 import { SetupGuidePage } from './views/SetupGuidePage'
 
 export const router = createBrowserRouter([
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
               {
                 path: 'app/cards',
                 element: <CardsPage />,
+              },
+              {
+                path: 'app/pricing',
+                element: <PricingPage />,
               },
               {
                 path: 'app/setup',

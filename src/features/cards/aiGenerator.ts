@@ -1,14 +1,32 @@
 import { env, hasSupabaseEnv } from '../../lib/env'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
+import type { AiProvider, PlanTier, SupportedAiModel } from '../../types/domain'
 
 export interface GenerateCardsInput {
   topic: string
   cardCount: number
+  requestedModel?: SupportedAiModel | null
+  byokProvider?: AiProvider | null
+  byokApiKey?: string | null
 }
 
 export interface GeneratedCardDraft {
   question: string
   answer: string
+}
+
+export interface GenerateCardsResult {
+  cards: GeneratedCardDraft[]
+  meta: {
+    planTier: PlanTier
+    provider: AiProvider
+    model: string
+    monthlyPacksUsed: number
+    monthlyPackLimit: number | null
+    maxCardsPerPack: number
+    usedByok: boolean
+    estimatedCostUsd: number | null
+  }
 }
 
 function createLocalCards(input: GenerateCardsInput) {
@@ -25,7 +43,19 @@ function createLocalCards(input: GenerateCardsInput) {
 
 export async function generateCardsWithAi(input: GenerateCardsInput) {
   if (!hasSupabaseEnv) {
-    return createLocalCards(input)
+    return {
+      cards: createLocalCards(input),
+      meta: {
+        planTier: 'free' as PlanTier,
+        provider: 'openai' as AiProvider,
+        model: env.openaiModel,
+        monthlyPacksUsed: 0,
+        monthlyPackLimit: 3,
+        maxCardsPerPack: 10,
+        usedByok: false,
+        estimatedCostUsd: null,
+      },
+    } satisfies GenerateCardsResult
   }
 
   const client = getSupabaseBrowserClient()
@@ -52,8 +82,14 @@ export async function generateCardsWithAi(input: GenerateCardsInput) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
         apikey: env.supabaseAnonKey!,
+        ...(input.byokApiKey ? { 'x-byok-api-key': input.byokApiKey } : {}),
+        ...(input.byokProvider ? { 'x-byok-provider': input.byokProvider } : {}),
       },
-      body: JSON.stringify(input),
+      body: JSON.stringify({
+        topic: input.topic,
+        cardCount: input.cardCount,
+        requestedModel: input.requestedModel ?? undefined,
+      }),
     })
   } catch (error) {
     if (error instanceof TypeError) {
@@ -66,7 +102,7 @@ export async function generateCardsWithAi(input: GenerateCardsInput) {
   }
 
   const payload = (await response.json()) as
-    | { cards?: GeneratedCardDraft[]; error?: string }
+    | { cards?: GeneratedCardDraft[]; meta?: GenerateCardsResult['meta']; error?: string }
     | undefined
 
   if (!response.ok) {
@@ -77,5 +113,17 @@ export async function generateCardsWithAi(input: GenerateCardsInput) {
     throw new Error('The generator returned no cards.')
   }
 
-  return payload.cards
+  return {
+    cards: payload.cards,
+    meta: payload.meta ?? {
+      planTier: 'free',
+      provider: 'openai',
+      model: env.openaiModel,
+      monthlyPacksUsed: 0,
+      monthlyPackLimit: 3,
+      maxCardsPerPack: 10,
+      usedByok: false,
+      estimatedCostUsd: null,
+    },
+  } satisfies GenerateCardsResult
 }

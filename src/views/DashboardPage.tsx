@@ -30,6 +30,9 @@ export function DashboardPage() {
           <Link to="/app/cards" className="ghost-button">
             Manage learning cards
           </Link>
+          <Link to="/app/pricing" className="ghost-button">
+            Plans and usage
+          </Link>
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <div className="rounded-3xl bg-slate-50 p-5">

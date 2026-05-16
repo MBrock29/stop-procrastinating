@@ -28,13 +28,14 @@ describe('generateCardsWithAi demo mode', () => {
   it('returns the requested number of local fallback cards when Supabase is absent', async () => {
     const { generateCardsWithAi } = await import('./aiGenerator')
 
-    const cards = await generateCardsWithAi({
+    const result = await generateCardsWithAi({
       topic: 'mid-senior React interview questions',
       cardCount: 3,
     })
 
-    expect(cards).toHaveLength(3)
-    expect(cards[0]?.question).toContain('mid-senior React interview questions')
+    expect(result.cards).toHaveLength(3)
+    expect(result.cards[0]?.question).toContain('mid-senior React interview questions')
+    expect(result.meta.model).toBe('gpt-4.1-mini')
     expect(getSession).not.toHaveBeenCalled()
   })
 })
