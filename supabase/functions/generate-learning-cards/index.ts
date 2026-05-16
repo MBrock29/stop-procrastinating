@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { decryptApiKey } from '../_shared/byokCrypto.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +18,11 @@ interface UserAiSettingsRow {
   preferred_model: SupportedAiModel
 }
 
+interface UserByokCredentialRow {
+  provider: AiProvider
+  encrypted_api_key: string
+}
+
 interface AiUsageRecord {
   inputTokens: number | null
   outputTokens: number | null
@@ -33,6 +39,7 @@ const platformProvider = (Deno.env.get('AI_GENERATION_PROVIDER') ?? 'openai') as
 const platformOpenAiApiKey = Deno.env.get('OPENAI_API_KEY')
 const platformOpenRouterApiKey = Deno.env.get('OPENROUTER_API_KEY')
 const appBaseUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173'
+const byokEncryptionKey = Deno.env.get('BYOK_ENCRYPTION_KEY')
 
 const FREE_MONTHLY_PACK_LIMIT = 3
 const PRO_MONTHLY_PACK_LIMIT = 100
@@ -613,8 +620,18 @@ Deno.serve(async (request) => {
 
   const byokApiKey = request.headers.get('x-byok-api-key')
   const byokProviderHeader = sanitizeProvider(request.headers.get('x-byok-provider'))
+  const { data: storedByokData } = settings.plan_tier === 'byok'
+    ? await client
+        .from('user_byok_credentials')
+        .select('provider, encrypted_api_key')
+        .eq('user_id', user.id)
+        .maybeSingle()
+    : { data: null }
+  const storedByokCredential = (storedByokData as UserByokCredentialRow | null) ?? null
   const effectiveProvider =
-    settings.plan_tier === 'byok' ? byokProviderHeader ?? settings.byok_provider : platformProvider
+    settings.plan_tier === 'byok'
+      ? storedByokCredential?.provider ?? byokProviderHeader ?? settings.byok_provider
+      : platformProvider
   const canonicalModel =
     isOwnerOverride
       ? OWNER_OVERRIDE_MODEL
@@ -624,14 +641,21 @@ Deno.serve(async (request) => {
         ? 'gpt-5.4-mini'
         : requestedModel ?? settings.preferred_model ?? policy.defaultModel
 
-  if (settings.plan_tier === 'byok' && !byokApiKey) {
+  if (
+    settings.plan_tier === 'byok' &&
+    !byokApiKey &&
+    (!storedByokCredential?.encrypted_api_key || !byokEncryptionKey)
+  ) {
     return jsonResponse({ error: 'Add your own API key before using BYOK mode.' }, 400)
   }
 
   const providerModel = resolveProviderModel(canonicalModel, effectiveProvider)
   const apiKey =
     settings.plan_tier === 'byok'
-      ? byokApiKey
+      ? byokApiKey ??
+        (storedByokCredential?.encrypted_api_key && byokEncryptionKey
+          ? await decryptApiKey(byokEncryptionKey, storedByokCredential.encrypted_api_key)
+          : null)
       : effectiveProvider === 'openrouter'
         ? platformOpenRouterApiKey
         : platformOpenAiApiKey
