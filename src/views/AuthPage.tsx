@@ -205,7 +205,7 @@ export function AuthPage() {
                       {index + 1}
                     </span>
                   </div>
-                  <p className="mt-4 text-sm leading-6 text-slate-700 dark:text-slate-200 sm:text-base">
+                  <p className="mt-4 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-200 sm:text-base">
                     {step}
                   </p>
                 </div>
