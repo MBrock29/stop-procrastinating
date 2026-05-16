@@ -36,8 +36,8 @@ const planCards = [
   },
   {
     title: 'Bring your own key',
-    price: 'Billed',
-    cadence: 'by your provider',
+    price: 'Billed by your own provider',
+    cadence: '',
     benefits: [
       'Store up to 500 cards',
       'Generate unlimited packs per month',
@@ -149,12 +149,20 @@ export function AuthPage() {
                   {plan.title}
                 </h3>
                 <div className="mt-4 flex items-end gap-2">
-                  <span className="text-4xl font-extrabold tracking-tight text-ink dark:text-white">
+                  <span
+                    className={
+                      plan.title === 'Bring your own key'
+                        ? 'text-sm font-semibold text-slate-500 dark:text-slate-300'
+                        : 'text-4xl font-extrabold tracking-tight text-ink dark:text-white'
+                    }
+                  >
                     {plan.price}
                   </span>
-                  <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
-                    {plan.cadence}
-                  </span>
+                  {plan.cadence ? (
+                    <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
+                      {plan.cadence}
+                    </span>
+                  ) : null}
                 </div>
 
                 <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-200">

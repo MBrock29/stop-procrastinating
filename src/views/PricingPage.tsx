@@ -112,9 +112,9 @@ export function PricingPage() {
         tier: 'byok',
         title: 'Bring your own key',
         eyebrow: 'Bring your own key',
-        price: 'Billed',
-        cadenceLabel: 'by your provider',
-        priceClassName: 'text-3xl sm:text-[2rem]',
+        price: 'Billed by your own provider',
+        cadenceLabel: '',
+        priceClassName: 'text-sm font-semibold text-slate-500 dark:text-slate-300',
         summary: 'Keep generation costs on your own provider account.',
         benefits: [
           'Store up to 500 cards',
@@ -310,9 +310,11 @@ export function PricingPage() {
                   >
                     {plan.price}
                   </span>
-                  <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
-                    {plan.cadenceLabel}
-                  </span>
+                  {plan.cadenceLabel ? (
+                    <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
+                      {plan.cadenceLabel}
+                    </span>
+                  ) : null}
                 </div>
                 <p className="muted-copy mt-4 text-sm leading-6">{plan.summary}</p>
 
