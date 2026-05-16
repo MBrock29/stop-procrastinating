@@ -33,20 +33,22 @@ function postPresence(payload: ExtensionStatusPayload | null) {
   )
 }
 
-void chrome.runtime
-  .sendMessage({
-    type: EXTENSION_GET_STATUS_MESSAGE,
-  })
-  .then((payload: ExtensionStatusPayload) => {
+async function refreshPresence() {
+  try {
+    const payload = (await chrome.runtime.sendMessage({
+      type: EXTENSION_GET_STATUS_MESSAGE,
+    })) as ExtensionStatusPayload
     postPresence(payload)
-  })
-  .catch(() => {
+  } catch {
     postPresence({
       appBaseUrl: window.location.origin,
       blockedDomains: [],
       lastSyncedAt: null,
     })
-  })
+  }
+}
+
+void refreshPresence()
 
 window.addEventListener('message', (event) => {
   if (event.source !== window) {
@@ -54,10 +56,15 @@ window.addEventListener('message', (event) => {
   }
 
   if (event.data?.type === EXTENSION_SYNC_MESSAGE && isPayload(event.data.payload)) {
-    void chrome.runtime.sendMessage({
-      type: EXTENSION_SYNC_MESSAGE,
-      payload: event.data.payload,
-    })
+    void chrome.runtime
+      .sendMessage({
+        type: EXTENSION_SYNC_MESSAGE,
+        payload: event.data.payload,
+      })
+      .then(() => refreshPresence())
+      .catch(() => {
+        postPresence(null)
+      })
   }
 
   if (event.data?.type === EXTENSION_REQUEST_STATUS_MESSAGE) {
