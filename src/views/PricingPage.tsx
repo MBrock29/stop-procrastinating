@@ -212,7 +212,7 @@ export function PricingPage() {
               <article
                 key={plan.tier}
                 className={[
-                  'relative overflow-hidden rounded-[2rem] border p-6',
+                  'relative flex h-full flex-col overflow-hidden rounded-[2rem] border p-6',
                   plan.tier === 'pro'
                     ? 'border-amber-300/50 bg-gradient-to-br from-amber-50 via-white to-cyan-50 dark:from-amber-950/30 dark:via-slate-950 dark:to-cyan-950/20'
                     : 'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
@@ -251,7 +251,7 @@ export function PricingPage() {
                   ))}
                 </ul>
 
-                <div className="mt-8">
+                <div className="mt-auto pt-8">
                   {plan.ctaKind === 'free' ? (
                     <button
                       type="button"
@@ -442,11 +442,11 @@ export function PricingPage() {
                 Platform spend
               </div>
               <div className="mt-3 text-2xl font-extrabold text-ink dark:text-white">
-                £{usage.currentMonthPlatformCostUsd.toFixed(4)}
+                £{usage.currentMonthPlatformCostUsd.toFixed(2)}
               </div>
               {usage.currentMonthByokCostUsd > 0 ? (
                 <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
-                  BYOK estimate: £{usage.currentMonthByokCostUsd.toFixed(4)}
+                  BYOK estimate: £{usage.currentMonthByokCostUsd.toFixed(2)}
                 </div>
               ) : null}
             </div>
@@ -502,7 +502,7 @@ export function PricingPage() {
                   </div>
                   <div className="muted-copy mt-3 text-sm">
                     {event.status === 'success'
-                      ? `Success${event.estimatedCostUsd != null ? ` · est. £${event.estimatedCostUsd.toFixed(4)}` : ''}`
+                      ? `Success${event.estimatedCostUsd != null ? ` · est. £${event.estimatedCostUsd.toFixed(2)}` : ''}`
                       : event.failureReason ?? event.status}
                   </div>
                 </article>
