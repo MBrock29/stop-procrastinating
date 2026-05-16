@@ -74,7 +74,10 @@ export function DashboardPage() {
             Manage learning cards
           </Link>
           <Link to="/app/pricing" className="ghost-button">
-            Plans and usage
+            Pricing plans
+          </Link>
+          <Link to="/app/byok#usage" className="ghost-button">
+            Usage
           </Link>
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">

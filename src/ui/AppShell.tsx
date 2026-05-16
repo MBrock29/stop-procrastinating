@@ -8,8 +8,6 @@ const navItems = [
   { to: '/app', label: 'Dashboard', end: true },
   { to: '/app/sites', label: 'Blocked sites', end: true },
   { to: '/app/cards', label: 'Learning cards', end: true },
-  { to: '/app/pricing', label: 'Pricing plans', end: true },
-  { to: '/app/byok#usage', label: 'Usage', end: false },
 ]
 
 export function AppShell() {
