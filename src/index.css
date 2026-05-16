@@ -13,10 +13,14 @@
     -moz-osx-font-smoothing: grayscale;
     --app-text: #10203b;
     --app-muted: #5f6f8f;
-    --app-border: rgba(148, 163, 184, 0.26);
-    --app-surface: rgba(255, 255, 255, 0.82);
-    --app-surface-strong: rgba(255, 255, 255, 0.94);
-    --app-surface-muted: rgba(241, 245, 249, 0.9);
+    --app-border: rgba(244, 114, 182, 0.14);
+    --app-surface: rgba(255, 255, 255, 0.84);
+    --app-surface-strong: rgba(255, 253, 250, 0.96);
+    --app-surface-muted: linear-gradient(
+      135deg,
+      rgba(255, 245, 234, 0.95) 0%,
+      rgba(244, 247, 255, 0.94) 100%
+    );
     --app-surface-contrast: #0f172a;
     --app-background:
       radial-gradient(circle at 12% 18%, rgba(245, 158, 11, 0.18), transparent 28%),
@@ -97,6 +101,27 @@
 
   .ghost-button:hover {
     background: var(--app-surface-muted);
+  }
+
+  .google-button {
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.94));
+    color: #1e3a8a;
+    @apply inline-flex items-center justify-center rounded-full px-5 py-3 font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-200;
+  }
+
+  .google-button:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(219, 234, 254, 0.98));
+  }
+
+  .dark .google-button {
+    border-color: rgba(96, 165, 250, 0.28);
+    background: linear-gradient(135deg, rgba(19, 33, 61, 0.96), rgba(30, 58, 138, 0.88));
+    color: #dbeafe;
+  }
+
+  .dark .google-button:hover {
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.98), rgba(37, 99, 235, 0.88));
   }
 
   .theme-toggle {

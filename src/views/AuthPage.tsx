@@ -7,7 +7,7 @@ import { useTheme } from '../features/theme/ThemeContext'
 export function AuthPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { authError, mode, signInWithGoogle, signInWithPassword, status } = useAuth()
+  const { authError, signInWithGoogle, signInWithPassword, status } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
@@ -92,11 +92,6 @@ export function AuthPage() {
           <section className="panel px-6 py-8 sm:px-8">
             <div className="mx-auto max-w-md">
               <h2 className="text-2xl font-bold text-ink dark:text-white">Sign in to your focus space</h2>
-              <p className="muted-copy mt-2 text-sm">
-                {mode === 'supabase'
-                  ? 'Use your Supabase-backed account to sync sites, cards, and redirect sessions.'
-                  : 'Supabase keys are not configured yet, so this screen runs in demo mode while keeping the same protected flow.'}
-              </p>
 
               <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
                 <label className="block">
@@ -139,7 +134,7 @@ export function AuthPage() {
               <button
                 type="button"
                 onClick={() => void handleGoogleSignIn()}
-                className="ghost-button mt-4 w-full"
+                className="google-button mt-4 w-full"
                 disabled={pending}
               >
                 Continue with Google
