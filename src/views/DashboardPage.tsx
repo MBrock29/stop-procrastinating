@@ -15,6 +15,17 @@ export function DashboardPage() {
   const hasExtensionConnection = extensionStatus.status === 'connected'
   const onboardingSteps = [
     {
+      label: 'Connect the browser extension',
+      done: hasExtensionConnection,
+      description: hasExtensionConnection
+        ? extensionStatus.isStale
+          ? 'The extension is connected, but the last sync looks old.'
+          : 'Chrome extension is connected and can receive fresh rules.'
+        : 'Install or reopen the extension in Chrome, then sync from the app.',
+      actionHref: hasExtensionConnection ? '/app/sites' : '/app/setup',
+      actionLabel: hasExtensionConnection ? 'Sync extension' : 'Setup guide',
+    },
+    {
       label: 'Add learning cards',
       done: hasAnyCards,
       description: hasAnyCards
@@ -31,17 +42,6 @@ export function DashboardPage() {
         : 'Add the sites you want to interrupt and redirect.',
       actionHref: '/app/sites',
       actionLabel: activeCount > 0 ? 'Review sites' : 'Add blocked sites',
-    },
-    {
-      label: 'Connect the browser extension',
-      done: hasExtensionConnection,
-      description: hasExtensionConnection
-        ? extensionStatus.isStale
-          ? 'The extension is connected, but the last sync looks old.'
-          : 'Chrome extension is connected and can receive fresh rules.'
-        : 'Install or reopen the extension in Chrome, then sync from the app.',
-      actionHref: hasExtensionConnection ? '/app/sites' : '/app/setup',
-      actionLabel: hasExtensionConnection ? 'Sync extension' : 'Setup guide',
     },
   ]
 

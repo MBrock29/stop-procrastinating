@@ -47,10 +47,10 @@ export function AppShell() {
                   to="/app/settings"
                   className={({ isActive }) =>
                     [
-                      'inline-flex min-h-[42px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition',
+                      'inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition',
                       isActive
-                        ? 'bg-reef text-white shadow-lg shadow-reef/20'
-                        : 'border border-[var(--app-border)] bg-[var(--app-surface-strong)] text-[var(--app-text)] hover:bg-[var(--app-surface-muted)]',
+                        ? 'action-button shadow-lg shadow-reef/20'
+                        : 'ghost-button',
                     ].join(' ')
                   }
                 >
@@ -68,7 +68,7 @@ export function AppShell() {
                 <button
                   type="button"
                   onClick={() => void handleSignOut()}
-                  className="ghost-button min-h-[42px]"
+                  className="ghost-button h-11 px-4 text-sm"
                 >
                   Sign out
                 </button>
@@ -89,10 +89,10 @@ export function AppShell() {
                     end={item.end}
                     className={({ isActive }) =>
                       [
-                        'inline-flex min-h-[42px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition',
+                        'inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition',
                         isActive
-                          ? 'bg-reef text-white shadow-lg shadow-reef/20'
-                          : 'border border-[var(--app-border)] bg-[var(--app-surface-strong)] text-[var(--app-text)] hover:bg-[var(--app-surface-muted)]',
+                          ? 'action-button shadow-lg shadow-reef/20'
+                          : 'ghost-button',
                       ].join(' ')
                     }
                   >
