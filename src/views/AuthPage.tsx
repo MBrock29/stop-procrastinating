@@ -19,19 +19,19 @@ const planCards = [
       'Store up to 500 cards',
       'Generate up to 3 packs per month',
       'Generate up to 10 cards per pack',
-      'Access to the lighter hosted learning model',
+      'Access to our basic model',
     ],
   },
   {
     title: 'Pro',
     price: '£1.99',
     cadence: '/month',
-    badge: '£19.99/year available',
+    badge: 'Annual discount available',
     benefits: [
       'Store up to 500 cards',
       'Generate up to 100 packs per month',
       'Generate up to 500 cards per pack',
-      'Access to the stronger hosted learning model',
+      'Access to our strongest model',
     ],
   },
   {
@@ -42,7 +42,7 @@ const planCards = [
       'Store up to 500 cards',
       'Generate unlimited packs per month',
       'Generate up to 500 cards per pack',
-      'Choose between gpt-4.1-mini and gpt-5.4-mini',
+      'Choose your own model',
     ],
   },
 ]
@@ -167,6 +167,21 @@ export function AuthPage() {
                     </li>
                   ))}
                 </ul>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    to="/login?mode=register"
+                    className="action-button min-h-[44px] flex-1 px-4 py-2 text-sm"
+                  >
+                    Register
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="ghost-button min-h-[44px] flex-1 px-4 py-2 text-sm"
+                  >
+                    Sign in
+                  </Link>
+                </div>
               </article>
             ))}
           </div>
