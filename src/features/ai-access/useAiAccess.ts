@@ -41,25 +41,26 @@ const fallbackSettings: AiAccessSettings = {
   updatedAt: '',
 }
 
-function buildUsageSnapshot(events: AiGenerationEvent[]): UsageSnapshot {
+function buildUsageSnapshot(events: AiGenerationEvent[], planTier: PlanTier): UsageSnapshot {
   const successful = events.filter((event) => event.status === 'success')
+  const successfulForPlan = successful.filter((event) => event.planTier === planTier)
 
   return {
-    currentMonthPacksUsed: successful.length,
-    currentMonthCardsGenerated: successful.reduce((sum, event) => sum + event.cardCount, 0),
+    currentMonthPacksUsed: successfulForPlan.length,
+    currentMonthCardsGenerated: successfulForPlan.reduce((sum, event) => sum + event.cardCount, 0),
     currentMonthPlatformCostUsd: Number(
-      successful
+      successfulForPlan
         .filter((event) => !event.usedByok)
         .reduce((sum, event) => sum + (event.estimatedCostUsd ?? 0), 0)
         .toFixed(6),
     ),
     currentMonthByokCostUsd: Number(
-      successful
+      successfulForPlan
         .filter((event) => event.usedByok)
         .reduce((sum, event) => sum + (event.estimatedCostUsd ?? 0), 0)
         .toFixed(6),
     ),
-    lastGeneratedAt: successful[0]?.createdAt ?? null,
+    lastGeneratedAt: successfulForPlan[0]?.createdAt ?? null,
   }
 }
 
@@ -118,7 +119,7 @@ export function useAiAccess() {
     void refresh()
   }, [refresh])
 
-  const usage = useMemo(() => buildUsageSnapshot(events), [events])
+  const usage = useMemo(() => buildUsageSnapshot(events, settings.planTier), [events, settings.planTier])
   const tierPolicy = TIER_POLICIES[settings.planTier]
 
   return {

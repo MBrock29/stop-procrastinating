@@ -159,10 +159,6 @@
     color: #0b0b0b;
   }
 
-  .theme-toggle:hover {
-    background: var(--app-surface-muted);
-  }
-
   .soft-card {
     border: 1px solid var(--app-border);
     background: var(--app-surface-muted);

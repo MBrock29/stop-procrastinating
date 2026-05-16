@@ -1,5 +1,6 @@
 import { env } from '../../lib/env'
 import {
+  EXTENSION_PRESENCE_MESSAGE,
   EXTENSION_REQUEST_SYNC_MESSAGE,
   EXTENSION_REQUEST_STATUS_MESSAGE,
   EXTENSION_STATUS_RESPONSE_MESSAGE,
@@ -66,6 +67,11 @@ export function requestExtensionStatus(timeoutMs = 1500) {
 
     function handleMessage(event: MessageEvent) {
       if (event.source !== window || event.origin !== window.location.origin) {
+        return
+      }
+
+      if (event.data?.type === EXTENSION_PRESENCE_MESSAGE) {
+        finish((event.data.payload as ExtensionStatusPayload | null) ?? null)
         return
       }
 

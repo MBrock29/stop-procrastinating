@@ -1,4 +1,5 @@
 import {
+  EXTENSION_PRESENCE_MESSAGE,
   EXTENSION_REQUEST_SYNC_MESSAGE,
   EXTENSION_REQUEST_STATUS_MESSAGE,
   EXTENSION_STATUS_RESPONSE_MESSAGE,
@@ -20,6 +21,32 @@ function isPayload(value: unknown): value is ExtensionSyncPayload {
     candidate.blockedDomains.every((item) => typeof item === 'string')
   )
 }
+
+function postPresence(payload: ExtensionStatusPayload | null) {
+  window.postMessage(
+    {
+      source: 'stop-procrastinating-extension',
+      type: EXTENSION_PRESENCE_MESSAGE,
+      payload,
+    },
+    window.location.origin,
+  )
+}
+
+void chrome.runtime
+  .sendMessage({
+    type: EXTENSION_GET_STATUS_MESSAGE,
+  })
+  .then((payload: ExtensionStatusPayload) => {
+    postPresence(payload)
+  })
+  .catch(() => {
+    postPresence({
+      appBaseUrl: window.location.origin,
+      blockedDomains: [],
+      lastSyncedAt: null,
+    })
+  })
 
 window.addEventListener('message', (event) => {
   if (event.source !== window) {
