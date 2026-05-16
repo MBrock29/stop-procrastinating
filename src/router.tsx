@@ -4,6 +4,7 @@ import { AppShell } from './ui/AppShell'
 import { ProtectedRoute } from './ui/ProtectedRoute'
 import { AuthPage } from './views/AuthPage'
 import { BlockedDomainsPage } from './views/BlockedDomainsPage'
+import { ByokPage } from './views/ByokPage'
 import { CardsPage } from './views/CardsPage'
 import { DashboardPage } from './views/DashboardPage'
 import { InterruptPage } from './views/InterruptPage'
@@ -47,6 +48,10 @@ export const router = createBrowserRouter([
               {
                 path: 'app/pricing',
                 element: <PricingPage />,
+              },
+              {
+                path: 'app/byok',
+                element: <ByokPage />,
               },
               {
                 path: 'app/settings',

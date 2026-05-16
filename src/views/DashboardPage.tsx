@@ -146,7 +146,7 @@ export function DashboardPage() {
           </div>
           {settings.planTier === 'byok' && !byokCredentialStatus ? (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              BYOK is selected, but there is no saved provider key on your account yet. Add one on the pricing page before generating more packs.
+              BYOK is selected, but there is no saved provider key on your account yet. Add one on the BYOK page before generating more packs.
             </div>
           ) : null}
         </div>

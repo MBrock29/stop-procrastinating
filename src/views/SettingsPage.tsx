@@ -180,10 +180,10 @@ export function SettingsPage() {
             <div className="muted-copy mt-2 leading-6">
               {byokCredentialStatus
                 ? `Saved on ${new Date(byokCredentialStatus.updatedAt).toLocaleString()}.`
-                : 'If you want cross-device BYOK, add your provider key on the pricing page.'}
+                : 'If you want cross-device BYOK, add your provider key on the BYOK page.'}
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
-              <Link to="/app/pricing" className="action-button">
+              <Link to="/app/byok" className="action-button">
                 Open BYOK settings
               </Link>
               <button

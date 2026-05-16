@@ -170,7 +170,7 @@ export function InterruptPage() {
                 Create learning cards
               </Link>
               <div className="mt-3 flex flex-wrap justify-center gap-3">
-                <Link to="/app/pricing" className="ghost-button">
+                <Link to="/app/byok" className="ghost-button">
                   Check AI setup
                 </Link>
                 <Link to="/app/sites" className="ghost-button">

@@ -314,7 +314,7 @@ export function CardsPage() {
 
     try {
       if (settings.planTier === 'byok' && !byokCredentialStatus) {
-        throw new Error('Add your own API key on the pricing page before using BYOK mode.')
+        throw new Error('Add your own API key on the BYOK page before using BYOK mode.')
       }
 
       const generationBatchId = crypto.randomUUID()
@@ -411,7 +411,7 @@ export function CardsPage() {
                   tierPolicy.monthlyPackLimit ?? 'unlimited'
                 } packs per month.`}
           </div>
-          <Link to="/app/pricing" className="mt-3 inline-block font-semibold text-reef">
+          <Link to="/app/byok" className="mt-3 inline-block font-semibold text-reef">
             Manage plans and BYOK
           </Link>
         </div>
