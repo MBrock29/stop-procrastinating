@@ -354,7 +354,7 @@ export function ByokPage() {
       </section>
 
       <div className='grid gap-6 xl:grid-cols-[0.9fr_1.1fr]'>
-        <section className='panel px-6 py-6 sm:px-8'>
+        <section id='usage' className='panel px-6 py-6 sm:px-8 scroll-mt-24'>
           <p className='section-kicker'>Usage</p>
           <h3 className='mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl'>
             Track monthly generation at a glance
