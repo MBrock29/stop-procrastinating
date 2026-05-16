@@ -12,11 +12,6 @@ interface CardDraft {
   answer: string
 }
 
-const initialDraft: CardDraft = {
-  question: '',
-  answer: '',
-}
-
 interface AiDraft {
   topic: string
   cardCount: number
@@ -34,10 +29,10 @@ function CardEditor({
   onChange,
   onSubmit,
 }: {
-  draft: CardDraft
+  draft: { question: string; answer: string }
   heading: string
   isPending: boolean
-  onChange: (draft: CardDraft) => void
+  onChange: (draft: { question: string; answer: string }) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   return (
@@ -97,7 +92,7 @@ function CardListItem({
   isPending: boolean
   onArchive: (cardId: string, nextArchivedState: boolean) => Promise<unknown>
   onDelete: (cardId: string) => Promise<unknown>
-  onUpdate: (cardId: string, draft: CardDraft) => Promise<unknown>
+  onUpdate: (cardId: string, draft: { question: string; answer: string }) => Promise<unknown>
 }) {
   const [editing, setEditing] = useState(false)
   const [localDraft, setLocalDraft] = useState<CardDraft>({
@@ -192,14 +187,12 @@ export function CardsPage() {
     addGeneratedCards,
     archiveCard,
     cards,
-    createCard,
     error,
     isLoading,
     removeCard,
     removeCards,
     updateCard,
   } = useLearningCards()
-  const [draft, setDraft] = useState<CardDraft>(initialDraft)
   const [aiDraft, setAiDraft] = useState<AiDraft>(initialAiDraft)
   const [pending, setPending] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -288,32 +281,6 @@ export function CardsPage() {
     () => cards.slice(0, visibleCardCount),
     [cards, visibleCardCount],
   )
-
-  async function handleCreate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    if (!draft.question.trim() || !draft.answer.trim()) {
-      setFormError('Add both a question and an answer.')
-      return
-    }
-
-    setPending(true)
-    setFormError(null)
-
-    try {
-      await createCard({
-        question: draft.question.trim(),
-        answer: draft.answer.trim(),
-      })
-      setDraft(initialDraft)
-    } catch (nextError) {
-      const message =
-        nextError instanceof Error ? nextError.message : 'Unable to create that card.'
-      setFormError(message)
-    } finally {
-      setPending(false)
-    }
-  }
 
   async function handleUpdate(cardId: string, nextDraft: CardDraft) {
     if (!nextDraft.question.trim() || !nextDraft.answer.trim()) {
@@ -522,14 +489,6 @@ export function CardsPage() {
             {pending ? 'Generating…' : 'Generate AI cards'}
           </button>
         </form>
-
-        <CardEditor
-          draft={draft}
-          heading="Manually add a card"
-          isPending={pending}
-          onChange={setDraft}
-          onSubmit={handleCreate}
-        />
 
         <div className="soft-card mt-6 p-5">
           <div>
