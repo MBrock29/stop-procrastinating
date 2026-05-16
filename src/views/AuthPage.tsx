@@ -168,18 +168,9 @@ export function AuthPage() {
                   ))}
                 </ul>
 
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Link
-                    to="/login?mode=register"
-                    className="action-button min-h-[44px] flex-1 px-4 py-2 text-sm"
-                  >
-                    Register
-                  </Link>
-                  <Link
-                    to="/login"
-                    className="ghost-button min-h-[44px] flex-1 px-4 py-2 text-sm"
-                  >
-                    Sign in
+                <div className="mt-6">
+                  <Link to="/login" className="action-button min-h-[44px] w-full px-4 py-2 text-sm">
+                    Get started
                   </Link>
                 </div>
               </article>
