@@ -43,6 +43,19 @@ export function AppShell() {
 
             <div className="flex flex-col gap-4 xl:items-end">
               <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+                <NavLink
+                  to="/app/settings"
+                  className={({ isActive }) =>
+                    [
+                      'inline-flex min-h-[42px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition',
+                      isActive
+                        ? 'bg-reef text-white shadow-lg shadow-reef/20'
+                        : 'border border-[var(--app-border)] bg-[var(--app-surface-strong)] text-[var(--app-text)] hover:bg-[var(--app-surface-muted)]',
+                    ].join(' ')
+                  }
+                >
+                  Settings
+                </NavLink>
                 <button type="button" onClick={toggleTheme} className="theme-toggle">
                   <span>{theme === 'light' ? 'Dark theme' : 'Light theme'}</span>
                   <span aria-hidden="true">{theme === 'light' ? '◐' : '◑'}</span>

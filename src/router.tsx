@@ -9,6 +9,7 @@ import { DashboardPage } from './views/DashboardPage'
 import { InterruptPage } from './views/InterruptPage'
 import { NotFoundPage } from './views/NotFoundPage'
 import { PricingPage } from './views/PricingPage'
+import { SettingsPage } from './views/SettingsPage'
 import { SetupGuidePage } from './views/SetupGuidePage'
 
 export const router = createBrowserRouter([
@@ -41,6 +42,10 @@ export const router = createBrowserRouter([
               {
                 path: 'app/pricing',
                 element: <PricingPage />,
+              },
+              {
+                path: 'app/settings',
+                element: <SettingsPage />,
               },
               {
                 path: 'app/setup',
