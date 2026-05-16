@@ -65,7 +65,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-soft-grid bg-[size:36px_36px] px-4 py-10 sm:px-6 lg:px-8">
+    <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between pb-4">
         <Link to="/" className="text-sm font-semibold text-slate-600 transition hover:text-reef dark:text-slate-300">
           ← Back to home

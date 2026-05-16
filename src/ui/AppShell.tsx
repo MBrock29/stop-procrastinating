@@ -21,7 +21,7 @@ export function AppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-soft-grid bg-[size:36px_36px]">
+    <div className="min-h-screen">
       <ExtensionSyncBridge />
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
         <header className="panel mb-6 overflow-hidden px-6 py-6 sm:px-8">

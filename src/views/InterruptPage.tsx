@@ -112,7 +112,7 @@ export function InterruptPage() {
   }
 
   return (
-    <div className="min-h-screen bg-soft-grid bg-[size:36px_36px] px-4 py-10 sm:px-6 lg:px-8">
+    <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
         <section className="panel px-6 py-8 sm:px-10">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">

@@ -56,7 +56,7 @@ export function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-soft-grid bg-[size:36px_36px] px-4 py-10 sm:px-6 lg:px-8">
+    <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-6xl justify-end gap-3 pb-4">
         <Link to="/login" className="ghost-button px-4 py-2 text-sm">
           Sign in
