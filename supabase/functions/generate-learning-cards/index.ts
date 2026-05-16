@@ -187,6 +187,30 @@ function parseCards(parsed: unknown) {
     }))
 }
 
+function extractJsonPayload(rawText: string) {
+  const trimmed = rawText.trim()
+
+  if (!trimmed) {
+    throw new HttpError(502, 'The model returned an empty response.')
+  }
+
+  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
+  const candidate = fencedMatch?.[1]?.trim() ?? trimmed
+
+  try {
+    return JSON.parse(candidate)
+  } catch {
+    const objectStart = candidate.indexOf('{')
+    const objectEnd = candidate.lastIndexOf('}')
+
+    if (objectStart >= 0 && objectEnd > objectStart) {
+      return JSON.parse(candidate.slice(objectStart, objectEnd + 1))
+    }
+
+    throw new HttpError(502, 'Unable to parse generated cards.')
+  }
+}
+
 async function generateWithOpenAi(
   topic: string,
   cardCount: number,
@@ -264,7 +288,7 @@ async function generateWithOpenAi(
   }
 
   try {
-    const cards = parseCards(JSON.parse(payload.output_text ?? '{}'))
+    const cards = parseCards(extractJsonPayload(payload.output_text ?? ''))
 
     if (!cards.length) {
       throw new HttpError(502, 'No valid cards were returned.')
@@ -369,7 +393,7 @@ async function generateWithOpenRouter(
     : content ?? ''
 
   try {
-    const cards = parseCards(JSON.parse(rawText))
+    const cards = parseCards(extractJsonPayload(rawText))
 
     if (!cards.length) {
       throw new HttpError(502, 'No valid cards were returned.')
