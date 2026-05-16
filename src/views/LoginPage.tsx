@@ -81,20 +81,7 @@ export function LoginPage() {
         </button>
       </div>
 
-      <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-        <section className="panel overflow-hidden px-8 py-8 sm:px-10 sm:py-9">
-          <p className="text-lg font-extrabold uppercase tracking-[0.28em] text-reef/75 sm:text-xl">
-            Stop Procrastinating
-          </p>
-          <h1 className="mt-4 max-w-2xl text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-4xl">
-            Turn drift into deliberate practice.
-          </h1>
-          <p className="muted-copy mt-5 max-w-2xl text-base leading-7 sm:text-lg">
-            This app pairs a Chrome browser extension with your own question-and-answer
-            cards so every impulse visit becomes a short, useful learning moment.
-          </p>
-        </section>
-
+      <div className="mx-auto max-w-xl">
         <section className="panel px-6 py-7 sm:px-8">
           <div className="mx-auto max-w-md">
             <div className="flex rounded-full border border-slate-200/70 bg-white/70 p-1 dark:border-white/10 dark:bg-white/5">
