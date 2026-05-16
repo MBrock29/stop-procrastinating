@@ -180,6 +180,14 @@ export function ByokPage() {
     spendAmount > 0 && spendAmount < 0.01
       ? '< £0.01'
       : `£${spendAmount.toFixed(2)}`;
+  const hasMatchingSavedKey =
+    Boolean(byokCredentialStatus) && byokCredentialStatus?.provider === byokDraft.provider;
+  const submitButtonLabel =
+    pending
+      ? 'Saving…'
+      : !byokDraft.apiKey.trim() && hasMatchingSavedKey
+        ? 'Switch to BYOK'
+        : 'Save key and switch to BYOK';
 
   return (
     <div className='space-y-6'>
@@ -339,7 +347,7 @@ export function ByokPage() {
               className='action-button'
               disabled={pending || isLoading}
             >
-              {pending ? 'Saving…' : 'Save key and switch to BYOK'}
+              {submitButtonLabel}
             </button>
             <button
               type='button'
