@@ -160,10 +160,10 @@ export function AuthPage() {
                 <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-200">
                   {plan.benefits.map((benefit) => (
                     <li key={benefit} className="flex items-start gap-3">
-                      <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-reef/12 text-xs font-bold text-reef">
+                      <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef">
                         ✓
                       </span>
-                      <span>{benefit}</span>
+                      <span className="font-semibold">{benefit}</span>
                     </li>
                   ))}
                 </ul>
