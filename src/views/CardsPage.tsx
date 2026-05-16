@@ -564,7 +564,7 @@ export function CardsPage() {
                       </button>
                       <button
                         type="button"
-                        className="rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+                        className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
                         onClick={() => void handleBulkDelete(pack.cardIds)}
                         disabled={pending}
                       >

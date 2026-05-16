@@ -195,6 +195,30 @@ function buildPrompt(topic: string, cardCount: number) {
   return `Create ${cardCount} learning cards for the topic "${topic}". Focus on practical, interview-style or production-useful knowledge. Avoid duplicates. Return only the requested JSON schema.`
 }
 
+function buildCardsSchema(cardCount: number) {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      cards: {
+        type: 'array',
+        minItems: cardCount,
+        maxItems: cardCount,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            question: { type: 'string' },
+            answer: { type: 'string' },
+          },
+          required: ['question', 'answer'],
+        },
+      },
+    },
+    required: ['cards'],
+  }
+}
+
 function parseCards(parsed: unknown) {
   if (!parsed || typeof parsed !== 'object') {
     return []
@@ -274,27 +298,7 @@ async function generateWithOpenAi(
           type: 'json_schema',
           name: 'generated_learning_cards',
           strict: true,
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            properties: {
-              cards: {
-                type: 'array',
-                minItems: 1,
-                maxItems: 500,
-                items: {
-                  type: 'object',
-                  additionalProperties: false,
-                  properties: {
-                    question: { type: 'string' },
-                    answer: { type: 'string' },
-                  },
-                  required: ['question', 'answer'],
-                },
-              },
-            },
-            required: ['cards'],
-          },
+          schema: buildCardsSchema(cardCount),
         },
       },
     }),
@@ -315,6 +319,13 @@ async function generateWithOpenAi(
 
     if (!cards.length) {
       throw new HttpError(502, 'No valid cards were returned.')
+    }
+
+    if (cards.length !== cardCount) {
+      throw new HttpError(
+        502,
+        `The model returned ${cards.length} cards instead of the requested ${cardCount}. Please try again.`,
+      )
     }
 
     return {
@@ -365,27 +376,7 @@ async function generateWithOpenRouter(
         json_schema: {
           name: 'generated_learning_cards',
           strict: true,
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            properties: {
-              cards: {
-                type: 'array',
-                minItems: 1,
-                maxItems: 500,
-                items: {
-                  type: 'object',
-                  additionalProperties: false,
-                  properties: {
-                    question: { type: 'string' },
-                    answer: { type: 'string' },
-                  },
-                  required: ['question', 'answer'],
-                },
-              },
-            },
-            required: ['cards'],
-          },
+          schema: buildCardsSchema(cardCount),
         },
       },
     }),
@@ -420,6 +411,13 @@ async function generateWithOpenRouter(
 
     if (!cards.length) {
       throw new HttpError(502, 'No valid cards were returned.')
+    }
+
+    if (cards.length !== cardCount) {
+      throw new HttpError(
+        502,
+        `The model returned ${cards.length} cards instead of the requested ${cardCount}. Please try again.`,
+      )
     }
 
     return {
@@ -679,7 +677,7 @@ Deno.serve(async (request) => {
       planTier: settings.plan_tier,
       provider: effectiveProvider,
       model: canonicalModel,
-      cardCount: requestedCardCount,
+      cardCount: generation.cards.length,
       status: 'success',
       inputTokens: generation.usage.inputTokens,
       outputTokens: generation.usage.outputTokens,
