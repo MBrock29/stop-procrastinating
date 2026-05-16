@@ -7,7 +7,7 @@ export function SetupGuidePage() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
       <section className="panel px-6 py-6 sm:px-8">
-        <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef/75">
+        <p className="text-base font-extrabold uppercase tracking-[0.28em] text-reef">
           Setup Guide
         </p>
         <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-ink">

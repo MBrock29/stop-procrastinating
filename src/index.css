@@ -152,7 +152,7 @@
   }
 
   .section-kicker {
-    @apply text-lg font-extrabold uppercase tracking-[0.28em] text-reef/75 sm:text-xl;
+    @apply text-lg font-extrabold uppercase tracking-[0.28em] text-reef sm:text-xl;
   }
 
   .page-title {

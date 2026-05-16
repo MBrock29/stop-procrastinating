@@ -77,7 +77,7 @@ export function AuthPage() {
 
       <div className="mx-auto max-w-6xl space-y-8">
         <section className="panel overflow-hidden px-8 py-9 sm:px-10 sm:py-10">
-          <p className="text-lg font-extrabold uppercase tracking-[0.28em] text-reef/75 sm:text-xl">
+          <p className="text-lg font-extrabold uppercase tracking-[0.28em] text-reef sm:text-xl">
             Stop Procrastinating
           </p>
           <div className="mt-4 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">

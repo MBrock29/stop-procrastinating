@@ -293,7 +293,7 @@ export function PricingPage() {
                   </div>
                 ) : null}
 
-                <div className="text-xs font-bold uppercase tracking-[0.28em] text-reef/75">
+                <div className="text-xs font-bold uppercase tracking-[0.28em] text-reef">
                   {plan.eyebrow}
                 </div>
                 <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white">
@@ -581,7 +581,7 @@ export function PricingPage() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <div className="text-xs font-bold uppercase tracking-[0.2em] text-reef/75">
+                      <div className="text-xs font-bold uppercase tracking-[0.2em] text-reef">
                         {event.planTier} · {event.model}
                       </div>
                       <div className="mt-1 text-base font-bold text-ink dark:text-white">{event.topic}</div>

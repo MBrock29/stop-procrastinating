@@ -115,7 +115,7 @@ export function InterruptPage() {
     <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
         <section className="panel px-6 py-8 sm:px-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef">
             Redirect interrupt
           </p>
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-ink">
@@ -182,7 +182,7 @@ export function InterruptPage() {
 
           {!isLoading && card ? (
             <div className="mt-8 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
-              <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+              <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef">
                 Learning session
               </div>
               <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
@@ -245,7 +245,7 @@ export function InterruptPage() {
 
           {!isLoading && !card && cards.length > 0 ? (
             <div className="mt-8 rounded-[2rem] border border-slate-200 bg-slate-50 p-6 text-center">
-              <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef/75">
+              <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef">
                 Session complete
               </div>
               <h2 className="mt-4 text-2xl font-bold text-ink">
