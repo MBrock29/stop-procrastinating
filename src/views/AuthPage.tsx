@@ -81,7 +81,7 @@ export function AuthPage() {
               ].map((item) => (
                 <div
                   key={item}
-                  className="soft-card flex min-h-[132px] items-center justify-center p-5 text-center text-sm muted-copy"
+                  className="soft-card flex min-h-[92px] items-center justify-center p-4 text-center text-sm muted-copy"
                 >
                   {item}
                 </div>
