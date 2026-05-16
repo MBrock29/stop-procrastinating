@@ -13,16 +13,22 @@
     -moz-osx-font-smoothing: grayscale;
     --app-text: #10203b;
     --app-muted: #5f6f8f;
-    --app-border: rgba(148, 163, 184, 0.26);
-    --app-surface: rgba(255, 255, 255, 0.82);
-    --app-surface-strong: rgba(255, 255, 255, 0.94);
-    --app-surface-muted: rgba(241, 245, 249, 0.9);
+    --app-border: rgba(148, 163, 184, 0.22);
+    --app-border-strong: rgba(51, 65, 85, 0.18);
+    --app-surface: rgba(255, 255, 255, 0.78);
+    --app-surface-strong: rgba(255, 255, 255, 0.92);
+    --app-surface-muted: rgba(242, 247, 255, 0.92);
+    --app-surface-tint: rgba(255, 247, 237, 0.9);
     --app-surface-contrast: #0f172a;
     --app-background:
-      radial-gradient(circle at 12% 18%, rgba(245, 158, 11, 0.18), transparent 28%),
-      radial-gradient(circle at 82% 0%, rgba(14, 165, 233, 0.22), transparent 30%),
-      linear-gradient(180deg, #fff8ef 0%, #eef6ff 52%, #f5f7fb 100%);
-    --app-shadow: 0 26px 70px rgba(15, 23, 42, 0.12);
+      radial-gradient(circle at 10% 14%, rgba(251, 146, 60, 0.22), transparent 24%),
+      radial-gradient(circle at 84% 6%, rgba(56, 189, 248, 0.2), transparent 28%),
+      radial-gradient(circle at 50% 72%, rgba(45, 212, 191, 0.12), transparent 26%),
+      linear-gradient(180deg, #fff7ed 0%, #f8fbff 48%, #eef7f6 100%);
+    --app-shadow: 0 28px 80px rgba(15, 23, 42, 0.1);
+    --app-accent-warm: #f97316;
+    --app-accent-cool: #0891b2;
+    --app-accent-mint: #0f766e;
     color: var(--app-text);
     background: var(--app-background);
   }
@@ -30,16 +36,22 @@
   .dark {
     --app-text: #f8fafc;
     --app-muted: #b6c0d1;
-    --app-border: rgba(255, 255, 255, 0.12);
-    --app-surface: rgba(20, 20, 20, 0.84);
-    --app-surface-strong: rgba(28, 28, 28, 0.94);
-    --app-surface-muted: rgba(38, 38, 38, 0.96);
+    --app-border: rgba(255, 255, 255, 0.11);
+    --app-border-strong: rgba(255, 255, 255, 0.18);
+    --app-surface: rgba(17, 17, 17, 0.8);
+    --app-surface-strong: rgba(24, 24, 24, 0.92);
+    --app-surface-muted: rgba(33, 33, 33, 0.94);
+    --app-surface-tint: rgba(34, 24, 20, 0.9);
     --app-surface-contrast: #f8fafc;
     --app-background:
-      radial-gradient(circle at 14% 14%, rgba(245, 158, 11, 0.12), transparent 28%),
-      radial-gradient(circle at 88% 0%, rgba(20, 184, 166, 0.12), transparent 28%),
-      linear-gradient(180deg, #000000 0%, #050505 52%, #0b0b0b 100%);
-    --app-shadow: 0 26px 90px rgba(0, 0, 0, 0.52);
+      radial-gradient(circle at 12% 12%, rgba(249, 115, 22, 0.16), transparent 24%),
+      radial-gradient(circle at 86% 5%, rgba(8, 145, 178, 0.14), transparent 26%),
+      radial-gradient(circle at 56% 74%, rgba(15, 118, 110, 0.14), transparent 24%),
+      linear-gradient(180deg, #020202 0%, #060606 46%, #0c1015 100%);
+    --app-shadow: 0 30px 90px rgba(0, 0, 0, 0.48);
+    --app-accent-warm: #fb923c;
+    --app-accent-cool: #22d3ee;
+    --app-accent-mint: #2dd4bf;
   }
 
   * {
@@ -135,6 +147,96 @@
     border: 1px solid var(--app-border);
     background: var(--app-surface-muted);
     @apply rounded-[1.75rem];
+  }
+
+  .surface-strip {
+    border: 1px solid var(--app-border);
+    background: linear-gradient(135deg, var(--app-surface-strong), var(--app-surface));
+    box-shadow: var(--app-shadow);
+    @apply rounded-[1.5rem] backdrop-blur;
+  }
+
+  .editorial-stage {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--app-border);
+    background:
+      linear-gradient(140deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.64)),
+      radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(6, 182, 212, 0.16), transparent 28%);
+    box-shadow: var(--app-shadow);
+    @apply rounded-[2.5rem] backdrop-blur;
+  }
+
+  .dark .editorial-stage {
+    background:
+      linear-gradient(140deg, rgba(19, 19, 19, 0.92), rgba(10, 12, 16, 0.88)),
+      radial-gradient(circle at top left, rgba(249, 115, 22, 0.16), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.12), transparent 26%);
+  }
+
+  .accent-label {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.24em];
+    color: var(--app-accent-cool);
+    background: color-mix(in srgb, var(--app-accent-cool) 12%, transparent);
+  }
+
+  .flow-board {
+    position: relative;
+    border: 1px solid var(--app-border);
+    background: linear-gradient(180deg, var(--app-surface-strong), var(--app-surface-muted));
+    @apply rounded-[2rem] p-5;
+  }
+
+  .flow-board::before {
+    content: '';
+    position: absolute;
+    left: 2rem;
+    top: 2.75rem;
+    bottom: 2.75rem;
+    width: 2px;
+    background: linear-gradient(180deg, var(--app-accent-warm), var(--app-accent-cool), var(--app-accent-mint));
+    opacity: 0.6;
+  }
+
+  .flow-step {
+    position: relative;
+    padding-left: 4.25rem;
+    @apply py-2;
+  }
+
+  .flow-step::before {
+    content: attr(data-step);
+    position: absolute;
+    left: 0;
+    top: 0.25rem;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: white;
+    background: linear-gradient(135deg, var(--app-accent-warm), var(--app-accent-cool));
+    box-shadow: 0 16px 30px rgba(8, 145, 178, 0.18);
+  }
+
+  .stat-ribbon {
+    border-top: 1px solid var(--app-border);
+    border-bottom: 1px solid var(--app-border);
+    background: linear-gradient(90deg, rgba(249, 115, 22, 0.08), rgba(8, 145, 178, 0.08), rgba(15, 118, 110, 0.08));
+    @apply grid gap-4 rounded-[1.5rem] px-5 py-4 md:grid-cols-3;
+  }
+
+  .stat-ribbon-item {
+    @apply flex flex-col gap-2;
+  }
+
+  .spotlight-band {
+    border: 1px solid var(--app-border-strong);
+    background: linear-gradient(135deg, var(--app-surface-tint), var(--app-surface-muted));
+    @apply rounded-[1.85rem] p-5;
   }
 
   .app-input {
