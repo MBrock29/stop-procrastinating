@@ -1,92 +1,98 @@
-import type { FormEvent } from 'react'
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains'
-import { syncExtensionRules } from '../features/extension/extensionBridge'
-import { useExtensionStatus } from '../features/extension/useExtensionStatus'
+import type { FormEvent } from 'react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains';
+import { syncExtensionRules } from '../features/extension/extensionBridge';
+import { useExtensionStatus } from '../features/extension/useExtensionStatus';
 
 export function BlockedDomainsPage() {
   const { addDomain, domains, error, isLoading, removeDomain, toggleDomain } =
-    useBlockedDomains()
-  const extensionStatus = useExtensionStatus()
-  const [formError, setFormError] = useState<string | null>(null)
-  const [pending, setPending] = useState(false)
-  const [syncMessage, setSyncMessage] = useState<string | null>(null)
+    useBlockedDomains();
+  const extensionStatus = useExtensionStatus();
+  const [formError, setFormError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
-  const activeDomains = domains.filter((item) => item.isActive).map((item) => item.domain)
+  const activeDomains = domains
+    .filter((item) => item.isActive)
+    .map((item) => item.domain);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setPending(true)
-    setFormError(null)
+    event.preventDefault();
+    setPending(true);
+    setFormError(null);
 
-    const formData = new FormData(event.currentTarget)
-    const rawDomain = String(formData.get('domain') ?? '')
+    const formData = new FormData(event.currentTarget);
+    const rawDomain = String(formData.get('domain') ?? '');
 
     try {
-      await addDomain(rawDomain)
-      event.currentTarget.reset()
+      await addDomain(rawDomain);
+      event.currentTarget.reset();
     } catch (nextError) {
       const message =
-        nextError instanceof Error ? nextError.message : 'Unable to save that domain.'
-      setFormError(message)
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to save that domain.';
+      setFormError(message);
     } finally {
-      setPending(false)
+      setPending(false);
     }
   }
 
   function handleManualSync() {
-    setSyncMessage(null)
-    syncExtensionRules(activeDomains)
+    setSyncMessage(null);
+    syncExtensionRules(activeDomains);
     window.setTimeout(() => {
       void extensionStatus.refresh().then(() => {
         setSyncMessage(
           activeDomains.length === 0
             ? 'Extension checked. No active domains are currently available to sync.'
             : 'Sync request sent. If Chrome is open with the extension installed, it should now have your latest active rules.',
-        )
-      })
-    }, 600)
+        );
+      });
+    }, 600);
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-      <section className="panel px-6 py-6 sm:px-8">
-        <p className="section-kicker">Blocked sites</p>
-        <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
+    <div className='grid gap-6 lg:grid-cols-[0.9fr_1.1fr]'>
+      <section className='panel px-6 py-6 sm:px-8'>
+        <p className='section-kicker'>Blocked sites</p>
+        <h2 className='mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl'>
           Build your blocked sites list
         </h2>
-        <p className="muted-copy mt-4 max-w-xl">
-          You can add a full URL like `https://www.reddit.com/r/reactjs` or a plain
-          hostname like `reddit.com`. We normalise each entry into a domain rule so one
-          item can cover the main site and its subdomains.
+        <p className='muted-copy mt-4 max-w-xl'>
+          You can add a full URL like `https://www.reddit.com/r/funny` or a
+          plain hostname like `reddit.com`. We normalise each entry into a
+          domain rule so one item can cover the main site and its subdomains.
         </p>
 
-        <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-          <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+        <form className='mt-8 space-y-4' onSubmit={handleSubmit}>
+          <label className='block'>
+            <span className='mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200'>
               Domain or URL
             </span>
             <input
-              name="domain"
-              type="text"
-              placeholder="https://www.reddit.com/r/reactjs"
-              className="app-input"
+              name='domain'
+              type='text'
+              placeholder='https://www.reddit.com/r/funny'
+              className='app-input'
             />
           </label>
           {formError ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className='rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900'>
               {formError}
             </div>
           ) : null}
-          <button type="submit" className="action-button" disabled={pending}>
+          <button type='submit' className='action-button' disabled={pending}>
             {pending ? 'Saving…' : 'Add blocked site'}
           </button>
         </form>
 
-        <div className="soft-card mt-8 p-5 text-sm muted-copy">
-          <h3 className="text-base font-bold text-ink dark:text-white">Normalisation examples</h3>
-          <ul className="mt-3 space-y-2">
+        <div className='soft-card mt-8 p-5 text-sm muted-copy'>
+          <h3 className='text-base font-bold text-ink dark:text-white'>
+            Normalisation examples
+          </h3>
+          <ul className='mt-3 space-y-2'>
             <li>{'`reddit.com` -> `reddit.com`'}</li>
             <li>{'`www.reddit.com` -> `reddit.com`'}</li>
             <li>
@@ -97,11 +103,13 @@ export function BlockedDomainsPage() {
           </ul>
         </div>
 
-        <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm muted-copy">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className='mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm muted-copy'>
+          <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
             <div>
-              <h3 className="text-base font-bold text-ink dark:text-white">Extension sync</h3>
-              <p className="mt-1">
+              <h3 className='text-base font-bold text-ink dark:text-white'>
+                Extension sync
+              </h3>
+              <p className='mt-1'>
                 {extensionStatus.status === 'connected'
                   ? extensionStatus.isStale
                     ? 'The extension is connected, but the last sync looks old. Send the latest rules again.'
@@ -109,23 +117,30 @@ export function BlockedDomainsPage() {
                   : 'If the extension is installed, this sends your active rules to it from the app.'}
               </p>
               {extensionStatus.details?.lastSyncedAt ? (
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
-                  Last synced {new Date(extensionStatus.details.lastSyncedAt).toLocaleString()}
+                <p className='mt-2 text-sm text-slate-500 dark:text-slate-300'>
+                  Last synced{' '}
+                  {new Date(
+                    extensionStatus.details.lastSyncedAt,
+                  ).toLocaleString()}
                 </p>
               ) : null}
             </div>
-            <button type="button" className="ghost-button" onClick={handleManualSync}>
+            <button
+              type='button'
+              className='ghost-button'
+              onClick={handleManualSync}
+            >
               Sync browser extension
             </button>
           </div>
           {syncMessage ? (
-            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+            <div className='mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900'>
               {syncMessage}
             </div>
           ) : null}
           {extensionStatus.status !== 'connected' ? (
-            <div className="mt-4 text-sm">
-              <Link to="/app/setup" className="font-semibold text-reef">
+            <div className='mt-4 text-sm'>
+              <Link to='/app/setup' className='font-semibold text-reef'>
                 Open the setup guide
               </Link>
             </div>
@@ -133,67 +148,74 @@ export function BlockedDomainsPage() {
         </div>
       </section>
 
-      <section className="panel px-6 py-6 sm:px-8">
-        <div className="flex items-start justify-between gap-4">
+      <section className='panel px-6 py-6 sm:px-8'>
+        <div className='flex items-start justify-between gap-4'>
           <div>
-            <p className="section-kicker">Active rules</p>
-            <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
-              {domains.length} domain{domains.length === 1 ? '' : 's'} configured
+            <p className='section-kicker'>Active rules</p>
+            <h3 className='mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl'>
+              {domains.length} domain{domains.length === 1 ? '' : 's'}{' '}
+              configured
             </h3>
           </div>
         </div>
 
         {error ? (
-          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className='mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900'>
             {error}
           </div>
         ) : null}
 
         {isLoading ? (
-          <div className="soft-card mt-6 px-4 py-8 text-center text-sm muted-copy">
+          <div className='soft-card mt-6 px-4 py-8 text-center text-sm muted-copy'>
             Loading your blocked domains…
           </div>
         ) : null}
 
         {!isLoading && domains.length === 0 ? (
-          <div className="soft-card mt-6 border-dashed px-5 py-8 text-sm muted-copy">
-            No blocked domains yet. Add your first habit-trigger site to start shaping
-            the redirect behavior.
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Link to="/app/cards" className="ghost-button">
+          <div className='soft-card mt-6 border-dashed px-5 py-8 text-sm muted-copy'>
+            No blocked domains yet. Add your first habit-trigger site to start
+            shaping the redirect behavior.
+            <div className='mt-4 flex flex-wrap gap-3'>
+              <Link to='/app/cards' className='ghost-button'>
                 Prepare learning cards
               </Link>
-              <Link to="/app/setup" className="ghost-button">
+              <Link to='/app/setup' className='ghost-button'>
                 Open setup guide
               </Link>
             </div>
           </div>
         ) : null}
 
-        <div className="mt-6 space-y-4">
+        <div className='mt-6 space-y-4'>
           {domains.map((domain) => (
             <article
               key={domain.id}
-              className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-5 py-5"
+              className='rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-5 py-5'
             >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                 <div>
-                  <div className="text-lg font-bold text-ink dark:text-white">{domain.domain}</div>
-                  <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                    {domain.isActive ? 'Active and ready to sync' : 'Paused for now'}
+                  <div className='text-lg font-bold text-ink dark:text-white'>
+                    {domain.domain}
+                  </div>
+                  <div className='mt-1 text-sm text-slate-500 dark:text-slate-300'>
+                    {domain.isActive
+                      ? 'Active and ready to sync'
+                      : 'Paused for now'}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className='flex flex-wrap gap-3'>
                   <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => void toggleDomain(domain.id, !domain.isActive)}
+                    type='button'
+                    className='ghost-button'
+                    onClick={() =>
+                      void toggleDomain(domain.id, !domain.isActive)
+                    }
                   >
                     {domain.isActive ? 'Pause rule' : 'Resume rule'}
                   </button>
                   <button
-                    type="button"
-                    className="rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+                    type='button'
+                    className='rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100'
                     onClick={() => void removeDomain(domain.id)}
                   >
                     Delete
@@ -205,5 +227,5 @@ export function BlockedDomainsPage() {
         </div>
       </section>
     </div>
-  )
+  );
 }
