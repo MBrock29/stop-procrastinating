@@ -190,10 +190,10 @@ export function PricingPage() {
                 <ul className="mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200">
                   {plan.benefits.map((benefit) => (
                     <li key={benefit} className="flex items-start gap-3">
-                      <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef">
+                      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef">
                         ✓
                       </span>
-                      <span className="flex-1 pt-px font-semibold">{benefit}</span>
+                      <span className="flex-1 font-semibold leading-6">{benefit}</span>
                     </li>
                   ))}
                 </ul>
