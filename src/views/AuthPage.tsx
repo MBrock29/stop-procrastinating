@@ -124,7 +124,7 @@ export function AuthPage() {
               Choose the plan that fits your pace.
             </h2>
           </div>
-          <div className='panel mt-6 overflow-hidden px-6 py-6 sm:px-8'>
+          <div className='mt-6 overflow-hidden'>
             <div className='flex justify-end'>
               <div className='soft-card inline-flex p-1'>
                 {(['monthly', 'yearly'] as BillingCadence[]).map((cadence) => (
@@ -144,7 +144,7 @@ export function AuthPage() {
                 ))}
               </div>
             </div>
-            <div className='grid gap-4 xl:grid-cols-3'>
+            <div className='mt-6 grid gap-4 xl:grid-cols-3'>
               {planCards.map((plan) => (
                 <article
                   key={plan.title}
