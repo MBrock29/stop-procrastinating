@@ -22,11 +22,11 @@ interface PlanCardDefinition {
 
 export function PricingPage() {
   const {
+    isLoading,
     settings,
     setPlanTier,
   } = useAiAccess()
   const [billingCadence, setBillingCadence] = useState<BillingCadence>('monthly')
-  const [hoveredCtaTier, setHoveredCtaTier] = useState<PlanTier | null>(null)
   const [pending, setPending] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [feedbackTone, setFeedbackTone] = useState<'success' | 'error'>('success')
@@ -146,7 +146,7 @@ export function PricingPage() {
 
         <div className="mt-8 grid gap-4 xl:grid-cols-3">
           {planCards.map((plan) => {
-            const isCurrent = settings.planTier === plan.tier
+            const isCurrent = !isLoading && settings.planTier === plan.tier
 
             return (
               <article
@@ -211,25 +211,21 @@ export function PricingPage() {
                       type="button"
                       className={[isCurrent ? 'action-button' : 'ghost-button', 'w-full'].join(' ')}
                       onClick={() => void handleSwitchToFree()}
-                      disabled={pending || isCurrent}
+                      disabled={pending || isCurrent || isLoading}
                     >
-                      {plan.ctaLabel}
+                      {isLoading ? 'Loading…' : plan.ctaLabel}
                     </button>
                   ) : plan.ctaKind === 'scroll' ? (
                     isCurrent ? (
-                      <Link
-                        to="/app/byok"
-                        className="action-button w-full"
-                        onMouseEnter={() => setHoveredCtaTier(plan.tier)}
-                        onMouseLeave={() => setHoveredCtaTier(null)}
-                        onFocus={() => setHoveredCtaTier(plan.tier)}
-                        onBlur={() => setHoveredCtaTier(null)}
-                      >
-                        {hoveredCtaTier === plan.tier ? 'Configure' : 'Current plan'}
+                      <Link to="/app/byok" className="action-button w-full">
+                        Configure BYOK
                       </Link>
                     ) : (
-                      <Link to="/app/byok" className="ghost-button w-full">
-                        {plan.ctaLabel}
+                      <Link
+                        to="/app/byok"
+                        className={['ghost-button', 'w-full', isLoading ? 'pointer-events-none opacity-70' : ''].join(' ')}
+                      >
+                        {isLoading ? 'Loading…' : plan.ctaLabel}
                       </Link>
                     )
                   ) : (
@@ -238,7 +234,7 @@ export function PricingPage() {
                       className={[isCurrent ? 'action-button' : 'ghost-button', 'w-full'].join(' ')}
                       disabled
                     >
-                      {isCurrent ? 'Current plan' : plan.ctaLabel}
+                      {isLoading ? 'Loading…' : isCurrent ? 'Current plan' : plan.ctaLabel}
                     </button>
                   )}
                 </div>
