@@ -160,29 +160,55 @@ async function callManageByokCredentials<T>(method: 'GET' | 'POST' | 'DELETE', b
     throw new Error('Supabase is not configured.')
   }
 
-  const {
-    data: { session },
-  } = await client.auth.getSession()
+  async function resolveAccessToken() {
+    const {
+      data: { session: existingSession },
+    } = await client.auth.getSession()
 
-  if (!session?.access_token) {
-    throw new Error('You must be signed in to manage your BYOK key.')
+    if (existingSession?.access_token) {
+      return existingSession.access_token
+    }
+
+    const {
+      data: { session: refreshedSession },
+      error: refreshError,
+    } = await client.auth.refreshSession()
+
+    if (refreshError || !refreshedSession?.access_token) {
+      throw new Error('You must be signed in to manage your BYOK key.')
+    }
+
+    return refreshedSession.access_token
   }
 
-  const response = await fetch(`${env.supabaseUrl}/functions/v1/manage-byok-credentials`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-      apikey: env.supabaseAnonKey!,
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  })
+  async function performRequest(accessToken: string) {
+    return fetch(`${env.supabaseUrl}/functions/v1/manage-byok-credentials`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        apikey: env.supabaseAnonKey!,
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    })
+  }
+
+  let accessToken = await resolveAccessToken()
+  let response = await performRequest(accessToken)
+
+  if (response.status === 401) {
+    accessToken = await resolveAccessToken()
+    response = await performRequest(accessToken)
+  }
 
   if (response.status === 204) {
     return null as T
   }
 
-  const payload = (await response.json()) as (ByokCredentialPayload & { error?: string }) | undefined
+  const rawPayload = await response.text()
+  const payload = rawPayload
+    ? ((JSON.parse(rawPayload) as ByokCredentialPayload & { error?: string }) ?? undefined)
+    : undefined
 
   if (!response.ok) {
     throw new Error(payload?.error ?? 'Unable to manage your BYOK key.')

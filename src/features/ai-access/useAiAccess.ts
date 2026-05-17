@@ -89,21 +89,27 @@ export function useAiAccess() {
     try {
       const browserClient = getSupabaseBrowserClient()
       const localByokCredential = browserClient ? null : readLocalByokCredentials(user.id)
-      const [nextSettings, nextEvents, nextByokCredentialStatus] = await Promise.all([
+      const [nextSettings, nextEvents] = await Promise.all([
         getAiAccessSettings(user.id),
         listAiGenerationEvents(user.id),
-        browserClient
-          ? getStoredByokCredentialStatus()
-          : Promise.resolve(
-              localByokCredential
-                ? {
-                    provider: localByokCredential.provider,
-                    lastFour: localByokCredential.apiKey.slice(-4),
-                    updatedAt: new Date().toISOString(),
-                  }
-                : null,
-            ),
       ])
+      let nextByokCredentialStatus: ByokCredentialStatus | null = null
+
+      if (browserClient) {
+        try {
+          nextByokCredentialStatus = await getStoredByokCredentialStatus()
+        } catch (credentialError) {
+          console.error('Unable to load BYOK credential status:', credentialError)
+        }
+      } else {
+        nextByokCredentialStatus = localByokCredential
+          ? {
+              provider: localByokCredential.provider,
+              lastFour: localByokCredential.apiKey.slice(-4),
+              updatedAt: new Date().toISOString(),
+            }
+          : null
+      }
 
       setSettings(nextSettings)
       setEvents(nextEvents)

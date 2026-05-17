@@ -188,6 +188,7 @@ export function ByokPage() {
       : !byokDraft.apiKey.trim() && hasMatchingSavedKey
         ? 'Switch to BYOK'
         : 'Save key and switch to BYOK';
+  const displayError = formError ?? error;
 
   return (
     <div className='space-y-6'>
@@ -236,11 +237,11 @@ export function ByokPage() {
               <div className='muted-copy mt-1'>
                 {lastFour ? `Key ending ${lastFour}` : 'No BYOK key saved yet'}
               </div>
-              <div className='muted-copy mt-1'>
-                {byokCredentialStatus
-                  ? `Provider: ${byokCredentialStatus.provider}`
-                  : 'No BYOK key stored yet'}
-              </div>
+              {byokCredentialStatus ? (
+                <div className='muted-copy mt-1'>
+                  {`Provider: ${byokCredentialStatus.provider}`}
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -323,21 +324,15 @@ export function ByokPage() {
             />
           </label>
 
-          {formError ? (
+          {displayError ? (
             <div className='mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900'>
-              {formError}
+              {displayError}
             </div>
           ) : null}
 
           {successMessage ? (
             <div className='mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900'>
               {successMessage}
-            </div>
-          ) : null}
-
-          {error ? (
-            <div className='mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900'>
-              {error}
             </div>
           ) : null}
 
