@@ -33,7 +33,10 @@ export function AuthPage() {
       title: 'Pro',
       price: billingCadence === 'monthly' ? '£1.99' : '£19.99',
       cadence: billingCadence === 'monthly' ? '/month' : '/year',
-      badge: billingCadence === 'annual' ? 'Annual discount available' : undefined,
+      badge:
+        billingCadence === 'monthly'
+          ? 'Annual discount available'
+          : 'Best value',
       benefits: [
         'Store up to 500 cards',
         'Generate up to 25 packs per month',
