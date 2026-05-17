@@ -26,6 +26,7 @@ export function PricingPage() {
     setPlanTier,
   } = useAiAccess()
   const [billingCadence, setBillingCadence] = useState<BillingCadence>('monthly')
+  const [hoveredCtaTier, setHoveredCtaTier] = useState<PlanTier | null>(null)
   const [pending, setPending] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [feedbackTone, setFeedbackTone] = useState<'success' | 'error'>('success')
@@ -216,9 +217,16 @@ export function PricingPage() {
                     </button>
                   ) : plan.ctaKind === 'scroll' ? (
                     isCurrent ? (
-                      <button type="button" className="action-button w-full" disabled>
-                        Current plan
-                      </button>
+                      <Link
+                        to="/app/byok"
+                        className="action-button w-full"
+                        onMouseEnter={() => setHoveredCtaTier(plan.tier)}
+                        onMouseLeave={() => setHoveredCtaTier(null)}
+                        onFocus={() => setHoveredCtaTier(plan.tier)}
+                        onBlur={() => setHoveredCtaTier(null)}
+                      >
+                        {hoveredCtaTier === plan.tier ? 'Configure' : 'Current plan'}
+                      </Link>
                     ) : (
                       <Link to="/app/byok" className="ghost-button w-full">
                         {plan.ctaLabel}
