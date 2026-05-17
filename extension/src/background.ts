@@ -9,7 +9,7 @@ import {
 } from '../../src/shared/extension'
 import { resolveRedirectTarget } from './redirect'
 
-const DEFAULT_APP_URL = 'http://localhost:5173'
+const DEFAULT_APP_URL = 'https://betterfocus.live'
 const ALLOW_ONCE_TTL_MS = 1000 * 60
 
 async function getStatus(): Promise<ExtensionStatusPayload> {
