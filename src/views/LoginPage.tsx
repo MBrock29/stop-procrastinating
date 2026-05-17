@@ -174,6 +174,13 @@ export function LoginPage() {
         >
           MBrock29
         </a>
+        {' · '}
+        <Link
+          to="/privacy"
+          className="font-semibold text-reef transition hover:underline"
+        >
+          Privacy policy
+        </Link>
       </footer>
     </div>
   )

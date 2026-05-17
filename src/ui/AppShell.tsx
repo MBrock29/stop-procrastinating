@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
 import { ExtensionSyncBridge } from '../features/extension/ExtensionSyncBridge';
@@ -109,6 +109,10 @@ export function AppShell() {
           >
             MBrock29
           </a>
+          {' · '}
+          <Link to='/privacy' className='font-semibold text-reef transition hover:underline'>
+            Privacy policy
+          </Link>
         </footer>
       </div>
     </div>

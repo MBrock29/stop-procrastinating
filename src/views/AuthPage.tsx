@@ -220,6 +220,13 @@ export function AuthPage() {
         >
           MBrock29
         </a>
+        {' · '}
+        <Link
+          to='/privacy'
+          className='font-semibold text-reef transition hover:underline'
+        >
+          Privacy policy
+        </Link>
       </footer>
     </div>
   );

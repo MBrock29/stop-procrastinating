@@ -11,6 +11,7 @@ import { InterruptPage } from './views/InterruptPage'
 import { LoginPage } from './views/LoginPage'
 import { NotFoundPage } from './views/NotFoundPage'
 import { PricingPage } from './views/PricingPage'
+import { PrivacyPolicyPage } from './views/PrivacyPolicyPage'
 import { SettingsPage } from './views/SettingsPage'
 import { SetupGuidePage } from './views/SetupGuidePage'
 
@@ -26,6 +27,10 @@ export const router = createBrowserRouter([
       {
         path: 'login',
         element: <LoginPage />,
+      },
+      {
+        path: 'privacy',
+        element: <PrivacyPolicyPage />,
       },
       {
         element: <ProtectedRoute />,
