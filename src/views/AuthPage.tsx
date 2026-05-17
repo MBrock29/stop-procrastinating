@@ -1,5 +1,5 @@
-import { Link, Navigate } from 'react-router-dom'
-import { useAuth } from '../features/auth/useAuth'
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../features/auth/useAuth';
 
 const flowSteps = [
   'Install the Chrome extension.',
@@ -7,7 +7,7 @@ const flowSteps = [
   'Add websites you wish to redirect.',
   'Learn from as little as one card per time.',
   'New and shaky cards surface first to prioritise learning.',
-]
+];
 
 const planCards = [
   {
@@ -44,62 +44,66 @@ const planCards = [
       'Choose your own model',
     ],
   },
-]
+];
 
 export function AuthPage() {
-  const { status } = useAuth()
+  const { status } = useAuth();
 
   if (status === 'authenticated') {
-    return <Navigate to="/app" replace />
+    return <Navigate to='/app' replace />;
   }
 
   return (
-    <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-6xl justify-end gap-3 pb-4">
-        <Link to="/login?mode=register" className="action-button px-4 py-2 text-sm">
+    <div className='min-h-screen px-4 py-10 sm:px-6 lg:px-8'>
+      <div className='mx-auto flex w-full max-w-6xl justify-end gap-3 pb-4'>
+        <Link
+          to='/login?mode=register'
+          className='action-button px-4 py-2 text-sm'
+        >
           Create account
         </Link>
-        <Link to="/login" className="ghost-button px-4 py-2 text-sm">
+        <Link to='/login' className='ghost-button px-4 py-2 text-sm'>
           Sign in
         </Link>
       </div>
 
-      <div className="mx-auto max-w-6xl space-y-8">
-        <section className="panel overflow-hidden px-8 py-9 sm:px-10 sm:py-10">
-          <p className="text-lg font-extrabold uppercase tracking-[0.28em] text-reef sm:text-xl">
-            Stop Procrastinating
+      <div className='mx-auto max-w-6xl space-y-8'>
+        <section className='panel overflow-hidden px-8 py-9 sm:px-10 sm:py-10'>
+          <p className='text-lg font-extrabold uppercase tracking-[0.28em] text-reef sm:text-xl'>
+            Better Focus
           </p>
-          <div className="mt-4">
-            <h1 className="text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-5xl">
+          <div className='mt-4'>
+            <h1 className='text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-5xl'>
               Turn drift into deliberate practice.
             </h1>
-            <p className="muted-copy mt-5 w-full text-base leading-7 sm:text-lg">
-              This app pairs a Chrome browser extension with your own question-and-answer
-              cards so every impulse visit becomes a short, useful learning moment.
+            <p className='muted-copy mt-5 w-full text-base leading-7 sm:text-lg'>
+              This app pairs a Chrome browser extension with your own
+              question-and-answer cards so every impulse visit becomes a short,
+              useful learning moment.
             </p>
           </div>
         </section>
 
         <section>
-          <div className="px-1">
-            <p className="section-kicker">How It Works</p>
-            <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
+          <div className='px-1'>
+            <p className='section-kicker'>How It Works</p>
+            <h2 className='mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl'>
               Five small steps from distraction to progress.
             </h2>
           </div>
-          <div className="mt-6 grid gap-4 lg:grid-cols-5">
+          <div className='mt-6 grid gap-4 lg:grid-cols-5'>
             {flowSteps.map((step, index) => (
-              <div key={step} className="relative">
+              <div key={step} className='relative'>
                 {index < flowSteps.length - 1 ? (
-                  <div className="absolute left-[calc(50%+1.75rem)] right-[-1rem] top-7 hidden h-px bg-gradient-to-r from-reef/40 to-sky-400/25 lg:block" />
+                  <div className='absolute left-[calc(50%+1.75rem)] right-[-1rem] top-7 hidden h-px bg-gradient-to-r from-reef/40 to-sky-400/25 lg:block' />
                 ) : null}
-                <div className="soft-card relative h-full min-h-[150px] px-5 py-5">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-reef text-sm font-bold text-white shadow-sm shadow-reef/20">
+                <div className='soft-card relative h-full min-h-[150px] px-5 py-5'>
+                  <div className='flex items-center gap-3'>
+                    <span className='inline-flex h-10 w-10 items-center justify-center rounded-full bg-reef text-sm font-bold text-white shadow-sm shadow-reef/20'>
                       {index + 1}
                     </span>
                   </div>
-                  <p className="mt-4 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-200 sm:text-base">
+                  <p className='mt-4 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-200 sm:text-base'>
                     {step}
                   </p>
                 </div>
@@ -109,13 +113,13 @@ export function AuthPage() {
         </section>
 
         <section>
-          <div className="px-1">
-            <p className="section-kicker">Pricing</p>
-            <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
+          <div className='px-1'>
+            <p className='section-kicker'>Pricing</p>
+            <h2 className='mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl'>
               Choose the plan that fits your pace.
             </h2>
           </div>
-          <div className="mt-6 grid gap-4 xl:grid-cols-3">
+          <div className='mt-6 grid gap-4 xl:grid-cols-3'>
             {planCards.map((plan) => (
               <article
                 key={plan.title}
@@ -127,16 +131,16 @@ export function AuthPage() {
                 ].join(' ')}
               >
                 {plan.badge ? (
-                  <div className="absolute right-4 top-4 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900">
+                  <div className='absolute right-4 top-4 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900'>
                     {plan.badge}
                   </div>
                 ) : null}
 
-                <div className="min-h-[7.5rem]">
-                  <h3 className="text-2xl font-extrabold tracking-tight text-ink dark:text-white">
+                <div className='min-h-[7.5rem]'>
+                  <h3 className='text-2xl font-extrabold tracking-tight text-ink dark:text-white'>
                     {plan.title}
                   </h3>
-                  <div className="mt-4 flex items-end gap-2">
+                  <div className='mt-4 flex items-end gap-2'>
                     <span
                       className={
                         plan.title === 'Bring your own key'
@@ -147,26 +151,29 @@ export function AuthPage() {
                       {plan.price}
                     </span>
                     {plan.cadence ? (
-                      <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
+                      <span className='pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300'>
                         {plan.cadence}
                       </span>
                     ) : null}
                   </div>
                 </div>
 
-                <ul className="mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200">
+                <ul className='mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200'>
                   {plan.benefits.map((benefit) => (
-                    <li key={benefit} className="flex items-start gap-3">
-                      <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef">
+                    <li key={benefit} className='flex items-start gap-3'>
+                      <span className='mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef'>
                         ✓
                       </span>
-                      <span className="font-semibold">{benefit}</span>
+                      <span className='font-semibold'>{benefit}</span>
                     </li>
                   ))}
                 </ul>
 
-                <div className="mt-auto pt-6">
-                  <Link to="/login" className="action-button min-h-[44px] w-full px-4 py-2 text-sm">
+                <div className='mt-auto pt-6'>
+                  <Link
+                    to='/login'
+                    className='action-button min-h-[44px] w-full px-4 py-2 text-sm'
+                  >
                     Get started
                   </Link>
                 </div>
@@ -176,17 +183,17 @@ export function AuthPage() {
         </section>
       </div>
 
-      <footer className="mx-auto max-w-6xl px-2 py-6 text-center text-sm text-slate-500 dark:text-slate-300">
+      <footer className='mx-auto max-w-6xl px-2 py-6 text-center text-sm text-slate-500 dark:text-slate-300'>
         Made with love by{' '}
         <a
-          href="https://x.com/MBrock29"
-          target="_blank"
-          rel="noreferrer"
-          className="font-semibold text-reef transition hover:underline"
+          href='https://x.com/MBrock29'
+          target='_blank'
+          rel='noreferrer'
+          className='font-semibold text-reef transition hover:underline'
         >
           MBrock29
         </a>
       </footer>
     </div>
-  )
+  );
 }

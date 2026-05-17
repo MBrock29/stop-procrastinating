@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Stop Procrastinating",
+  "name": "Better Focus",
   "description": "Redirect blocked sites into a short learning interrupt.",
   "version": "0.1.0",
   "action": {
-    "default_title": "Stop Procrastinating",
+    "default_title": "Better Focus",
     "default_popup": "popup.html"
   },
   "background": {

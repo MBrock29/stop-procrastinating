@@ -1,4 +1,4 @@
-# Stop Procrastinating
+# Better Focus
 
 React, TypeScript, Tailwind, Supabase, and a Chrome Manifest V3 extension working together to turn habit-site visits into a short learning interrupt.
 
