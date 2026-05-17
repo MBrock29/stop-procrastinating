@@ -1,4 +1,4 @@
-import { mkdir, copyFile } from 'node:fs/promises'
+import { mkdir, copyFile, cp } from 'node:fs/promises'
 import path from 'node:path'
 import { build } from 'esbuild'
 
@@ -41,4 +41,5 @@ await Promise.all([
   copyFile(path.join(staticDir, 'manifest.json'), path.join(outDir, 'manifest.json')),
   copyFile(path.join(staticDir, 'popup.html'), path.join(outDir, 'popup.html')),
   copyFile(path.join(staticDir, 'popup.css'), path.join(outDir, 'popup.css')),
+  cp(path.join(staticDir, 'icons'), path.join(outDir, 'icons'), { recursive: true }),
 ])
