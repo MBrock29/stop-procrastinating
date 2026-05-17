@@ -8,7 +8,6 @@ type BillingCadence = 'monthly' | 'yearly'
 interface PlanCardDefinition {
   tier: PlanTier
   title: string
-  eyebrow: string
   price: string
   cadenceLabel: string
   priceClassName?: string
@@ -39,7 +38,6 @@ export function PricingPage() {
       {
         tier: 'free',
         title: 'Free',
-        eyebrow: 'Get started',
         price: '£0',
         cadenceLabel: '/month',
         summary: 'A light plan for occasional topic packs.',
@@ -55,7 +53,6 @@ export function PricingPage() {
       {
         tier: 'pro',
         title: 'Pro',
-        eyebrow: 'For heavy learners',
         price: proPrice,
         cadenceLabel: proCadenceLabel,
         summary: 'Higher-volume generation and the stronger hosted model.',
@@ -72,7 +69,6 @@ export function PricingPage() {
       {
         tier: 'byok',
         title: 'Bring your own key',
-        eyebrow: 'Bring your own key',
         price: 'Billed by your own provider',
         cadenceLabel: '',
         priceClassName: 'self-end pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300',
@@ -159,16 +155,13 @@ export function PricingPage() {
                 ].join(' ')}
               >
                 {plan.badge ? (
-                  <div className="absolute right-4 top-4 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-900">
+                  <div className="absolute right-4 top-4 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900">
                     {plan.badge}
                   </div>
                 ) : null}
 
-                <div className="text-xs font-bold uppercase tracking-[0.28em] text-reef">
-                  {plan.eyebrow}
-                </div>
-                <div className="min-h-[9.5rem]">
-                  <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white">
+                <div className="min-h-[7.5rem]">
+                  <h3 className="text-2xl font-extrabold tracking-tight text-ink dark:text-white">
                     {plan.title}
                   </h3>
                   <div
@@ -197,19 +190,19 @@ export function PricingPage() {
                 <ul className="mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200">
                   {plan.benefits.map((benefit) => (
                     <li key={benefit} className="flex items-start gap-3">
-                      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-reef/12 text-xs font-bold text-reef">
+                      <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef">
                         ✓
                       </span>
-                      <span className="flex-1 pt-px">{benefit}</span>
+                      <span className="flex-1 pt-px font-semibold">{benefit}</span>
                     </li>
                   ))}
                 </ul>
 
-                <div className="mt-auto pt-8">
+                <div className="mt-auto pt-6">
                   {plan.ctaKind === 'free' ? (
                     <button
                       type="button"
-                      className={[isCurrent ? 'action-button' : 'ghost-button', 'w-full'].join(' ')}
+                      className={[isCurrent ? 'action-button' : 'ghost-button', 'min-h-[44px] w-full px-4 py-2 text-sm'].join(' ')}
                       onClick={() => void handleSwitchToFree()}
                       disabled={pending || isCurrent || isLoading}
                     >
@@ -217,13 +210,13 @@ export function PricingPage() {
                     </button>
                   ) : plan.ctaKind === 'scroll' ? (
                     isCurrent ? (
-                      <Link to="/app/byok" className="action-button w-full">
+                      <Link to="/app/byok" className="action-button min-h-[44px] w-full px-4 py-2 text-sm">
                         Configure BYOK
                       </Link>
                     ) : (
                       <Link
                         to="/app/byok"
-                        className={['ghost-button', 'w-full', isLoading ? 'pointer-events-none opacity-70' : ''].join(' ')}
+                        className={['ghost-button', 'min-h-[44px] w-full px-4 py-2 text-sm', isLoading ? 'pointer-events-none opacity-70' : ''].join(' ')}
                       >
                         {isLoading ? 'Loading…' : plan.ctaLabel}
                       </Link>
@@ -231,7 +224,7 @@ export function PricingPage() {
                   ) : (
                     <button
                       type="button"
-                      className={[isCurrent ? 'action-button' : 'ghost-button', 'w-full'].join(' ')}
+                      className={[isCurrent ? 'action-button' : 'ghost-button', 'min-h-[44px] w-full px-4 py-2 text-sm'].join(' ')}
                       disabled
                     >
                       {isLoading ? 'Loading…' : isCurrent ? 'Current plan' : plan.ctaLabel}
