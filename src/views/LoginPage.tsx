@@ -165,7 +165,7 @@ export function LoginPage() {
       </div>
 
       <footer className="mx-auto max-w-xl px-2 py-6 text-center text-sm text-slate-500 dark:text-slate-300">
-        Made with love by{' '}
+        Made with ❤️ by{' '}
         <a
           href="https://x.com/MBrock29"
           target="_blank"

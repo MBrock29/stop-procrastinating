@@ -59,16 +59,13 @@ export function DashboardPage() {
         <p className="section-kicker">
           Dashboard
         </p>
-        <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white sm:text-3xl">
-          Keep today’s learning loop simple.
-        </h2>
-        <p className="muted-copy mt-3 max-w-2xl text-sm leading-6 sm:text-base">
+        <p className="muted-copy mt-4 max-w-2xl text-sm leading-6 sm:text-base">
           Jump into a review session, tune your library, or check whether your browser
           extension is still in sync.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link to="/interrupt?source=dashboard" className="action-button">
-            Start learning session
+          <Link to="/app" className="action-button">
+            Overview
           </Link>
           <Link to="/app/cards" className="ghost-button">
             Manage learning cards

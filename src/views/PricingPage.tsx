@@ -12,6 +12,7 @@ interface PlanCardDefinition {
   price: string
   cadenceLabel: string
   priceClassName?: string
+  priceRowClassName?: string
   summary: string
   benefits: string[]
   ctaLabel: string
@@ -73,7 +74,8 @@ export function PricingPage() {
         eyebrow: 'Bring your own key',
         price: 'Billed by your own provider',
         cadenceLabel: '',
-        priceClassName: 'text-sm font-semibold text-slate-500 dark:text-slate-300',
+        priceClassName: 'self-end pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300',
+        priceRowClassName: 'min-h-[3.5rem] items-end',
         summary: 'Keep generation costs on your own provider account.',
         benefits: [
           'Store up to 500 cards',
@@ -168,7 +170,12 @@ export function PricingPage() {
                   <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-ink dark:text-white">
                     {plan.title}
                   </h3>
-                  <div className="mt-4 flex items-end gap-2">
+                  <div
+                    className={[
+                      'mt-4 flex min-h-[3.5rem] gap-2',
+                      plan.priceRowClassName ?? 'items-end',
+                    ].join(' ')}
+                  >
                     <span
                       className={[
                         'font-extrabold tracking-tight text-ink dark:text-white',
@@ -189,10 +196,10 @@ export function PricingPage() {
                 <ul className="mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200">
                   {plan.benefits.map((benefit) => (
                     <li key={benefit} className="flex items-start gap-3">
-                      <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-reef/12 text-xs font-bold text-reef">
+                      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-reef/12 text-xs font-bold text-reef">
                         ✓
                       </span>
-                      <span>{benefit}</span>
+                      <span className="flex-1 pt-px">{benefit}</span>
                     </li>
                   ))}
                 </ul>
@@ -201,18 +208,28 @@ export function PricingPage() {
                   {plan.ctaKind === 'free' ? (
                     <button
                       type="button"
-                      className="action-button w-full"
+                      className={[isCurrent ? 'action-button' : 'ghost-button', 'w-full'].join(' ')}
                       onClick={() => void handleSwitchToFree()}
                       disabled={pending || isCurrent}
                     >
                       {plan.ctaLabel}
                     </button>
                   ) : plan.ctaKind === 'scroll' ? (
-                    <Link to="/app/byok" className="ghost-button w-full">
-                      {plan.ctaLabel}
-                    </Link>
+                    isCurrent ? (
+                      <button type="button" className="action-button w-full" disabled>
+                        Current plan
+                      </button>
+                    ) : (
+                      <Link to="/app/byok" className="ghost-button w-full">
+                        {plan.ctaLabel}
+                      </Link>
+                    )
                   ) : (
-                    <button type="button" className="ghost-button w-full" disabled>
+                    <button
+                      type="button"
+                      className={[isCurrent ? 'action-button' : 'ghost-button', 'w-full'].join(' ')}
+                      disabled
+                    >
                       {isCurrent ? 'Current plan' : plan.ctaLabel}
                     </button>
                   )}

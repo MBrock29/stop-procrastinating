@@ -140,11 +140,11 @@ export function AuthPage() {
                   <h3 className='text-2xl font-extrabold tracking-tight text-ink dark:text-white'>
                     {plan.title}
                   </h3>
-                  <div className='mt-4 flex items-end gap-2'>
+                  <div className='mt-4 flex min-h-[3.5rem] items-end gap-2'>
                     <span
                       className={
                         plan.title === 'Bring your own key'
-                          ? 'text-sm font-semibold text-slate-500 dark:text-slate-300'
+                          ? 'self-end pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300'
                           : 'text-4xl font-extrabold tracking-tight text-ink dark:text-white'
                       }
                     >
@@ -161,10 +161,10 @@ export function AuthPage() {
                 <ul className='mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200'>
                   {plan.benefits.map((benefit) => (
                     <li key={benefit} className='flex items-start gap-3'>
-                      <span className='mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef'>
+                      <span className='mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef'>
                         ✓
                       </span>
-                      <span className='font-semibold'>{benefit}</span>
+                      <span className='flex-1 pt-px font-semibold'>{benefit}</span>
                     </li>
                   ))}
                 </ul>
@@ -184,7 +184,7 @@ export function AuthPage() {
       </div>
 
       <footer className='mx-auto max-w-6xl px-2 py-6 text-center text-sm text-slate-500 dark:text-slate-300'>
-        Made with love by{' '}
+        Made with ❤️ by{' '}
         <a
           href='https://x.com/MBrock29'
           target='_blank'
