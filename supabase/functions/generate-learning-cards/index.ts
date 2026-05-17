@@ -44,7 +44,7 @@ const platformProvider = (Deno.env.get('AI_GENERATION_PROVIDER') ??
   'openai') as AiProvider;
 const platformOpenAiApiKey = Deno.env.get('OPENAI_API_KEY');
 const platformOpenRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
-const appBaseUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
+const appBaseUrl = Deno.env.get('APP_URL') ?? 'https://betterfocus.live';
 const byokEncryptionKey = Deno.env.get('BYOK_ENCRYPTION_KEY');
 
 const FREE_MONTHLY_PACK_LIMIT = 3;

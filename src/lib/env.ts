@@ -1,5 +1,5 @@
 const browserOrigin =
-  typeof window === 'undefined' ? 'http://localhost:5173' : window.location.origin
+  typeof window === 'undefined' ? 'https://betterfocus.live' : window.location.origin
 
 const appUrl = import.meta.env.VITE_APP_URL ?? browserOrigin
 
