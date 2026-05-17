@@ -12,7 +12,6 @@ interface PlanCardDefinition {
   cadenceLabel: string;
   priceClassName?: string;
   priceRowClassName?: string;
-  summary: string;
   benefits: string[];
   ctaLabel: string;
   ctaKind: 'free' | 'coming-soon' | 'scroll';
@@ -39,7 +38,6 @@ export function PricingPage() {
         title: 'Free',
         price: '£0',
         cadenceLabel: '/month',
-        summary: 'A light plan for occasional topic packs.',
         benefits: [
           'Store up to 100 cards',
           'Generate up to 3 packs per month',
@@ -55,7 +53,6 @@ export function PricingPage() {
         title: 'Pro',
         price: proPrice,
         cadenceLabel: proCadenceLabel,
-        summary: 'Higher-volume generation and the stronger hosted model.',
         benefits: [
           'Store up to 500 cards',
           'Generate up to 25 packs per month',
@@ -74,7 +71,6 @@ export function PricingPage() {
         priceClassName:
           'self-end pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300',
         priceRowClassName: 'min-h-[3.5rem] items-end',
-        summary: 'Keep generation costs on your own provider account.',
         benefits: [
           'Store up to 500 cards',
           'Generate unlimited packs per month',
@@ -154,7 +150,7 @@ export function PricingPage() {
                 className={[
                   'relative flex h-full flex-col overflow-hidden rounded-[2rem] border p-6',
                   plan.tier === 'pro'
-                    ? 'border-amber-300/50 bg-gradient-to-br from-amber-50 via-white to-cyan-50 dark:from-amber-950/30 dark:via-slate-950 dark:to-cyan-950/20'
+                    ? 'border-amber-300/70 bg-gradient-to-br from-amber-100 via-white to-cyan-100 shadow-lg shadow-amber-100/70 dark:from-amber-900/45 dark:via-slate-950 dark:to-cyan-900/30 dark:shadow-black/30'
                     : 'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
                 ].join(' ')}
               >
@@ -188,9 +184,6 @@ export function PricingPage() {
                       </span>
                     ) : null}
                   </div>
-                  <p className='muted-copy mt-4 text-sm leading-6'>
-                    {plan.summary}
-                  </p>
                 </div>
 
                 <ul className='mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200'>
