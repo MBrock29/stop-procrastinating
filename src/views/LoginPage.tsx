@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth'
+import { SiteFooter } from '../ui/SiteFooter'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -164,24 +165,7 @@ export function LoginPage() {
         </section>
       </div>
 
-      <footer className="mx-auto max-w-xl px-2 py-6 text-center text-sm text-slate-500 dark:text-slate-300">
-        Made with ❤️ by{' '}
-        <a
-          href="https://x.com/MBrock29"
-          target="_blank"
-          rel="noreferrer"
-          className="font-semibold text-reef transition hover:underline"
-        >
-          MBrock29
-        </a>
-        {' · '}
-        <Link
-          to="/privacy"
-          className="font-semibold text-reef transition hover:underline"
-        >
-          Privacy policy
-        </Link>
-      </footer>
+      <SiteFooter className="mx-auto max-w-xl" />
     </div>
   )
 }
