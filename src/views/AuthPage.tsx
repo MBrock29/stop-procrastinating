@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
 
-type BillingCadence = 'monthly' | 'yearly';
+type BillingCadence = 'monthly' | 'annual';
 
 const flowSteps = [
   'Install the Chrome extension.',
@@ -33,7 +33,7 @@ export function AuthPage() {
       title: 'Pro',
       price: billingCadence === 'monthly' ? '£1.99' : '£19.99',
       cadence: billingCadence === 'monthly' ? '/month' : '/year',
-      badge: billingCadence === 'yearly' ? 'Best value' : undefined,
+      badge: billingCadence === 'annual' ? 'Best value' : undefined,
       benefits: [
         'Store up to 500 cards',
         'Generate up to 25 packs per month',
@@ -127,7 +127,7 @@ export function AuthPage() {
           <div className='mt-6 overflow-hidden'>
             <div className='flex justify-end'>
               <div className='soft-card inline-flex p-1'>
-                {(['monthly', 'yearly'] as BillingCadence[]).map((cadence) => (
+                {(['monthly', 'annual'] as BillingCadence[]).map((cadence) => (
                   <button
                     key={cadence}
                     type='button'
@@ -139,7 +139,7 @@ export function AuthPage() {
                         : 'text-[var(--app-text)] hover:bg-[var(--app-surface-strong)]',
                     ].join(' ')}
                   >
-                    {cadence === 'monthly' ? 'Monthly' : 'Yearly'}
+                    {cadence === 'monthly' ? 'Monthly' : 'Annual'}
                   </button>
                 ))}
               </div>

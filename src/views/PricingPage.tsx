@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAiAccess } from '../features/ai-access/useAiAccess';
 import type { PlanTier } from '../types/domain';
 
-type BillingCadence = 'monthly' | 'yearly';
+type BillingCadence = 'monthly' | 'annual';
 
 interface PlanCardDefinition {
   tier: PlanTier;
@@ -61,7 +61,7 @@ export function PricingPage() {
         ],
         ctaLabel: 'Billing coming soon',
         ctaKind: 'coming-soon',
-        badge: billingCadence === 'yearly' ? 'Best value' : undefined,
+        badge: billingCadence === 'annual' ? 'Best value' : undefined,
       },
       {
         tier: 'byok',
@@ -106,10 +106,10 @@ export function PricingPage() {
 
   return (
     <div className='space-y-6'>
-      <section className='panel overflow-hidden px-6 py-6 sm:px-8'>
+      <section className='overflow-hidden'>
         <div className='flex justify-end'>
           <div className='soft-card inline-flex p-1'>
-            {(['monthly', 'yearly'] as BillingCadence[]).map((cadence) => (
+            {(['monthly', 'annual'] as BillingCadence[]).map((cadence) => (
               <button
                 key={cadence}
                 type='button'
@@ -121,7 +121,7 @@ export function PricingPage() {
                     : 'text-[var(--app-text)] hover:bg-[var(--app-surface-strong)]',
                 ].join(' ')}
               >
-                {cadence === 'monthly' ? 'Monthly' : 'Yearly'}
+                {cadence === 'monthly' ? 'Monthly' : 'Annual'}
               </button>
             ))}
           </div>
