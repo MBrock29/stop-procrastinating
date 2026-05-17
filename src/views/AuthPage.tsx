@@ -119,66 +119,68 @@ export function AuthPage() {
               Choose the plan that fits your pace.
             </h2>
           </div>
-          <div className='mt-6 grid gap-4 xl:grid-cols-3'>
-            {planCards.map((plan) => (
-              <article
-                key={plan.title}
-                className={[
-                  'relative flex h-full flex-col overflow-hidden rounded-[2rem] border p-6',
-                  plan.title === 'Pro'
-                    ? 'border-amber-300/50 bg-gradient-to-br from-amber-50 via-white to-cyan-50 dark:from-amber-950/30 dark:via-slate-950 dark:to-cyan-950/20'
-                    : 'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
-                ].join(' ')}
-              >
-                {plan.badge ? (
-                  <div className='absolute right-4 top-4 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900'>
-                    {plan.badge}
-                  </div>
-                ) : null}
+          <div className='panel mt-6 overflow-hidden px-6 py-6 sm:px-8'>
+            <div className='grid gap-4 xl:grid-cols-3'>
+              {planCards.map((plan) => (
+                <article
+                  key={plan.title}
+                  className={[
+                    'relative flex h-full flex-col overflow-hidden rounded-[2rem] border p-6',
+                    plan.title === 'Pro'
+                      ? 'border-amber-300/50 bg-gradient-to-br from-amber-50 via-white to-cyan-50 dark:from-amber-950/30 dark:via-slate-950 dark:to-cyan-950/20'
+                      : 'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
+                  ].join(' ')}
+                >
+                  {plan.badge ? (
+                    <div className='absolute right-4 top-4 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900'>
+                      {plan.badge}
+                    </div>
+                  ) : null}
 
-                <div className='min-h-[7.5rem]'>
-                  <h3 className='text-2xl font-extrabold tracking-tight text-ink dark:text-white'>
-                    {plan.title}
-                  </h3>
-                  <div className='mt-4 flex min-h-[3.5rem] items-end gap-2'>
-                    <span
-                      className={
-                        plan.title === 'Bring your own key'
-                          ? 'self-end pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300'
-                          : 'text-4xl font-extrabold tracking-tight text-ink dark:text-white'
-                      }
+                  <div className='min-h-[7.5rem]'>
+                    <h3 className='text-2xl font-extrabold tracking-tight text-ink dark:text-white'>
+                      {plan.title}
+                    </h3>
+                    <div className='mt-4 flex min-h-[3.5rem] items-end gap-2'>
+                      <span
+                        className={
+                          plan.title === 'Bring your own key'
+                            ? 'self-end pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300'
+                            : 'text-4xl font-extrabold tracking-tight text-ink dark:text-white'
+                        }
+                      >
+                        {plan.price}
+                      </span>
+                      {plan.cadence ? (
+                        <span className='pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300'>
+                          {plan.cadence}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <ul className='mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200'>
+                    {plan.benefits.map((benefit) => (
+                      <li key={benefit} className='flex items-start gap-3'>
+                        <span className='inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef'>
+                          ✓
+                        </span>
+                        <span className='flex-1 font-semibold leading-6'>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className='mt-auto pt-6'>
+                    <Link
+                      to='/login'
+                      className='action-button min-h-[44px] w-full px-4 py-2 text-sm'
                     >
-                      {plan.price}
-                    </span>
-                    {plan.cadence ? (
-                      <span className='pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300'>
-                        {plan.cadence}
-                      </span>
-                    ) : null}
+                      Get started
+                    </Link>
                   </div>
-                </div>
-
-                <ul className='mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200'>
-                  {plan.benefits.map((benefit) => (
-                    <li key={benefit} className='flex items-start gap-3'>
-                      <span className='inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef'>
-                        ✓
-                      </span>
-                      <span className='flex-1 font-semibold leading-6'>{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className='mt-auto pt-6'>
-                  <Link
-                    to='/login'
-                    className='action-button min-h-[44px] w-full px-4 py-2 text-sm'
-                  >
-                    Get started
-                  </Link>
-                </div>
-              </article>
-            ))}
+                </article>
+              ))}
+            </div>
           </div>
         </section>
       </div>
