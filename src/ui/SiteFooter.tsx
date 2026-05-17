@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
 
 interface SiteFooterProps {
-  className?: string
+  className?: string;
 }
 
 export function SiteFooter({ className = '' }: SiteFooterProps) {
@@ -12,34 +12,34 @@ export function SiteFooter({ className = '' }: SiteFooterProps) {
         className,
       ].join(' ')}
     >
-      <div className="grid gap-3 text-center sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-        <div className="hidden sm:block" />
+      <div className='grid gap-3 text-center sm:grid-cols-[1fr_auto_1fr] sm:items-center'>
+        <div className='hidden sm:block' />
         <div>
           Made with ❤️ by{' '}
           <a
-            href="https://x.com/MBrock29"
-            target="_blank"
-            rel="noreferrer"
-            className="font-semibold text-reef transition hover:underline"
+            href='https://x.com/MBrock29'
+            target='_blank'
+            rel='noreferrer'
+            className='font-semibold text-reef transition hover:underline'
           >
             MBrock29
           </a>
         </div>
-        <div className="flex items-center justify-center gap-4 sm:justify-self-end">
+        <div className='flex items-center justify-center gap-4 sm:justify-self-end'>
           <Link
-            to="/privacy"
-            className="font-semibold text-reef transition hover:underline"
+            to='/privacy'
+            className='font-semibold text-reef transition hover:underline'
           >
             Privacy policy
           </Link>
-          <Link
+          {/* <Link
             to="/contact"
             className="font-semibold text-reef transition hover:underline"
           >
             Contact
-          </Link>
+          </Link> */}
         </div>
       </div>
     </footer>
-  )
+  );
 }
