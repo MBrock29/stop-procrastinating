@@ -61,7 +61,7 @@ export function PricingPage() {
         ],
         ctaLabel: 'Billing coming soon',
         ctaKind: 'coming-soon',
-        badge: billingCadence === 'annual' ? 'Best value' : undefined,
+        badge: billingCadence === 'annual' ? 'Annual discount available' : undefined,
       },
       {
         tier: 'byok',
