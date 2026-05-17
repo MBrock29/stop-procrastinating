@@ -110,7 +110,7 @@ export function PricingPage() {
 
   return (
     <div className="space-y-6">
-      <section className="panel overflow-hidden px-6 py-6 sm:px-8">
+      <section className="overflow-hidden px-1 py-1">
         <div className="flex justify-end">
           <div className="soft-card inline-flex p-1">
             {(['monthly', 'yearly'] as BillingCadence[]).map((cadence) => (
