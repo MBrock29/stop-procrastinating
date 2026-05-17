@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
+
+type BillingCadence = 'monthly' | 'yearly';
 
 const flowSteps = [
   'Install the Chrome extension.',
@@ -9,45 +12,47 @@ const flowSteps = [
   'New and shaky cards surface first to prioritise learning.',
 ];
 
-const planCards = [
-  {
-    title: 'Free',
-    price: '£0',
-    cadence: '/month',
-    benefits: [
-      'Store up to 100 cards',
-      'Generate up to 3 packs per month',
-      'Generate up to 10 cards per pack',
-      'Access to our basic model',
-    ],
-  },
-  {
-    title: 'Pro',
-    price: '£1.99',
-    cadence: '/month',
-    badge: 'Annual discount available',
-    benefits: [
-      'Store up to 500 cards',
-      'Generate up to 25 packs per month',
-      'Generate up to 100 cards per pack',
-      'Access to our strongest model',
-    ],
-  },
-  {
-    title: 'Bring your own key',
-    price: 'Billed by your own provider',
-    cadence: '',
-    benefits: [
-      'Store up to 500 cards',
-      'Generate unlimited packs per month',
-      'Generate up to 100 cards per pack',
-      'Choose your own model',
-    ],
-  },
-];
-
 export function AuthPage() {
   const { status } = useAuth();
+  const [billingCadence, setBillingCadence] =
+    useState<BillingCadence>('monthly');
+
+  const planCards = [
+    {
+      title: 'Free',
+      price: '£0',
+      cadence: '/month',
+      benefits: [
+        'Store up to 100 cards',
+        'Generate up to 3 packs per month',
+        'Generate up to 10 cards per pack',
+        'Access to our basic model',
+      ],
+    },
+    {
+      title: 'Pro',
+      price: billingCadence === 'monthly' ? '£1.99' : '£19.99',
+      cadence: billingCadence === 'monthly' ? '/month' : '/year',
+      badge: billingCadence === 'yearly' ? 'Best value' : undefined,
+      benefits: [
+        'Store up to 500 cards',
+        'Generate up to 25 packs per month',
+        'Generate up to 100 cards per pack',
+        'Access to our strongest model',
+      ],
+    },
+    {
+      title: 'Bring your own key',
+      price: 'Billed by your own provider',
+      cadence: '',
+      benefits: [
+        'Store up to 500 cards',
+        'Generate unlimited packs per month',
+        'Generate up to 100 cards per pack',
+        'Choose your own model',
+      ],
+    },
+  ];
 
   if (status === 'authenticated') {
     return <Navigate to='/app' replace />;
@@ -120,6 +125,25 @@ export function AuthPage() {
             </h2>
           </div>
           <div className='panel mt-6 overflow-hidden px-6 py-6 sm:px-8'>
+            <div className='flex justify-end'>
+              <div className='soft-card inline-flex p-1'>
+                {(['monthly', 'yearly'] as BillingCadence[]).map((cadence) => (
+                  <button
+                    key={cadence}
+                    type='button'
+                    onClick={() => setBillingCadence(cadence)}
+                    className={[
+                      'rounded-full px-4 py-2 text-sm font-semibold transition',
+                      billingCadence === cadence
+                        ? 'bg-reef text-white shadow-lg shadow-reef/20'
+                        : 'text-[var(--app-text)] hover:bg-[var(--app-surface-strong)]',
+                    ].join(' ')}
+                  >
+                    {cadence === 'monthly' ? 'Monthly' : 'Yearly'}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className='grid gap-4 xl:grid-cols-3'>
               {planCards.map((plan) => (
                 <article
