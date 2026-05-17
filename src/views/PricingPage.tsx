@@ -149,9 +149,7 @@ export function PricingPage() {
                 key={plan.tier}
                 className={[
                   'relative flex h-full flex-col overflow-hidden rounded-[2rem] border p-6',
-                  plan.tier === 'pro'
-                    ? 'border-amber-300/70 bg-gradient-to-br from-amber-100 via-white to-cyan-100 shadow-lg shadow-amber-100/70 dark:from-amber-900/45 dark:via-slate-950 dark:to-cyan-900/30 dark:shadow-black/30'
-                    : 'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
+                  'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
                 ].join(' ')}
               >
                 {plan.badge ? (

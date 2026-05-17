@@ -126,9 +126,7 @@ export function AuthPage() {
                   key={plan.title}
                   className={[
                     'relative flex h-full flex-col overflow-hidden rounded-[2rem] border p-6',
-                    plan.title === 'Pro'
-                      ? 'border-amber-300/50 bg-gradient-to-br from-amber-50 via-white to-cyan-50 dark:from-amber-950/30 dark:via-slate-950 dark:to-cyan-950/20'
-                      : 'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
+                    'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
                   ].join(' ')}
                 >
                   {plan.badge ? (
