@@ -618,8 +618,8 @@ export function CardsPage() {
 
         {!isLoading && cards.length === 0 ? (
           <div className="soft-card mt-6 border-dashed px-5 py-8 text-sm muted-copy">
-            No cards yet. Add your first card or generate a topic-based batch so your
-            next learning session has something useful to show.
+            No cards yet. Generate a topic-based batch so your next learning
+            session has something useful to show.
           </div>
         ) : null}
 

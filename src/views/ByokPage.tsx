@@ -222,8 +222,8 @@ export function ByokPage() {
               </h3>
               <p className='muted-copy mt-2 max-w-2xl text-sm leading-6'>
                 Your key is stored against your account in encrypted form. When
-                BYOK is active, generation requests use that key so the cost
-                lands on your provider account instead of the platform.
+                BYOK is active, generation requests use that key so the cost is
+                billed to your provider account instead of the platform.
               </p>
               <p className='muted-copy mt-2 max-w-2xl text-sm leading-6'>
                 Once saved, the same BYOK setup can work across your devices
@@ -363,7 +363,7 @@ export function ByokPage() {
             Track monthly generation at a glance
           </h3>
           <p className='muted-copy mt-6 text-sm leading-6'>
-            See the costs of your plan BYOK plan below.
+            See your monthly generation and estimated spend below.
           </p>
 
           <div className='mt-10 grid gap-4 sm:grid-cols-2'>

@@ -30,7 +30,7 @@ export function DashboardPage() {
       done: hasAnyCards,
       description: hasAnyCards
         ? `${cards.length} card${cards.length === 1 ? '' : 's'} ready to review.`
-        : 'Create manual cards or generate your first AI pack.',
+        : 'Generate your first AI pack to start building your library.',
       actionHref: '/app/cards',
       actionLabel: hasAnyCards ? 'Open cards' : 'Add cards',
     },
