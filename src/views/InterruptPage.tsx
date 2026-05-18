@@ -165,8 +165,7 @@ export function InterruptPage() {
           <p className="mt-4 text-base leading-7 text-slate-600">
             {site ? (
               <>
-                The extension tried to open <span className="font-semibold text-ink">{site}</span>.
-                {' '}You were redirected from <span className="font-semibold text-ink">{source}</span>.
+                You were redirected from <span className="font-semibold text-ink">{site}</span>.
               </>
             ) : (
               <>
