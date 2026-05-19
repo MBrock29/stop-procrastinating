@@ -178,7 +178,7 @@ export function InterruptPage() {
             <Link to="/app" className="ghost-button">
               Return to dashboard
             </Link>
-            {safeReturnUrl ? (
+            {safeReturnUrl && settings.showContinueToSiteButton ? (
               <button
                 type="button"
                 onClick={continueToOriginalSite}
@@ -310,7 +310,7 @@ export function InterruptPage() {
                 <Link to="/app" className="action-button">
                   Return to dashboard
                 </Link>
-                {safeReturnUrl ? (
+                {safeReturnUrl && settings.showContinueToSiteButton ? (
                   <button
                     type="button"
                     onClick={continueToOriginalSite}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { useAuth } from '../features/auth/useAuth'
@@ -9,7 +9,13 @@ import { useExtensionStatus } from '../features/extension/useExtensionStatus'
 export function SettingsPage() {
   const navigate = useNavigate()
   const { mode, session, signOut, user } = useAuth()
-  const { byokCredentialStatus, clearByokCredentials, settings } = useAiAccess()
+  const {
+    byokCredentialStatus,
+    clearByokCredentials,
+    settings,
+    updateSettings,
+    isLoading,
+  } = useAiAccess()
   const { domains } = useBlockedDomains()
   const { cards } = useLearningCards()
   const extensionStatus = useExtensionStatus()
@@ -51,6 +57,31 @@ export function SettingsPage() {
     } catch (nextError) {
       const nextMessage =
         nextError instanceof Error ? nextError.message : 'Unable to sign out right now.'
+      setError(nextMessage)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function handleContinueButtonToggle(event: ChangeEvent<HTMLInputElement>) {
+    const nextChecked = event.target.checked
+
+    setPending(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      await updateSettings({ showContinueToSiteButton: nextChecked })
+      setMessage(
+        nextChecked
+          ? 'Continue to site will now appear on redirect sessions.'
+          : 'Continue to site is now hidden on redirect sessions.',
+      )
+    } catch (nextError) {
+      const nextMessage =
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to update your redirect setting.'
       setError(nextMessage)
     } finally {
       setPending(false)
@@ -166,6 +197,34 @@ export function SettingsPage() {
                 Last synced {new Date(extensionStatus.details.lastSyncedAt).toLocaleString()}
               </div>
             ) : null}
+          </div>
+
+          <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm">
+            <div className="font-semibold text-ink dark:text-white">
+              Redirect actions
+            </div>
+            <p className="muted-copy mt-2 leading-6">
+              Choose whether redirect sessions should show a quick way back to the
+              blocked site.
+            </p>
+            <label className="mt-4 flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={settings.showContinueToSiteButton}
+                onChange={(event) => void handleContinueButtonToggle(event)}
+                disabled={pending || isLoading}
+                className="mt-1 h-4 w-4 rounded border-[var(--app-border)] text-reef focus:ring-reef disabled:cursor-not-allowed"
+              />
+              <span>
+                <span className="block font-semibold text-ink dark:text-white">
+                  Show “Continue to site”
+                </span>
+                <span className="muted-copy mt-1 block leading-6">
+                  If turned off, redirect sessions will keep users inside Better Focus
+                  without showing the shortcut back to the original site.
+                </span>
+              </span>
+            </label>
           </div>
         </div>
 

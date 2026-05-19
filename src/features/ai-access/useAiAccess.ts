@@ -37,6 +37,7 @@ const fallbackSettings: AiAccessSettings = {
   planTier: 'free',
   byokProvider: 'openrouter',
   preferredModel: 'gpt-4.1-mini',
+  showContinueToSiteButton: true,
   redirectBackMode: 'manual',
   redirectBackCardCount: 1,
   createdAt: '',
@@ -148,6 +149,7 @@ export function useAiAccess() {
         planTier,
         byokProvider: settings.byokProvider,
         preferredModel: settings.preferredModel,
+        showContinueToSiteButton: settings.showContinueToSiteButton,
         redirectBackMode: settings.redirectBackMode,
         redirectBackCardCount: settings.redirectBackCardCount,
       })
@@ -159,6 +161,7 @@ export function useAiAccess() {
         planTier: PlanTier
         byokProvider: AiAccessSettings['byokProvider']
         preferredModel: SupportedAiModel
+        showContinueToSiteButton: boolean
         redirectBackMode: AiAccessSettings['redirectBackMode']
         redirectBackCardCount: number
       }>,
@@ -171,6 +174,8 @@ export function useAiAccess() {
         planTier: input.planTier ?? settings.planTier,
         byokProvider: input.byokProvider ?? settings.byokProvider,
         preferredModel: input.preferredModel ?? settings.preferredModel,
+        showContinueToSiteButton:
+          input.showContinueToSiteButton ?? settings.showContinueToSiteButton,
         redirectBackMode: input.redirectBackMode ?? settings.redirectBackMode,
         redirectBackCardCount:
           input.redirectBackCardCount ?? settings.redirectBackCardCount,

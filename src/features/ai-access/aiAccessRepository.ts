@@ -14,6 +14,7 @@ interface AiSettingsRow {
   plan_tier: PlanTier
   byok_provider: 'openai' | 'openrouter'
   preferred_model: SupportedAiModel
+  show_continue_to_site_button: boolean
   redirect_back_mode: RedirectBackMode
   redirect_back_card_count: number
   created_at: string
@@ -80,6 +81,7 @@ function readDemoSettings(userId: string): AiAccessSettings {
       planTier: 'free',
       byokProvider: 'openrouter',
       preferredModel: 'gpt-4.1-mini',
+      showContinueToSiteButton: true,
       redirectBackMode: 'manual',
       redirectBackCardCount: 1,
       createdAt: new Date().toISOString(),
@@ -95,6 +97,7 @@ function readDemoSettings(userId: string): AiAccessSettings {
       planTier: 'free',
       byokProvider: 'openrouter',
       preferredModel: 'gpt-4.1-mini',
+      showContinueToSiteButton: true,
       redirectBackMode: 'manual',
       redirectBackCardCount: 1,
       createdAt: new Date().toISOString(),
@@ -127,6 +130,7 @@ function mapSettingsRow(row: AiSettingsRow): AiAccessSettings {
     planTier: row.plan_tier,
     byokProvider: row.byok_provider,
     preferredModel: row.preferred_model,
+    showContinueToSiteButton: row.show_continue_to_site_button ?? true,
     redirectBackMode: row.redirect_back_mode ?? 'manual',
     redirectBackCardCount: row.redirect_back_card_count ?? 1,
     createdAt: row.created_at,
@@ -240,6 +244,7 @@ export async function getAiAccessSettings(userId: string) {
       planTier: 'free',
       byokProvider: 'openrouter',
       preferredModel: 'gpt-4.1-mini',
+      showContinueToSiteButton: true,
       redirectBackMode: 'manual',
       redirectBackCardCount: 1,
       createdAt: new Date().toISOString(),
@@ -258,6 +263,7 @@ export async function saveAiAccessSettings(
     | 'planTier'
     | 'byokProvider'
     | 'preferredModel'
+    | 'showContinueToSiteButton'
     | 'redirectBackMode'
     | 'redirectBackCardCount'
   >,
@@ -283,6 +289,7 @@ export async function saveAiAccessSettings(
       plan_tier: input.planTier,
       byok_provider: input.byokProvider,
       preferred_model: input.preferredModel,
+      show_continue_to_site_button: input.showContinueToSiteButton,
       redirect_back_mode: input.redirectBackMode,
       redirect_back_card_count: input.redirectBackCardCount,
       updated_at: new Date().toISOString(),

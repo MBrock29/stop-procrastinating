@@ -61,6 +61,7 @@ export interface AiAccessSettings {
   planTier: PlanTier
   byokProvider: AiProvider
   preferredModel: SupportedAiModel
+  showContinueToSiteButton: boolean
   redirectBackMode: RedirectBackMode
   redirectBackCardCount: number
   createdAt: string
