@@ -110,6 +110,24 @@ function writeDemoSettings(userId: string, settings: AiAccessSettings) {
   window.localStorage.setItem(settingsStorageKey(userId), JSON.stringify(settings))
 }
 
+export function readCachedAiAccessSettings(userId: string) {
+  const rawValue = window.localStorage.getItem(settingsStorageKey(userId))
+
+  if (!rawValue) {
+    return null
+  }
+
+  try {
+    return JSON.parse(rawValue) as AiAccessSettings
+  } catch {
+    return null
+  }
+}
+
+function cacheAiAccessSettings(userId: string, settings: AiAccessSettings) {
+  window.localStorage.setItem(settingsStorageKey(userId), JSON.stringify(settings))
+}
+
 function readDemoEvents(userId: string) {
   const rawValue = window.localStorage.getItem(eventsStorageKey(userId))
 
@@ -250,10 +268,12 @@ export async function getAiAccessSettings(userId: string) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
+    cacheAiAccessSettings(userId, fallback)
     return fallback
   }
-
-  return mapSettingsRow(data as AiSettingsRow)
+  const settings = mapSettingsRow(data as AiSettingsRow)
+  cacheAiAccessSettings(userId, settings)
+  return settings
 }
 
 export async function saveAiAccessSettings(
@@ -302,8 +322,9 @@ export async function saveAiAccessSettings(
   if (error) {
     throw new Error(formatAiSettingsError(error))
   }
-
-  return mapSettingsRow(data as AiSettingsRow)
+  const settings = mapSettingsRow(data as AiSettingsRow)
+  cacheAiAccessSettings(userId, settings)
+  return settings
 }
 
 export async function listAiGenerationEvents(userId: string) {

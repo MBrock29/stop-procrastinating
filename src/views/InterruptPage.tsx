@@ -14,7 +14,7 @@ import type { ConfidenceRating, InterruptSession, LearningCard } from '../types/
 
 export function InterruptPage() {
   const { user } = useAuth()
-  const { byokCredentialStatus, settings, isLoading: isAiSettingsLoading } = useAiAccess()
+  const { byokCredentialStatus, settings } = useAiAccess()
   const [searchParams] = useSearchParams()
   const site = searchParams.get('site')
   const source = searchParams.get('source') ?? 'manual'
@@ -178,7 +178,7 @@ export function InterruptPage() {
             <Link to="/app" className="ghost-button">
               Return to dashboard
             </Link>
-            {safeReturnUrl && !isAiSettingsLoading && settings.showContinueToSiteButton ? (
+            {safeReturnUrl && settings.showContinueToSiteButton ? (
               <button
                 type="button"
                 onClick={continueToOriginalSite}
@@ -310,7 +310,7 @@ export function InterruptPage() {
                 <Link to="/app" className="action-button">
                   Return to dashboard
                 </Link>
-                {safeReturnUrl && !isAiSettingsLoading && settings.showContinueToSiteButton ? (
+                {safeReturnUrl && settings.showContinueToSiteButton ? (
                   <button
                     type="button"
                     onClick={continueToOriginalSite}

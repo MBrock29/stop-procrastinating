@@ -5,6 +5,7 @@ import { TIER_POLICIES } from './constants'
 import {
   deleteStoredByokCredential,
   getAiAccessSettings,
+  readCachedAiAccessSettings,
   getStoredByokCredentialStatus,
   listAiGenerationEvents,
   saveStoredByokCredential,
@@ -69,7 +70,16 @@ function buildUsageSnapshot(events: AiGenerationEvent[], planTier: PlanTier): Us
 
 export function useAiAccess() {
   const { user } = useAuth()
-  const [settings, setSettings] = useState<AiAccessSettings>(fallbackSettings)
+  const [settings, setSettings] = useState<AiAccessSettings>(() => {
+    if (!user) {
+      return fallbackSettings
+    }
+
+    return readCachedAiAccessSettings(user.id) ?? {
+      ...fallbackSettings,
+      userId: user.id,
+    }
+  })
   const [events, setEvents] = useState<AiGenerationEvent[]>([])
   const [byokCredentialStatus, setByokCredentialStatus] = useState<ByokCredentialStatus | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -88,6 +98,11 @@ export function useAiAccess() {
     setError(null)
 
     try {
+      const cachedSettings = readCachedAiAccessSettings(user.id)
+      if (cachedSettings) {
+        setSettings(cachedSettings)
+      }
+
       const browserClient = getSupabaseBrowserClient()
       const localByokCredential = browserClient ? null : readLocalByokCredentials(user.id)
       const [nextSettings, nextEvents] = await Promise.all([
