@@ -3,8 +3,8 @@ const browserOrigin =
 
 const appUrl = import.meta.env.VITE_APP_URL ?? browserOrigin
 const enableByok = String(import.meta.env.VITE_ENABLE_BYOK ?? 'false') === 'true'
-const byokAllowedEmails = String(
-  import.meta.env.VITE_BYOK_ALLOWED_EMAILS ?? 'mbrock19@gmail.com',
+const internalAccessEmails = String(
+  import.meta.env.VITE_INTERNAL_ACCESS_EMAILS ?? 'mbrock19@gmail.com',
 )
   .split(',')
   .map((value) => value.trim().toLowerCase())
@@ -16,7 +16,7 @@ export const env = {
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
   openaiModel: import.meta.env.VITE_OPENAI_GENERATION_MODEL ?? 'gpt-4.1-mini',
   enableByok,
-  byokAllowedEmails,
+  internalAccessEmails,
 }
 
 export const hasSupabaseEnv = Boolean(env.supabaseUrl && env.supabaseAnonKey)

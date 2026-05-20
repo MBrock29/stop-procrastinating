@@ -69,6 +69,36 @@ function writeCardReviews(userId: string, reviews: CardReview[]) {
   window.localStorage.setItem(reviewStorageKey(userId), JSON.stringify(reviews))
 }
 
+export async function listCardReviews(userId: string) {
+  const client = getSupabaseBrowserClient()
+
+  if (!client) {
+    return readCardReviews(userId).sort((left, right) =>
+      right.reviewedAt.localeCompare(left.reviewedAt),
+    )
+  }
+
+  const { data, error } = await client
+    .from('card_reviews')
+    .select('*')
+    .eq('user_id', userId)
+    .order('reviewed_at', { ascending: false })
+    .limit(1000)
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []).map((item) => ({
+    id: (item as CardReviewRow).id,
+    cardId: (item as CardReviewRow).card_id,
+    userId: (item as CardReviewRow).user_id,
+    interruptSessionId: (item as CardReviewRow).interrupt_session_id,
+    confidence: (item as CardReviewRow).confidence,
+    reviewedAt: (item as CardReviewRow).reviewed_at,
+  }))
+}
+
 function mapInterruptRow(row: InterruptSessionRow): InterruptSession {
   return {
     id: row.id,

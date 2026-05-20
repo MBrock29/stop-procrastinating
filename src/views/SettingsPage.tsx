@@ -134,6 +134,8 @@ export function SettingsPage() {
             <div className="mt-3 text-lg font-bold text-ink dark:text-white">
               {settings.planTier === 'byok'
                 ? 'Bring your own key'
+                : settings.planTier === 'premium'
+                  ? 'Premium'
                 : settings.planTier === 'pro'
                   ? 'Pro'
                   : 'Free'}

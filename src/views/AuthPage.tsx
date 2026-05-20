@@ -34,7 +34,7 @@ export function AuthPage() {
     },
     {
       title: 'Pro',
-      price: billingCadence === 'monthly' ? '£1.99' : '£19.99',
+      price: billingCadence === 'monthly' ? '$3.99' : '$39.90',
       cadence: billingCadence === 'monthly' ? '/month' : '/year',
       badge:
         billingCadence === 'monthly'
@@ -45,6 +45,21 @@ export function AuthPage() {
         'Generate up to 25 packs per month',
         'Generate up to 100 cards per pack',
         'Access to our strongest model',
+      ],
+    },
+    {
+      title: 'Premium',
+      price: billingCadence === 'monthly' ? '$9.99' : '$99.90',
+      cadence: billingCadence === 'monthly' ? '/month' : '/year',
+      badge:
+        billingCadence === 'monthly'
+          ? 'Advanced learning tools'
+          : 'Best for serious learners',
+      benefits: [
+        'Store up to 1,000 cards',
+        'Generate up to 100 packs per month',
+        'Generate up to 100 cards per pack',
+        'Unlock summaries, charts, and deeper practice',
       ],
     },
     {

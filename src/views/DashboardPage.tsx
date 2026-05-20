@@ -5,6 +5,12 @@ import { useAuth } from '../features/auth/useAuth'
 import { useLearningCards } from '../features/cards/useLearningCards'
 import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains'
 import { useExtensionStatus } from '../features/extension/useExtensionStatus'
+import {
+  ConfidenceBreakdownChart,
+  TopicInsightList,
+  WeeklyReviewChart,
+} from '../features/insights/InsightsCharts'
+import { useLearningInsights } from '../features/insights/useLearningInsights'
 
 export function DashboardPage() {
   const { user } = useAuth()
@@ -12,7 +18,9 @@ export function DashboardPage() {
   const { cards } = useLearningCards()
   const { byokCredentialStatus, settings } = useAiAccess()
   const extensionStatus = useExtensionStatus()
+  const insights = useLearningInsights(cards)
   const showByok = canAccessByok(user?.email)
+  const showPremiumInsights = settings.planTier === 'premium'
   const activeCount = domains.filter((item) => item.isActive).length
   const activeCardsCount = cards.filter((item) => !item.isArchived).length
   const hasAnyCards = cards.length > 0
@@ -155,6 +163,86 @@ export function DashboardPage() {
               BYOK is selected, but there is no saved provider key on your account yet. Add one on the BYOK page before generating more packs.
             </div>
           ) : null}
+        </div>
+
+        <div className="soft-card mt-8 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-ink dark:text-white">Learning insights</h3>
+              <p className="muted-copy mt-2 text-sm leading-6">
+                Track momentum, confidence, and the topics that need more attention.
+              </p>
+            </div>
+            <div className="rounded-full bg-reef/10 px-4 py-2 text-sm font-semibold text-reef">
+              {showPremiumInsights ? 'Premium active' : 'Premium feature'}
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-4">
+            <div className="rounded-3xl bg-[var(--app-surface-strong)] px-4 py-4">
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
+                Total reviews
+              </div>
+              <div className="mt-3 text-3xl font-bold text-ink dark:text-white">
+                {insights.metrics.totalReviews}
+              </div>
+            </div>
+            <div className="rounded-3xl bg-[var(--app-surface-strong)] px-4 py-4">
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
+                Know rate
+              </div>
+              <div className="mt-3 text-3xl font-bold text-ink dark:text-white">
+                {insights.metrics.confidenceRate}%
+              </div>
+            </div>
+            <div className="rounded-3xl bg-[var(--app-surface-strong)] px-4 py-4">
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
+                Active cards
+              </div>
+              <div className="mt-3 text-3xl font-bold text-ink dark:text-white">
+                {insights.metrics.activeCards}
+              </div>
+            </div>
+            <div className="rounded-3xl bg-[var(--app-surface-strong)] px-4 py-4">
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
+                Archived cards
+              </div>
+              <div className="mt-3 text-3xl font-bold text-ink dark:text-white">
+                {insights.metrics.archivedCards}
+              </div>
+            </div>
+          </div>
+
+          {insights.error ? (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {insights.error}
+            </div>
+          ) : null}
+
+          {showPremiumInsights ? (
+            <div className="mt-5 grid gap-4 xl:grid-cols-2">
+              <WeeklyReviewChart snapshots={insights.dailyReviews} />
+              <ConfidenceBreakdownChart
+                know={insights.metrics.knowReviews}
+                semi={insights.metrics.semiReviews}
+                notConfident={insights.metrics.notConfidentReviews}
+              />
+              <TopicInsightList
+                title="Weakest topics"
+                subtitle="The areas where confidence is lagging most"
+                items={insights.weakestTopics}
+              />
+              <TopicInsightList
+                title="Strongest topics"
+                subtitle="The areas where your review confidence is strongest"
+                items={insights.strongestTopics}
+              />
+            </div>
+          ) : (
+            <div className="mt-5 rounded-3xl border border-dashed border-[var(--app-border)] px-5 py-6 text-sm muted-copy">
+              Premium unlocks weekly progress charts, confidence breakdowns, and weak-topic insights so users can see how their learning changes over time.
+            </div>
+          )}
         </div>
     </section>
   )

@@ -4,14 +4,18 @@ export function isByokPubliclyVisible() {
   return env.enableByok
 }
 
+export function hasInternalAccess(email?: string | null) {
+  if (!email) {
+    return false
+  }
+
+  return env.internalAccessEmails.includes(email.trim().toLowerCase())
+}
+
 export function canAccessByok(email?: string | null) {
   if (env.enableByok) {
     return true
   }
 
-  if (!email) {
-    return false
-  }
-
-  return env.byokAllowedEmails.includes(email.trim().toLowerCase())
+  return hasInternalAccess(email)
 }

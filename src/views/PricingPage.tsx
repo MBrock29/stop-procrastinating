@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAiAccess } from '../features/ai-access/useAiAccess';
-import { canAccessByok } from '../features/ai-access/byokVisibility';
+import { canAccessByok, hasInternalAccess } from '../features/ai-access/byokVisibility';
 import { useAuth } from '../features/auth/useAuth';
 import type { PlanTier } from '../types/domain';
 
@@ -16,7 +16,7 @@ interface PlanCardDefinition {
   priceRowClassName?: string;
   benefits: string[];
   ctaLabel: string;
-  ctaKind: 'free' | 'coming-soon' | 'scroll';
+  ctaKind: 'free' | 'coming-soon' | 'scroll' | 'premium';
   badge?: string;
 }
 
@@ -31,10 +31,14 @@ export function PricingPage() {
     'success',
   );
   const showByok = canAccessByok(user?.email);
+  const canTestPremium = hasInternalAccess(user?.email);
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
-    const proPrice = billingCadence === 'monthly' ? '£1.99' : '£19.99';
+    const proPrice = billingCadence === 'monthly' ? '$3.99' : '$39.90';
     const proCadenceLabel = billingCadence === 'monthly' ? '/month' : '/year';
+    const premiumPrice = billingCadence === 'monthly' ? '$9.99' : '$99.90';
+    const premiumCadenceLabel =
+      billingCadence === 'monthly' ? '/month' : '/year';
 
     const cards: PlanCardDefinition[] = [
       {
@@ -71,6 +75,29 @@ export function PricingPage() {
             : 'Best value',
       },
       {
+        tier: 'premium',
+        title: 'Premium',
+        price: premiumPrice,
+        cadenceLabel: premiumCadenceLabel,
+        benefits: [
+          'Store up to 1,000 cards',
+          'Generate up to 100 packs per month',
+          'Generate up to 100 cards per pack',
+          'Unlock summaries, charts, deeper practice, and richer interrupts',
+        ],
+        ctaLabel:
+          settings.planTier === 'premium'
+            ? 'Current plan'
+            : canTestPremium
+              ? 'Use premium plan'
+              : 'Premium coming soon',
+        ctaKind: canTestPremium ? 'premium' : 'coming-soon',
+        badge:
+          billingCadence === 'monthly'
+            ? 'Advanced learning tools'
+            : 'Best for serious learners',
+      },
+      {
         tier: 'byok',
         title: 'Bring your own key',
         price: 'Billed by your own provider',
@@ -91,7 +118,7 @@ export function PricingPage() {
     ];
 
     return cards.filter((plan) => showByok || plan.tier !== 'byok');
-  }, [billingCadence, settings.planTier, showByok]);
+  }, [billingCadence, canTestPremium, settings.planTier, showByok]);
 
   async function handleSwitchToFree() {
     setPending(true);
@@ -101,6 +128,26 @@ export function PricingPage() {
       await setPlanTier('free');
       setFeedbackTone('success');
       setFeedback('Free plan is now active.');
+    } catch (nextError) {
+      const message =
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to switch plans right now.';
+      setFeedbackTone('error');
+      setFeedback(message);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleSwitchToPremium() {
+    setPending(true);
+    setFeedback(null);
+
+    try {
+      await setPlanTier('premium');
+      setFeedbackTone('success');
+      setFeedback('Premium plan is now active.');
     } catch (nextError) {
       const message =
         nextError instanceof Error
@@ -215,6 +262,18 @@ export function PricingPage() {
                         'min-h-[44px] w-full px-4 py-2 text-sm',
                       ].join(' ')}
                       onClick={() => void handleSwitchToFree()}
+                      disabled={pending || isCurrent || isLoading}
+                    >
+                      {isLoading ? 'Loading…' : plan.ctaLabel}
+                    </button>
+                  ) : plan.ctaKind === 'premium' ? (
+                    <button
+                      type='button'
+                      className={[
+                        isCurrent ? 'action-button' : 'ghost-button',
+                        'min-h-[44px] w-full px-4 py-2 text-sm',
+                      ].join(' ')}
+                      onClick={() => void handleSwitchToPremium()}
                       disabled={pending || isCurrent || isLoading}
                     >
                       {isLoading ? 'Loading…' : plan.ctaLabel}

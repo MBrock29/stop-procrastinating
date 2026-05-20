@@ -39,6 +39,7 @@ const fallbackSettings: AiAccessSettings = {
   byokProvider: 'openrouter',
   preferredModel: 'gpt-4.1-mini',
   showContinueToSiteButton: true,
+  premiumInterruptMode: 'cards',
   redirectBackMode: 'manual',
   redirectBackCardCount: 1,
   createdAt: '',
@@ -165,6 +166,7 @@ export function useAiAccess() {
         byokProvider: settings.byokProvider,
         preferredModel: settings.preferredModel,
         showContinueToSiteButton: settings.showContinueToSiteButton,
+        premiumInterruptMode: settings.premiumInterruptMode,
         redirectBackMode: settings.redirectBackMode,
         redirectBackCardCount: settings.redirectBackCardCount,
       })
@@ -177,6 +179,7 @@ export function useAiAccess() {
         byokProvider: AiAccessSettings['byokProvider']
         preferredModel: SupportedAiModel
         showContinueToSiteButton: boolean
+        premiumInterruptMode: AiAccessSettings['premiumInterruptMode']
         redirectBackMode: AiAccessSettings['redirectBackMode']
         redirectBackCardCount: number
       }>,
@@ -191,6 +194,8 @@ export function useAiAccess() {
         preferredModel: input.preferredModel ?? settings.preferredModel,
         showContinueToSiteButton:
           input.showContinueToSiteButton ?? settings.showContinueToSiteButton,
+        premiumInterruptMode:
+          input.premiumInterruptMode ?? settings.premiumInterruptMode,
         redirectBackMode: input.redirectBackMode ?? settings.redirectBackMode,
         redirectBackCardCount:
           input.redirectBackCardCount ?? settings.redirectBackCardCount,

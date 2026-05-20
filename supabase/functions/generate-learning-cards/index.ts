@@ -7,7 +7,7 @@ const corsHeaders = {
     'authorization, x-client-info, apikey, content-type, x-byok-api-key, x-byok-provider',
 };
 
-type PlanTier = 'free' | 'pro' | 'byok';
+type PlanTier = 'free' | 'pro' | 'premium' | 'byok';
 type AiProvider = 'openai' | 'openrouter';
 type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5.4-mini';
 type EventStatus =
@@ -49,8 +49,10 @@ const byokEncryptionKey = Deno.env.get('BYOK_ENCRYPTION_KEY');
 
 const FREE_MONTHLY_PACK_LIMIT = 3;
 const PRO_MONTHLY_PACK_LIMIT = 25;
+const PREMIUM_MONTHLY_PACK_LIMIT = 100;
 const FREE_MAX_CARDS = 10;
 const PRO_MAX_CARDS = 100;
+const PREMIUM_MAX_CARDS = 100;
 const BYOK_MAX_CARDS = 100;
 const REQUEST_COOLDOWN_MS = 10_000;
 const OWNER_OVERRIDE_EMAILS = new Set(['mbrock19@gmail.com']);
@@ -122,6 +124,12 @@ function getTierPolicy(planTier: PlanTier) {
         maxCardsPerPack: PRO_MAX_CARDS,
         defaultModel: 'gpt-5.4-mini' as SupportedAiModel,
       };
+    case 'premium':
+      return {
+        monthlyPackLimit: PREMIUM_MONTHLY_PACK_LIMIT,
+        maxCardsPerPack: PREMIUM_MAX_CARDS,
+        defaultModel: 'gpt-5.4-mini' as SupportedAiModel,
+      };
     case 'byok':
       return {
         monthlyPackLimit: null,
@@ -178,6 +186,10 @@ function resolveCanonicalModel(
   }
 
   if (settings.plan_tier === 'pro') {
+    return 'gpt-5.4-mini';
+  }
+
+  if (settings.plan_tier === 'premium') {
     return 'gpt-5.4-mini';
   }
 
