@@ -239,12 +239,19 @@ export function PricingPage() {
                 {plan.badge || plan.secondaryBadge ? (
                   <div className='absolute right-4 top-4 flex flex-col items-end gap-2'>
                     {plan.badge ? (
-                      <div className='rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900'>
+                      <div
+                        className={[
+                          'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]',
+                          plan.secondaryBadge
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-amber-400 text-slate-900',
+                        ].join(' ')}
+                      >
                         {plan.badge}
                       </div>
                     ) : null}
                     {plan.secondaryBadge ? (
-                      <div className='rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white'>
+                      <div className='rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900'>
                         {plan.secondaryBadge}
                       </div>
                     ) : null}

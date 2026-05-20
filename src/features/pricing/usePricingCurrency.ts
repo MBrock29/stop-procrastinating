@@ -29,22 +29,36 @@ const priceMap = {
 } as const
 
 function detectCurrency(): PricingCurrency {
-  const locale = Intl.DateTimeFormat().resolvedOptions().locale.toLowerCase()
+  const locale = Intl.DateTimeFormat().resolvedOptions().locale
+  const region = locale.split('-')[1]?.toUpperCase()
+  const euroRegions = new Set([
+    'AT',
+    'BE',
+    'CY',
+    'DE',
+    'EE',
+    'ES',
+    'FI',
+    'FR',
+    'GR',
+    'HR',
+    'IE',
+    'IT',
+    'LT',
+    'LU',
+    'LV',
+    'MT',
+    'NL',
+    'PT',
+    'SI',
+    'SK',
+  ])
 
-  if (locale.includes('gb')) {
+  if (region === 'GB') {
     return 'GBP'
   }
 
-  if (
-    locale.includes('de') ||
-    locale.includes('fr') ||
-    locale.includes('es') ||
-    locale.includes('it') ||
-    locale.includes('nl') ||
-    locale.includes('pt') ||
-    locale.includes('ie') ||
-    locale.includes('eu')
-  ) {
+  if (region && euroRegions.has(region)) {
     return 'EUR'
   }
 
