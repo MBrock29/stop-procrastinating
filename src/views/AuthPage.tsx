@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
+import { isByokPubliclyVisible } from '../features/ai-access/byokVisibility';
 import { SiteFooter } from '../ui/SiteFooter';
 
 type BillingCadence = 'monthly' | 'annual';
@@ -17,6 +18,7 @@ export function AuthPage() {
   const { status } = useAuth();
   const [billingCadence, setBillingCadence] =
     useState<BillingCadence>('monthly');
+  const showByok = isByokPubliclyVisible();
 
   const planCards = [
     {
@@ -56,7 +58,7 @@ export function AuthPage() {
         'Choose your own model',
       ],
     },
-  ];
+  ].filter((plan) => showByok || plan.title !== 'Bring your own key');
 
   if (status === 'authenticated') {
     return <Navigate to='/app' replace />;

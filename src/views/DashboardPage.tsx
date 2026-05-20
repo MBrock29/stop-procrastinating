@@ -1,14 +1,18 @@
 import { Link } from 'react-router-dom'
+import { canAccessByok } from '../features/ai-access/byokVisibility'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
+import { useAuth } from '../features/auth/useAuth'
 import { useLearningCards } from '../features/cards/useLearningCards'
 import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains'
 import { useExtensionStatus } from '../features/extension/useExtensionStatus'
 
 export function DashboardPage() {
+  const { user } = useAuth()
   const { domains } = useBlockedDomains()
   const { cards } = useLearningCards()
   const { byokCredentialStatus, settings } = useAiAccess()
   const extensionStatus = useExtensionStatus()
+  const showByok = canAccessByok(user?.email)
   const activeCount = domains.filter((item) => item.isActive).length
   const activeCardsCount = cards.filter((item) => !item.isArchived).length
   const hasAnyCards = cards.length > 0
@@ -73,9 +77,11 @@ export function DashboardPage() {
           <Link to="/app/pricing" className="ghost-button">
             Pricing plans
           </Link>
-          <Link to="/app/byok#usage" className="ghost-button">
-            Usage
-          </Link>
+          {showByok ? (
+            <Link to="/app/byok#usage" className="ghost-button">
+              Usage
+            </Link>
+          ) : null}
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <div className="metric-card">
@@ -144,7 +150,7 @@ export function DashboardPage() {
               </div>
             ))}
           </div>
-          {settings.planTier === 'byok' && !byokCredentialStatus ? (
+          {showByok && settings.planTier === 'byok' && !byokCredentialStatus ? (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               BYOK is selected, but there is no saved provider key on your account yet. Add one on the BYOK page before generating more packs.
             </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { canAccessByok } from '../features/ai-access/byokVisibility'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { listLearningCards } from '../features/cards/cardsRepository'
 import { sortCardsForReview } from '../features/cards/scheduling'
@@ -15,6 +16,7 @@ import type { ConfidenceRating, InterruptSession, LearningCard } from '../types/
 export function InterruptPage() {
   const { user } = useAuth()
   const { byokCredentialStatus, settings } = useAiAccess()
+  const showByok = canAccessByok(user?.email)
   const [searchParams] = useSearchParams()
   const site = searchParams.get('site')
   const source = searchParams.get('source') ?? 'manual'
@@ -210,7 +212,7 @@ export function InterruptPage() {
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 Add your first learning card so redirects have something useful to show.
               </p>
-              {settings.planTier === 'byok' && !byokCredentialStatus ? (
+              {showByok && settings.planTier === 'byok' && !byokCredentialStatus ? (
                 <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   BYOK is selected on your account, but no provider key is saved yet.
                 </div>
@@ -219,9 +221,11 @@ export function InterruptPage() {
                 Create learning cards
               </Link>
               <div className="mt-3 flex flex-wrap justify-center gap-3">
-                <Link to="/app/byok" className="ghost-button">
-                  Check AI setup
-                </Link>
+                {showByok ? (
+                  <Link to="/app/byok" className="ghost-button">
+                    Check AI setup
+                  </Link>
+                ) : null}
                 <Link to="/app/sites" className="ghost-button">
                   Check blocked sites
                 </Link>

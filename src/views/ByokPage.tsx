@@ -1,7 +1,9 @@
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { canAccessByok } from '../features/ai-access/byokVisibility';
 import { useAiAccess } from '../features/ai-access/useAiAccess';
+import { useAuth } from '../features/auth/useAuth';
 import {
   SUPPORTED_AI_MODELS,
   SUPPORTED_AI_PROVIDERS,
@@ -33,6 +35,7 @@ function looksLikeApiKey(provider: AiProvider, apiKey: string) {
 }
 
 export function ByokPage() {
+  const { user } = useAuth();
   const {
     byokCredentialStatus,
     clearByokCredentials,
@@ -53,6 +56,7 @@ export function ByokPage() {
     provider: settings.byokProvider,
     apiKey: '',
   });
+  const showByok = canAccessByok(user?.email);
 
   useEffect(() => {
     setByokDraft((current) => ({
@@ -60,6 +64,10 @@ export function ByokPage() {
       apiKey: current.apiKey,
     }));
   }, [settings.byokProvider]);
+
+  if (!showByok) {
+    return <Navigate to='/app/pricing' replace />;
+  }
 
   async function handleByokSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

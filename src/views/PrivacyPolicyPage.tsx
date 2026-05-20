@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom'
+import { isByokPubliclyVisible } from '../features/ai-access/byokVisibility'
 
 const lastUpdated = 'May 17, 2026'
 
 export function PrivacyPolicyPage() {
+  const showByok = isByokPubliclyVisible()
+
   return (
     <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
@@ -52,11 +55,13 @@ export function PrivacyPolicyPage() {
                   and estimated usage cost may be recorded to enforce plan limits and help
                   users review usage.
                 </li>
-                <li>
-                  BYOK data: if a user chooses bring-your-own-key, the provider key is stored
-                  in encrypted form on the user account and is used only to send AI generation
-                  requests through the selected provider.
-                </li>
+                {showByok ? (
+                  <li>
+                    BYOK data: if a user chooses bring-your-own-key, the provider key is stored
+                    in encrypted form on the user account and is used only to send AI generation
+                    requests through the selected provider.
+                  </li>
+                ) : null}
               </ul>
             </section>
 
@@ -81,23 +86,28 @@ export function PrivacyPolicyPage() {
                 <li>To authenticate users and maintain signed-in sessions.</li>
                 <li>To save blocked-site rules, learning cards, and review progress.</li>
                 <li>To redirect blocked visits into learning sessions.</li>
-                <li>To generate learning cards through hosted AI models or a user-supplied key.</li>
+                <li>
+                  To generate learning cards through hosted AI models
+                  {showByok ? ' or a user-supplied key.' : '.'}
+                </li>
                 <li>To show plan usage, enforce plan limits, and troubleshoot product issues.</li>
               </ul>
             </section>
 
-            <section>
-              <h2 className="text-xl font-bold text-ink dark:text-white">
-                AI providers and BYOK
-              </h2>
-              <p className="mt-3">
-                Better Focus can generate cards using platform-provided AI access or a
-                user-supplied provider key. When AI generation is used, the topic prompt and
-                generation request are sent to the selected provider. If a user enables BYOK,
-                the cost of those AI requests is billed by that external provider according to
-                that provider’s terms.
-              </p>
-            </section>
+            {showByok ? (
+              <section>
+                <h2 className="text-xl font-bold text-ink dark:text-white">
+                  AI providers and BYOK
+                </h2>
+                <p className="mt-3">
+                  Better Focus can generate cards using platform-provided AI access or a
+                  user-supplied provider key. When AI generation is used, the topic prompt and
+                  generation request are sent to the selected provider. If a user enables BYOK,
+                  the cost of those AI requests is billed by that external provider according to
+                  that provider’s terms.
+                </p>
+              </section>
+            ) : null}
 
             <section>
               <h2 className="text-xl font-bold text-ink dark:text-white">
@@ -115,9 +125,10 @@ export function PrivacyPolicyPage() {
                 Data storage and security
               </h2>
               <p className="mt-3">
-                Better Focus uses reasonable technical measures to protect stored data. BYOK
-                credentials are stored in encrypted form. No method of transmission or storage
-                is perfectly secure, and security cannot be guaranteed absolutely.
+                Better Focus uses reasonable technical measures to protect stored data.
+                {showByok ? ' BYOK credentials are stored in encrypted form.' : ''}
+                {' '}No method of transmission or storage is perfectly secure, and security
+                cannot be guaranteed absolutely.
               </p>
             </section>
 
@@ -127,7 +138,7 @@ export function PrivacyPolicyPage() {
               </h2>
               <ul className="mt-3 space-y-3">
                 <li>Users can edit or delete blocked-site rules and learning cards.</li>
-                <li>Users can clear a saved BYOK credential from their account.</li>
+                {showByok ? <li>Users can clear a saved BYOK credential from their account.</li> : null}
                 <li>Users can sign out of the app at any time.</li>
                 <li>
                   Users can remove or disable the Chrome extension through Chrome’s extension

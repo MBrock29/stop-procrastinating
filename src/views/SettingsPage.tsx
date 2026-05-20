@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { canAccessByok } from '../features/ai-access/byokVisibility'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { useAuth } from '../features/auth/useAuth'
 import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains'
@@ -25,6 +26,7 @@ export function SettingsPage() {
 
   const activeDomains = domains.filter((item) => item.isActive).length
   const activeCards = cards.filter((item) => !item.isArchived).length
+  const showByok = canAccessByok(user?.email)
   const authProvider =
     session?.user.app_metadata.provider ??
     (mode === 'demo' ? 'demo' : 'email')
@@ -96,7 +98,9 @@ export function SettingsPage() {
           Keep your account and setup in good shape.
         </h2>
         <p className="muted-copy mt-4 max-w-2xl text-sm leading-6 sm:text-base">
-          Review your sign-in details, extension connection, and BYOK security from one place.
+          {showByok
+            ? 'Review your sign-in details, extension connection, and BYOK security from one place.'
+            : 'Review your sign-in details and extension connection from one place.'}
         </p>
 
         {message ? (
@@ -157,10 +161,16 @@ export function SettingsPage() {
         <div className="soft-card mt-6 p-5">
           <h3 className="text-lg font-bold text-ink dark:text-white">Security and privacy</h3>
           <ul className="muted-copy mt-4 space-y-3 text-sm leading-6">
-            <li>Your BYOK key is stored against your account in encrypted form and is only used inside Supabase Edge Functions.</li>
-            <li>The app never shows the full saved key back to the browser after it is stored.</li>
+            {showByok ? (
+              <li>Your BYOK key is stored against your account in encrypted form and is only used inside Supabase Edge Functions.</li>
+            ) : null}
+            {showByok ? (
+              <li>The app never shows the full saved key back to the browser after it is stored.</li>
+            ) : null}
             <li>The browser extension stores synced blocked domains locally in Chrome so redirects can happen quickly.</li>
-            <li>Using BYOK moves LLM request costs to your own provider account, but your product data still lives in Supabase.</li>
+            {showByok ? (
+              <li>Using BYOK moves LLM request costs to your own provider account, but your product data still lives in Supabase.</li>
+            ) : null}
           </ul>
         </div>
 
@@ -228,6 +238,7 @@ export function SettingsPage() {
           </div>
         </div>
 
+        {showByok ? (
         <div className="panel px-6 py-6 sm:px-8">
           <h3 className="text-lg font-bold text-ink dark:text-white">BYOK</h3>
           <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm">
@@ -256,6 +267,7 @@ export function SettingsPage() {
             </div>
           </div>
         </div>
+        ) : null}
 
         <div className="panel px-6 py-6 sm:px-8">
           <h3 className="text-lg font-bold text-ink dark:text-white">Account actions</h3>

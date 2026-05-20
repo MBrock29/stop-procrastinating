@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAiAccess } from '../features/ai-access/useAiAccess';
+import { canAccessByok } from '../features/ai-access/byokVisibility';
+import { useAuth } from '../features/auth/useAuth';
 import type { PlanTier } from '../types/domain';
 
 type BillingCadence = 'monthly' | 'annual';
@@ -19,6 +21,7 @@ interface PlanCardDefinition {
 }
 
 export function PricingPage() {
+  const { user } = useAuth();
   const { isLoading, settings, setPlanTier } = useAiAccess();
   const [billingCadence, setBillingCadence] =
     useState<BillingCadence>('monthly');
@@ -27,12 +30,13 @@ export function PricingPage() {
   const [feedbackTone, setFeedbackTone] = useState<'success' | 'error'>(
     'success',
   );
+  const showByok = canAccessByok(user?.email);
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
     const proPrice = billingCadence === 'monthly' ? '£1.99' : '£19.99';
     const proCadenceLabel = billingCadence === 'monthly' ? '/month' : '/year';
 
-    return [
+    const cards: PlanCardDefinition[] = [
       {
         tier: 'free',
         title: 'Free',
@@ -85,7 +89,9 @@ export function PricingPage() {
         ctaKind: 'scroll',
       },
     ];
-  }, [billingCadence, settings.planTier]);
+
+    return cards.filter((plan) => showByok || plan.tier !== 'byok');
+  }, [billingCadence, settings.planTier, showByok]);
 
   async function handleSwitchToFree() {
     setPending(true);
