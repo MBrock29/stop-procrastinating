@@ -20,22 +20,17 @@ interface PlanCardDefinition {
   priceRowClassName?: string;
   benefits: string[];
   ctaLabel: string;
-  ctaKind: 'free' | 'coming-soon' | 'scroll' | 'premium';
+  ctaKind: 'current' | 'coming-soon' | 'contact';
   badge?: string;
   secondaryBadge?: string;
 }
 
 export function PricingPage() {
   const { user } = useAuth();
-  const { isLoading, settings, setPlanTier } = useAiAccess();
+  const { isLoading, settings } = useAiAccess();
   const [billingCadence, setBillingCadence] =
     useState<BillingCadence>('monthly');
   const { currency, setCurrency, prices } = usePricingCurrency();
-  const [pending, setPending] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [feedbackTone, setFeedbackTone] = useState<'success' | 'error'>(
-    'success',
-  );
   const canUsePremium = canAccessPremium(user?.email);
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
@@ -61,9 +56,8 @@ export function PricingPage() {
           'Generate up to 10 cards per pack',
           'Access to the lighter hosted language learning model',
         ],
-        ctaLabel:
-          settings.planTier === 'free' ? 'Current plan' : 'Use free plan',
-        ctaKind: 'free',
+        ctaLabel: settings.planTier === 'free' ? 'Current plan' : 'Not active',
+        ctaKind: settings.planTier === 'free' ? 'current' : 'coming-soon',
       },
       {
         tier: 'pro',
@@ -76,8 +70,9 @@ export function PricingPage() {
           'Generate up to 100 cards per pack',
           'Access to a stronger model',
         ],
-        ctaLabel: 'Billing coming soon',
-        ctaKind: 'coming-soon',
+        ctaLabel:
+          settings.planTier === 'pro' ? 'Current plan' : 'Billing coming soon',
+        ctaKind: settings.planTier === 'pro' ? 'current' : 'coming-soon',
         badge:
           billingCadence === 'monthly'
             ? 'Annual discount available'
@@ -105,9 +100,13 @@ export function PricingPage() {
           settings.planTier === 'premium'
             ? 'Current plan'
             : canUsePremium
-              ? 'Use premium plan'
+              ? 'Included on your account'
               : 'Premium coming soon',
-        ctaKind: canUsePremium ? 'premium' : 'coming-soon',
+        ctaKind: settings.planTier === 'premium'
+          ? 'current'
+          : canUsePremium
+            ? 'contact'
+            : 'coming-soon',
         badge:
           billingCadence === 'monthly'
             ? 'Annual discount available'
@@ -128,46 +127,6 @@ export function PricingPage() {
     prices.proMonthly,
     settings.planTier,
   ]);
-
-  async function handleSwitchToFree() {
-    setPending(true);
-    setFeedback(null);
-
-    try {
-      await setPlanTier('free');
-      setFeedbackTone('success');
-      setFeedback('Free plan is now active.');
-    } catch (nextError) {
-      const message =
-        nextError instanceof Error
-          ? nextError.message
-          : 'Unable to switch plans right now.';
-      setFeedbackTone('error');
-      setFeedback(message);
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleSwitchToPremium() {
-    setPending(true);
-    setFeedback(null);
-
-    try {
-      await setPlanTier('premium');
-      setFeedbackTone('success');
-      setFeedback('Premium plan is now active.');
-    } catch (nextError) {
-      const message =
-        nextError instanceof Error
-          ? nextError.message
-          : 'Unable to switch plans right now.';
-      setFeedbackTone('error');
-      setFeedback(message);
-    } finally {
-      setPending(false);
-    }
-  }
 
   return (
     <div className='space-y-6'>
@@ -210,20 +169,6 @@ export function PricingPage() {
             )}
           </div>
         </div>
-
-        {feedback ? (
-          <div
-            className={[
-              'mt-6 rounded-2xl px-4 py-3 text-sm',
-              feedbackTone === 'success'
-                ? 'border border-emerald-200 bg-emerald-50 text-emerald-900'
-                : 'border border-amber-200 bg-amber-50 text-amber-900',
-            ].join(' ')}
-          >
-            {feedback}
-          </div>
-        ) : null}
-
         <div className='mt-8 grid gap-4 xl:grid-cols-3'>
           {planCards.map((plan) => {
             const isCurrent = !isLoading && settings.planTier === plan.tier;
@@ -298,50 +243,13 @@ export function PricingPage() {
                 </ul>
 
                 <div className='mt-auto pt-6'>
-                  {plan.ctaKind === 'free' ? (
-                    <button
-                      type='button'
-                      className={[
-                        isCurrent ? 'action-button' : 'ghost-button',
-                        'min-h-[44px] w-full px-4 py-2 text-sm',
-                      ].join(' ')}
-                      onClick={() => void handleSwitchToFree()}
-                      disabled={pending || isCurrent || isLoading}
+                  {plan.ctaKind === 'contact' ? (
+                    <Link
+                      to='/contact'
+                      className='ghost-button min-h-[44px] w-full px-4 py-2 text-sm'
                     >
                       {isLoading ? 'Loading…' : plan.ctaLabel}
-                    </button>
-                  ) : plan.ctaKind === 'premium' ? (
-                    <button
-                      type='button'
-                      className={[
-                        isCurrent ? 'action-button' : 'ghost-button',
-                        'min-h-[44px] w-full px-4 py-2 text-sm',
-                      ].join(' ')}
-                      onClick={() => void handleSwitchToPremium()}
-                      disabled={pending || isCurrent || isLoading}
-                    >
-                      {isLoading ? 'Loading…' : plan.ctaLabel}
-                    </button>
-                  ) : plan.ctaKind === 'scroll' ? (
-                    isCurrent ? (
-                      <Link
-                        to='/app/byok'
-                        className='action-button min-h-[44px] w-full px-4 py-2 text-sm'
-                      >
-                        Configure BYOK
-                      </Link>
-                    ) : (
-                      <Link
-                        to='/app/byok'
-                        className={[
-                          'ghost-button',
-                          'min-h-[44px] w-full px-4 py-2 text-sm',
-                          isLoading ? 'pointer-events-none opacity-70' : '',
-                        ].join(' ')}
-                      >
-                        {isLoading ? 'Loading…' : plan.ctaLabel}
-                      </Link>
-                    )
+                    </Link>
                   ) : (
                     <button
                       type='button'
@@ -351,11 +259,7 @@ export function PricingPage() {
                       ].join(' ')}
                       disabled
                     >
-                      {isLoading
-                        ? 'Loading…'
-                        : isCurrent
-                          ? 'Current plan'
-                          : plan.ctaLabel}
+                      {isLoading ? 'Loading…' : plan.ctaLabel}
                     </button>
                   )}
                 </div>

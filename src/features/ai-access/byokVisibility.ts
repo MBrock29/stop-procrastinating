@@ -1,4 +1,5 @@
 import { env } from '../../lib/env'
+import type { PlanTier } from '../../types/domain'
 
 export function isByokPubliclyVisible() {
   return env.enableByok
@@ -24,6 +25,14 @@ export function hasPremiumAccess(email?: string | null) {
   return env.premiumAccessEmails.includes(normalizeEmail(email)!)
 }
 
+export function hasProAccess(email?: string | null) {
+  if (!email) {
+    return false
+  }
+
+  return env.proAccessEmails.includes(normalizeEmail(email)!)
+}
+
 export function canAccessByok(email?: string | null) {
   if (env.enableByok) {
     return true
@@ -38,4 +47,31 @@ export function canAccessPremium(email?: string | null) {
 
 export function canAccessUsageTab(email?: string | null) {
   return normalizeEmail(email) === 'mbrock19@gmail.com'
+}
+
+export function resolveEffectivePlanTier(
+  storedPlanTier: PlanTier,
+  email?: string | null,
+): PlanTier {
+  if (storedPlanTier === 'byok' && canAccessByok(email)) {
+    return 'byok'
+  }
+
+  if (hasPremiumAccess(email)) {
+    return 'premium'
+  }
+
+  if (storedPlanTier === 'premium') {
+    return 'premium'
+  }
+
+  if (hasProAccess(email)) {
+    return 'pro'
+  }
+
+  if (storedPlanTier === 'pro') {
+    return 'pro'
+  }
+
+  return 'free'
 }

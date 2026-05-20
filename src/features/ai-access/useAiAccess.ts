@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 import { useAuth } from '../auth/useAuth'
-import { canAccessPremium } from './byokVisibility'
+import { canAccessPremium, resolveEffectivePlanTier } from './byokVisibility'
 import { TIER_POLICIES } from './constants'
 import {
   deleteStoredByokCredential,
@@ -70,6 +70,19 @@ function buildUsageSnapshot(events: AiGenerationEvent[], planTier: PlanTier): Us
   }
 }
 
+function applyEffectivePlan(settings: AiAccessSettings, email?: string | null): AiAccessSettings {
+  const effectivePlanTier = resolveEffectivePlanTier(settings.planTier, email)
+
+  if (effectivePlanTier === settings.planTier) {
+    return settings
+  }
+
+  return {
+    ...settings,
+    planTier: effectivePlanTier,
+  }
+}
+
 export function useAiAccess() {
   const { user } = useAuth()
   const [settings, setSettings] = useState<AiAccessSettings>(() => {
@@ -86,6 +99,10 @@ export function useAiAccess() {
   const [byokCredentialStatus, setByokCredentialStatus] = useState<ByokCredentialStatus | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const effectiveSettings = useMemo(
+    () => applyEffectivePlan(settings, user?.email),
+    [settings, user?.email],
+  )
 
   const refresh = useCallback(async () => {
     if (!user) {
@@ -145,11 +162,14 @@ export function useAiAccess() {
     void refresh()
   }, [refresh])
 
-  const usage = useMemo(() => buildUsageSnapshot(events, settings.planTier), [events, settings.planTier])
-  const tierPolicy = TIER_POLICIES[settings.planTier]
+  const usage = useMemo(
+    () => buildUsageSnapshot(events, effectiveSettings.planTier),
+    [events, effectiveSettings.planTier],
+  )
+  const tierPolicy = TIER_POLICIES[effectiveSettings.planTier]
 
   return {
-    settings,
+    settings: effectiveSettings,
     events,
     usage,
     tierPolicy,
@@ -168,12 +188,12 @@ export function useAiAccess() {
 
       const nextSettings = await saveAiAccessSettings(user.id, {
         planTier,
-        byokProvider: settings.byokProvider,
-        preferredModel: settings.preferredModel,
-        showContinueToSiteButton: settings.showContinueToSiteButton,
-        premiumInterruptMode: settings.premiumInterruptMode,
-        redirectBackMode: settings.redirectBackMode,
-        redirectBackCardCount: settings.redirectBackCardCount,
+        byokProvider: effectiveSettings.byokProvider,
+        preferredModel: effectiveSettings.preferredModel,
+        showContinueToSiteButton: effectiveSettings.showContinueToSiteButton,
+        premiumInterruptMode: effectiveSettings.premiumInterruptMode,
+        redirectBackMode: effectiveSettings.redirectBackMode,
+        redirectBackCardCount: effectiveSettings.redirectBackCardCount,
       })
       setSettings(nextSettings)
       return nextSettings
@@ -193,21 +213,24 @@ export function useAiAccess() {
         throw new Error('You must be signed in to update AI settings.')
       }
 
-      if ((input.planTier ?? settings.planTier) === 'premium' && !canAccessPremium(user.email)) {
+      if (
+        (input.planTier ?? effectiveSettings.planTier) === 'premium' &&
+        !canAccessPremium(user.email)
+      ) {
         throw new Error('Premium is not available on this account yet.')
       }
 
       const nextSettings = await saveAiAccessSettings(user.id, {
-        planTier: input.planTier ?? settings.planTier,
-        byokProvider: input.byokProvider ?? settings.byokProvider,
-        preferredModel: input.preferredModel ?? settings.preferredModel,
+        planTier: input.planTier ?? effectiveSettings.planTier,
+        byokProvider: input.byokProvider ?? effectiveSettings.byokProvider,
+        preferredModel: input.preferredModel ?? effectiveSettings.preferredModel,
         showContinueToSiteButton:
-          input.showContinueToSiteButton ?? settings.showContinueToSiteButton,
+          input.showContinueToSiteButton ?? effectiveSettings.showContinueToSiteButton,
         premiumInterruptMode:
-          input.premiumInterruptMode ?? settings.premiumInterruptMode,
-        redirectBackMode: input.redirectBackMode ?? settings.redirectBackMode,
+          input.premiumInterruptMode ?? effectiveSettings.premiumInterruptMode,
+        redirectBackMode: input.redirectBackMode ?? effectiveSettings.redirectBackMode,
         redirectBackCardCount:
-          input.redirectBackCardCount ?? settings.redirectBackCardCount,
+          input.redirectBackCardCount ?? effectiveSettings.redirectBackCardCount,
       })
       setSettings(nextSettings)
       return nextSettings

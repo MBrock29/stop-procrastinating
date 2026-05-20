@@ -20,6 +20,10 @@ const premiumAccessEmails = String(
   .split(',')
   .map((value) => value.trim().toLowerCase())
   .filter(Boolean)
+const proAccessEmails = String(import.meta.env.VITE_PRO_ACCESS_EMAILS ?? '')
+  .split(',')
+  .map((value) => value.trim().toLowerCase())
+  .filter(Boolean)
 
 export const env = {
   appUrl,
@@ -31,6 +35,7 @@ export const env = {
   umamiScriptUrl,
   byokAccessEmails,
   premiumAccessEmails,
+  proAccessEmails,
 }
 
 export const hasSupabaseEnv = Boolean(env.supabaseUrl && env.supabaseAnonKey)
