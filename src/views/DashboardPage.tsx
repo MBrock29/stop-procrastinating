@@ -206,7 +206,7 @@ export function DashboardPage() {
                 <h3 className="text-lg font-bold text-ink dark:text-white">Get set up</h3>
                 <span
                   className={[
-                    'inline-flex items-center justify-center text-xl font-black leading-none text-ink transition dark:text-white',
+                    'inline-flex -translate-y-px items-center justify-center text-xl font-black leading-none text-ink transition dark:text-white',
                     isSetupOpen ? 'rotate-180' : '',
                   ].join(' ')}
                   aria-hidden="true"
