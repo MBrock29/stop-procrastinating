@@ -76,7 +76,7 @@ export function PricingPage() {
         badge:
           billingCadence === 'monthly'
             ? 'Annual discount available'
-            : 'Most popular',
+            : 'Popular',
         secondaryBadge:
           billingCadence === 'annual' ? '12 months for 10' : undefined,
       },
@@ -86,7 +86,7 @@ export function PricingPage() {
         price: premiumPrice,
         cadenceLabel: premiumCadenceLabel,
         benefits: [
-          'Store up to 1,000 cards',
+          'Store up to 5,000 cards',
           'Generate up to 100 packs per month',
           'Generate up to 100 cards per pack',
           'Access to our strongest model',
@@ -94,7 +94,6 @@ export function PricingPage() {
           'See confidence breakdowns across every review',
           'Spot strongest and weakest topics instantly',
           'Save AI-generated topic summaries',
-          'Save weekly-style topic briefings',
           'Generate deeper follow-up packs from any topic',
           'Choose summary-first premium redirects',
         ],
