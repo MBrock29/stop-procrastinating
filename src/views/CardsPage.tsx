@@ -239,6 +239,7 @@ export function CardsPage() {
   const [visibleCardCount, setVisibleCardCount] = useState(10)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const aiCardLimit = tierPolicy.maxCardsPerPack
+  const storageCap = tierPolicy.maxStoredCards
   const showPremiumTools = settings.planTier === 'premium'
 
   const generatedPacks = useMemo<GeneratedPackSummary[]>(() => {
@@ -332,20 +333,29 @@ export function CardsPage() {
     [cards, visibleCardCount],
   )
   const parsedCardCount = Number(aiDraft.cardCount)
+  const storedCardsCount = cards.length
+  const remainingStorageSlots =
+    storageCap == null ? Number.POSITIVE_INFINITY : Math.max(storageCap - storedCardsCount, 0)
   const isCardCountEmpty = aiDraft.cardCount.trim().length === 0
   const hasValidCardCount =
     !isCardCountEmpty &&
     Number.isInteger(parsedCardCount) &&
     parsedCardCount >= 1 &&
-    parsedCardCount <= aiCardLimit
+    parsedCardCount <= aiCardLimit &&
+    parsedCardCount <= remainingStorageSlots
   const cardCountError = isCardCountEmpty
     ? 'Enter how many cards you want to generate.'
     : !Number.isInteger(parsedCardCount)
       ? 'Enter a whole number.'
       : parsedCardCount < 1
         ? 'Card count must be at least 1.'
-        : parsedCardCount > aiCardLimit
+      : parsedCardCount > aiCardLimit
           ? `Card count cannot be more than ${aiCardLimit} on this plan.`
+          : Number.isFinite(remainingStorageSlots) && remainingStorageSlots <= 0
+            ? `This plan allows up to ${storageCap} stored cards. Delete cards before generating more.`
+            : Number.isFinite(remainingStorageSlots) &&
+                parsedCardCount > remainingStorageSlots
+              ? `You can only add ${remainingStorageSlots} more card${remainingStorageSlots === 1 ? '' : 's'} before reaching this plan’s ${storageCap}-card limit.`
           : null
 
   async function handleUpdate(cardId: string, nextDraft: CardDraft) {
@@ -617,7 +627,10 @@ export function CardsPage() {
                 ? '100 cards per pack, 100 packs per month, deeper practice, and premium learning tools.'
               : `${tierPolicy.maxCardsPerPack} cards per pack, ${
                   tierPolicy.monthlyPackLimit ?? 'unlimited'
-                } packs per month.`}
+                } packs per month.`}{' '}
+            {storageCap != null
+              ? `${storedCardsCount}/${storageCap} cards stored.`
+              : `${storedCardsCount} cards stored.`}
           </div>
           <Link to="/app/pricing" className="mt-3 inline-block font-semibold text-reef">
             Manage plans
@@ -642,6 +655,12 @@ export function CardsPage() {
             <p className="muted-copy mt-2 text-sm leading-6">
               This plan supports up to {aiCardLimit} cards per pack.
             </p>
+            {storageCap != null ? (
+              <p className="muted-copy mt-2 text-sm leading-6">
+                You can store up to {storageCap} cards on this plan. {Math.max(remainingStorageSlots, 0)} slot
+                {Math.max(remainingStorageSlots, 0) === 1 ? '' : 's'} remaining.
+              </p>
+            ) : null}
           </div>
 
           <label className="block">

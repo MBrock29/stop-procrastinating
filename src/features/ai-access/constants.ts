@@ -5,6 +5,7 @@ export interface TierPolicy {
   description: string
   monthlyPackLimit: number | null
   maxCardsPerPack: number
+  maxStoredCards: number | null
   defaultModel: SupportedAiModel
 }
 
@@ -21,6 +22,7 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
     description: 'A light monthly allowance on the lighter hosted model.',
     monthlyPackLimit: 3,
     maxCardsPerPack: 10,
+    maxStoredCards: 100,
     defaultModel: 'gpt-4.1-mini',
   },
   pro: {
@@ -28,6 +30,7 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
     description: 'Higher-output packs on the stronger hosted model.',
     monthlyPackLimit: 25,
     maxCardsPerPack: 100,
+    maxStoredCards: 1000,
     defaultModel: 'gpt-5-mini',
   },
   premium: {
@@ -35,6 +38,7 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
     description: 'Deeper learning tools, summaries, and richer interrupts.',
     monthlyPackLimit: 100,
     maxCardsPerPack: 100,
+    maxStoredCards: 5000,
     defaultModel: 'gpt-5.4-mini',
   },
   byok: {
@@ -42,6 +46,7 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
     description: 'Use your own provider key and choose between the supported models.',
     monthlyPackLimit: null,
     maxCardsPerPack: 100,
+    maxStoredCards: 500,
     defaultModel: 'gpt-4.1-mini',
   },
 }
