@@ -23,3 +23,7 @@ export function canAccessByok(email?: string | null) {
 export function canAccessPremium(email?: string | null) {
   return hasInternalAccess(email)
 }
+
+export function canAccessUsageTab(email?: string | null) {
+  return email?.trim().toLowerCase() === 'mbrock19@gmail.com'
+}

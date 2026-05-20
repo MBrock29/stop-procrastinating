@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
-import { isByokPubliclyVisible } from '../features/ai-access/byokVisibility';
 import {
   type PricingCurrency,
   usePricingCurrency,
@@ -23,7 +22,6 @@ export function AuthPage() {
   const [billingCadence, setBillingCadence] =
     useState<BillingCadence>('monthly');
   const { currency, setCurrency, prices } = usePricingCurrency();
-  const showByok = isByokPubliclyVisible();
 
   const planCards = [
     {
@@ -78,18 +76,7 @@ export function AuthPage() {
         'Spot strongest and weakest topics instantly',
       ],
     },
-    {
-      title: 'Bring your own key',
-      price: 'Billed by your own provider',
-      cadence: '',
-      benefits: [
-        'Store up to 500 cards',
-        'Generate unlimited packs per month',
-        'Generate up to 100 cards per pack',
-        'Choose your own model',
-      ],
-    },
-  ].filter((plan) => showByok || plan.title !== 'Bring your own key');
+  ];
 
   if (status === 'authenticated') {
     return <Navigate to='/app' replace />;
@@ -228,11 +215,7 @@ export function AuthPage() {
                     </h3>
                     <div className='mt-4 flex min-h-[3.5rem] items-end gap-2'>
                       <span
-                        className={
-                          plan.title === 'Bring your own key'
-                            ? 'self-end pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300'
-                            : 'text-4xl font-extrabold tracking-tight text-ink dark:text-white'
-                        }
+                        className='text-4xl font-extrabold tracking-tight text-ink dark:text-white'
                       >
                         {plan.price}
                       </span>

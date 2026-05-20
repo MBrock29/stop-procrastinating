@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { canAccessByok } from '../features/ai-access/byokVisibility'
+import {
+  canAccessByok,
+  canAccessUsageTab,
+} from '../features/ai-access/byokVisibility'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { useAuth } from '../features/auth/useAuth'
 import { useLearningCards } from '../features/cards/useLearningCards'
@@ -21,6 +24,7 @@ export function DashboardPage() {
   const extensionStatus = useExtensionStatus()
   const insights = useLearningInsights(cards)
   const showByok = canAccessByok(user?.email)
+  const showUsageTab = canAccessUsageTab(user?.email)
   const showPremiumInsights = settings.planTier === 'premium'
   const activeCount = domains.filter((item) => item.isActive).length
   const activeCardsCount = cards.filter((item) => !item.isArchived).length
@@ -93,7 +97,7 @@ export function DashboardPage() {
           <Link to="/app/pricing" className="ghost-button">
             Pricing plans
           </Link>
-          {showByok ? (
+          {showUsageTab ? (
             <Link to="/app/byok#usage" className="ghost-button">
               Usage
             </Link>

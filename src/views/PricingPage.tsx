@@ -1,10 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAiAccess } from '../features/ai-access/useAiAccess';
-import {
-  canAccessByok,
-  canAccessPremium,
-} from '../features/ai-access/byokVisibility';
+import { canAccessPremium } from '../features/ai-access/byokVisibility';
 import { useAuth } from '../features/auth/useAuth';
 import {
   type PricingCurrency,
@@ -39,7 +36,6 @@ export function PricingPage() {
   const [feedbackTone, setFeedbackTone] = useState<'success' | 'error'>(
     'success',
   );
-  const showByok = canAccessByok(user?.email);
   const canUsePremium = canAccessPremium(user?.email);
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
@@ -119,27 +115,9 @@ export function PricingPage() {
         secondaryBadge:
           billingCadence === 'annual' ? '12 months for 10' : undefined,
       },
-      {
-        tier: 'byok',
-        title: 'Bring your own key',
-        price: 'Billed by your own provider',
-        cadenceLabel: '',
-        priceClassName:
-          'self-end pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300',
-        priceRowClassName: 'min-h-[3.5rem] items-end',
-        benefits: [
-          'Store up to 500 cards',
-          'Generate unlimited packs per month',
-          'Generate up to 100 cards per pack',
-          'Choose your own model',
-        ],
-        ctaLabel:
-          settings.planTier === 'byok' ? 'Current plan' : 'Configure here',
-        ctaKind: 'scroll',
-      },
     ];
 
-    return cards.filter((plan) => showByok || plan.tier !== 'byok');
+    return cards;
   }, [
     billingCadence,
     canUsePremium,
@@ -149,7 +127,6 @@ export function PricingPage() {
     prices.proAnnual,
     prices.proMonthly,
     settings.planTier,
-    showByok,
   ]);
 
   async function handleSwitchToFree() {
