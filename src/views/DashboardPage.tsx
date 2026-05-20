@@ -202,9 +202,9 @@ export function DashboardPage() {
             className="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-start sm:justify-between"
           >
             <div>
-              <div className="inline-flex items-center gap-3">
+              <div className="inline-flex items-center gap-4">
                 <h3 className="text-lg font-bold text-ink dark:text-white">Get set up</h3>
-                <span className="text-sm font-semibold text-reef">
+                <span className="-translate-y-px text-sm font-semibold text-reef">
                   {isSetupOpen ? 'Collapse' : 'Expand'}
                 </span>
               </div>
