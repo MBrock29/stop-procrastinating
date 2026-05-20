@@ -9,7 +9,7 @@ const corsHeaders = {
 
 type PlanTier = 'free' | 'pro' | 'premium' | 'byok';
 type AiProvider = 'openai' | 'openrouter';
-type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5.4-mini';
+type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5-mini' | 'gpt-5.4-mini';
 type EventStatus =
   | 'success'
   | 'limit_exceeded'
@@ -57,13 +57,16 @@ const BYOK_MAX_CARDS = 100;
 const REQUEST_COOLDOWN_MS = 10_000;
 const OWNER_OVERRIDE_EMAILS = new Set(['mbrock19@gmail.com']);
 const OWNER_OVERRIDE_MAX_CARDS = 100;
-const OWNER_OVERRIDE_DEFAULT_MODEL: SupportedAiModel = 'gpt-4.1-mini';
 
 const MODEL_COSTS: Record<SupportedAiModel, { input: number; output: number }> =
   {
     'gpt-4.1-mini': {
       input: 0.4,
       output: 1.6,
+    },
+    'gpt-5-mini': {
+      input: 0.25,
+      output: 2,
     },
     'gpt-5.4-mini': {
       input: 0.75,
@@ -75,6 +78,10 @@ const MODEL_ALIASES: Record<SupportedAiModel, Record<AiProvider, string>> = {
   'gpt-4.1-mini': {
     openai: 'gpt-4.1-mini',
     openrouter: 'openai/gpt-4.1-mini',
+  },
+  'gpt-5-mini': {
+    openai: 'gpt-5-mini',
+    openrouter: 'openai/gpt-5-mini',
   },
   'gpt-5.4-mini': {
     openai: 'gpt-5.4-mini',
@@ -122,7 +129,7 @@ function getTierPolicy(planTier: PlanTier) {
       return {
         monthlyPackLimit: PRO_MONTHLY_PACK_LIMIT,
         maxCardsPerPack: PRO_MAX_CARDS,
-        defaultModel: 'gpt-5.4-mini' as SupportedAiModel,
+        defaultModel: 'gpt-5-mini' as SupportedAiModel,
       };
     case 'premium':
       return {
@@ -157,7 +164,11 @@ function sanitizeProvider(value: string | null): AiProvider | null {
 function sanitizeModel(
   value: string | null | undefined,
 ): SupportedAiModel | null {
-  if (value === 'gpt-4.1-mini' || value === 'gpt-5.4-mini') {
+  if (
+    value === 'gpt-4.1-mini' ||
+    value === 'gpt-5-mini' ||
+    value === 'gpt-5.4-mini'
+  ) {
     return value;
   }
 
@@ -178,7 +189,7 @@ function resolveCanonicalModel(
   }
 
   if (isOwnerOverride) {
-    return OWNER_OVERRIDE_DEFAULT_MODEL;
+    return getTierPolicy(settings.plan_tier).defaultModel;
   }
 
   if (settings.plan_tier === 'free') {
@@ -186,7 +197,7 @@ function resolveCanonicalModel(
   }
 
   if (settings.plan_tier === 'pro') {
-    return 'gpt-5.4-mini';
+    return 'gpt-5-mini';
   }
 
   if (settings.plan_tier === 'premium') {

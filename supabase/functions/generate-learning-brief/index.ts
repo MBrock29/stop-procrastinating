@@ -8,12 +8,16 @@ const corsHeaders = {
 
 type PlanTier = 'free' | 'pro' | 'premium' | 'byok';
 type AiProvider = 'openai' | 'openrouter';
-type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5.4-mini';
-type LearningBriefKind = 'summary' | 'briefing';
+type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5-mini' | 'gpt-5.4-mini';
 
 interface UserAiSettingsRow {
   plan_tier: PlanTier;
   preferred_model: SupportedAiModel;
+}
+
+interface LearningBriefCardInput {
+  question: string;
+  answer: string;
 }
 
 interface BriefResult {
@@ -60,7 +64,7 @@ function resolveCanonicalModel(settings: UserAiSettingsRow): SupportedAiModel {
   }
 
   if (settings.plan_tier === 'pro') {
-    return 'gpt-5.4-mini';
+    return 'gpt-5-mini';
   }
 
   return settings.preferred_model ?? 'gpt-4.1-mini';
@@ -74,12 +78,39 @@ function resolveProviderModel(model: SupportedAiModel, provider: AiProvider) {
   return model;
 }
 
-function buildPrompt(topic: string, kind: LearningBriefKind) {
-  if (kind === 'summary') {
-    return `Create a concise learning summary for "${topic}". Keep it under 220 words. Cover the core concept, one practical example, and one common pitfall.`;
+function truncate(value: string, maxLength: number) {
+  if (value.length <= maxLength) {
+    return value;
   }
 
-  return `Create a concise weekly-style briefing for "${topic}". Keep it under 260 words. Explain what matters, why it matters, and what to watch next.`;
+  return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function buildCardsDigest(cards: LearningBriefCardInput[]) {
+  return cards
+    .slice(0, 24)
+    .map((card, index) =>
+      `${index + 1}. Q: ${truncate(card.question.trim(), 180)}\nA: ${truncate(card.answer.trim(), 260)}`,
+    )
+    .join('\n\n');
+}
+
+function buildPrompt(topic: string, cards: LearningBriefCardInput[]) {
+  const cardsDigest = buildCardsDigest(cards);
+
+  return `You are creating a recap for a learner who has just studied a pack of flashcards about "${topic}".
+
+Use the actual pack content below to summarise what they have learned overall. Keep the final summary under 350 words.
+
+Your summary should:
+- recap the overall theme of the pack
+- group the main ideas into a few clear themes
+- mention one practical example or application if useful
+- mention one important pitfall, misconception, or trade-off to remember
+- feel like a helpful recap of this specific pack, not a generic topic overview
+
+Flashcard pack:
+${cardsDigest}`;
 }
 
 function buildBriefSchema() {
@@ -137,7 +168,7 @@ function extractJsonPayload(rawText: string) {
 
 async function generateWithOpenAi(
   topic: string,
-  kind: LearningBriefKind,
+  cards: LearningBriefCardInput[],
   model: string,
   apiKey: string,
 ) {
@@ -164,7 +195,7 @@ async function generateWithOpenAi(
           content: [
             {
               type: 'input_text',
-              text: buildPrompt(topic, kind),
+              text: buildPrompt(topic, cards),
             },
           ],
         },
@@ -197,39 +228,42 @@ async function generateWithOpenAi(
 
 async function generateWithOpenRouter(
   topic: string,
-  kind: LearningBriefKind,
+  cards: LearningBriefCardInput[],
   model: string,
   apiKey: string,
 ) {
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'Generate concise, technically accurate learning summaries and return only JSON.',
-        },
-        {
-          role: 'user',
-          content: `${buildPrompt(topic, kind)} Return JSON with exactly {"title": string, "content": string}.`,
-        },
-      ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'generated_learning_brief',
-          strict: true,
-          schema: buildBriefSchema(),
-        },
+  const response = await fetch(
+    'https://openrouter.ai/api/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
       },
-    }),
-  });
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Generate concise, technically accurate learning summaries and return only JSON.',
+          },
+          {
+            role: 'user',
+            content: `${buildPrompt(topic, cards)} Return JSON with exactly {"title": string, "content": string}.`,
+          },
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'generated_learning_brief',
+            strict: true,
+            schema: buildBriefSchema(),
+          },
+        },
+      }),
+    },
+  );
 
   const payload = (await response.json()) as {
     error?: { message?: string };
@@ -276,14 +310,28 @@ Deno.serve(async (request) => {
 
     const body = (await request.json()) as {
       topic?: string;
-      kind?: LearningBriefKind;
+      cards?: LearningBriefCardInput[];
     };
 
     const topic = body.topic?.trim();
-    const kind = body.kind === 'briefing' ? 'briefing' : 'summary';
+    const cards = (body.cards ?? [])
+      .filter((card) =>
+        typeof card?.question === 'string' &&
+        typeof card?.answer === 'string' &&
+        card.question.trim() &&
+        card.answer.trim()
+      )
+      .map((card) => ({
+        question: card.question.trim(),
+        answer: card.answer.trim(),
+      }));
 
     if (!topic) {
       throw new HttpError(400, 'A topic is required.');
+    }
+
+    if (cards.length === 0) {
+      throw new HttpError(400, 'At least one pack card is required.');
     }
 
     const { data: settingsRow } = await supabase
@@ -295,7 +343,7 @@ Deno.serve(async (request) => {
     const settings = settingsRow ?? getDefaultSettings();
 
     if (settings.plan_tier !== 'premium') {
-      throw new HttpError(403, 'Premium is required to generate summaries and briefings.');
+      throw new HttpError(403, 'Premium is required to generate summaries.');
     }
 
     const model = resolveCanonicalModel(settings);
@@ -311,14 +359,14 @@ Deno.serve(async (request) => {
 
     const result =
       platformProvider === 'openrouter'
-        ? await generateWithOpenRouter(topic, kind, providerModel, apiKey)
-        : await generateWithOpenAi(topic, kind, providerModel, apiKey);
+        ? await generateWithOpenRouter(topic, cards, providerModel, apiKey)
+        : await generateWithOpenAi(topic, cards, providerModel, apiKey);
 
     return jsonResponse({
       ...result,
       meta: {
         model,
-        kind,
+        kind: 'summary',
       },
     });
   } catch (error) {

@@ -1,10 +1,12 @@
 import { env, hasSupabaseEnv } from '../../lib/env'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
-import type { LearningBriefKind } from '../../types/domain'
 
 export interface GenerateLearningBriefInput {
   topic: string
-  kind: LearningBriefKind
+  cards: Array<{
+    question: string
+    answer: string
+  }>
 }
 
 export interface GenerateLearningBriefResult {
@@ -12,23 +14,22 @@ export interface GenerateLearningBriefResult {
   content: string
   meta: {
     model: string
-    kind: LearningBriefKind
+    kind: 'summary'
   }
 }
 
 function createLocalBrief(input: GenerateLearningBriefInput) {
+  const exampleCards = input.cards
+    .slice(0, 3)
+    .map((card) => `- ${card.question}: ${card.answer}`)
+    .join('\n')
+
   return {
-    title:
-      input.kind === 'summary'
-        ? `${input.topic} summary`
-        : `${input.topic} briefing`,
-    content:
-      input.kind === 'summary'
-        ? `This is a short summary for ${input.topic}. Focus on the main concepts, one practical use case, and one common pitfall to watch for.`
-        : `This is a weekly-style briefing for ${input.topic}. Highlight what matters, why it matters, and what to pay attention to next.`,
+    title: `${input.topic} summary`,
+    content: `This pack on ${input.topic} covers the core ideas, practical patterns, and common trade-offs you should remember. Review the recurring themes, connect similar questions together, and keep the main pitfalls in mind before your next session.\n\nExample recap points:\n${exampleCards}`,
     meta: {
       model: env.openaiModel,
-      kind: input.kind,
+      kind: 'summary',
     },
   } satisfies GenerateLearningBriefResult
 }
@@ -82,7 +83,7 @@ export async function generateLearningBrief(input: GenerateLearningBriefInput) {
     content: payload.content,
     meta: payload.meta ?? {
       model: env.openaiModel,
-      kind: input.kind,
+      kind: 'summary',
     },
   } satisfies GenerateLearningBriefResult
 }
