@@ -5,7 +5,7 @@ export interface UserProfile {
 
 export type PlanTier = 'free' | 'pro' | 'premium' | 'byok'
 export type AiProvider = 'openai' | 'openrouter'
-export type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5.4-mini'
+export type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5-mini' | 'gpt-5.4-mini'
 export type RedirectBackMode = 'manual' | 'after_cards'
 export type PremiumInterruptMode = 'cards' | 'summary'
 

@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAiAccess } from '../features/ai-access/useAiAccess';
-import { canAccessByok } from '../features/ai-access/byokVisibility';
+import {
+  canAccessByok,
+  canAccessPremium,
+} from '../features/ai-access/byokVisibility';
 import { useAuth } from '../features/auth/useAuth';
 import type { PlanTier } from '../types/domain';
 
@@ -18,6 +21,7 @@ interface PlanCardDefinition {
   ctaLabel: string;
   ctaKind: 'free' | 'coming-soon' | 'scroll' | 'premium';
   badge?: string;
+  secondaryBadge?: string;
 }
 
 export function PricingPage() {
@@ -31,6 +35,7 @@ export function PricingPage() {
     'success',
   );
   const showByok = canAccessByok(user?.email);
+  const canUsePremium = canAccessPremium(user?.email);
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
     const proPrice = billingCadence === 'monthly' ? '$3.99' : '$39.90';
@@ -64,14 +69,16 @@ export function PricingPage() {
           'Store up to 500 cards',
           'Generate up to 25 packs per month',
           'Generate up to 100 cards per pack',
-          'Access to the stronger hosted language learning model',
+          'Access to a stronger model',
         ],
         ctaLabel: 'Billing coming soon',
         ctaKind: 'coming-soon',
         badge:
           billingCadence === 'monthly'
             ? 'Annual discount available'
-            : 'Best value',
+            : 'Most popular',
+        secondaryBadge:
+          billingCadence === 'annual' ? '12 months for 10' : undefined,
       },
       {
         tier: 'premium',
@@ -82,17 +89,28 @@ export function PricingPage() {
           'Store up to 1,000 cards',
           'Generate up to 100 packs per month',
           'Generate up to 100 cards per pack',
-          'Unlock summaries, charts, deeper practice, and richer interrupts',
+          'Access to our strongest model',
+          'Unlock weekly progress charts',
+          'See confidence breakdowns across every review',
+          'Spot strongest and weakest topics instantly',
+          'Save AI-generated topic summaries',
+          'Save weekly-style topic briefings',
+          'Generate deeper follow-up packs from any topic',
+          'Choose summary-first premium redirects',
         ],
         ctaLabel:
           settings.planTier === 'premium'
             ? 'Current plan'
-            : 'Use premium plan',
-        ctaKind: 'premium',
+            : canUsePremium
+              ? 'Use premium plan'
+              : 'Premium coming soon',
+        ctaKind: canUsePremium ? 'premium' : 'coming-soon',
         badge:
           billingCadence === 'monthly'
-            ? 'Advanced learning tools'
-            : 'Best for serious learners',
+            ? 'Annual discount available'
+            : 'Best value',
+        secondaryBadge:
+          billingCadence === 'annual' ? '12 months for 10' : undefined,
       },
       {
         tier: 'byok',
@@ -115,7 +133,7 @@ export function PricingPage() {
     ];
 
     return cards.filter((plan) => showByok || plan.tier !== 'byok');
-  }, [billingCadence, settings.planTier, showByok]);
+  }, [billingCadence, canUsePremium, settings.planTier, showByok]);
 
   async function handleSwitchToFree() {
     setPending(true);
@@ -205,9 +223,18 @@ export function PricingPage() {
                   'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
                 ].join(' ')}
               >
-                {plan.badge ? (
-                  <div className='absolute right-4 top-4 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900'>
-                    {plan.badge}
+                {plan.badge || plan.secondaryBadge ? (
+                  <div className='absolute right-4 top-4 flex flex-col items-end gap-2'>
+                    {plan.badge ? (
+                      <div className='rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900'>
+                        {plan.badge}
+                      </div>
+                    ) : null}
+                    {plan.secondaryBadge ? (
+                      <div className='rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white'>
+                        {plan.secondaryBadge}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
 

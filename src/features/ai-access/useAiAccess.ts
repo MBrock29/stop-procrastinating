@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 import { useAuth } from '../auth/useAuth'
+import { canAccessPremium } from './byokVisibility'
 import { TIER_POLICIES } from './constants'
 import {
   deleteStoredByokCredential,
@@ -161,6 +162,10 @@ export function useAiAccess() {
         throw new Error('You must be signed in to change plans.')
       }
 
+      if (planTier === 'premium' && !canAccessPremium(user.email)) {
+        throw new Error('Premium is not available on this account yet.')
+      }
+
       const nextSettings = await saveAiAccessSettings(user.id, {
         planTier,
         byokProvider: settings.byokProvider,
@@ -186,6 +191,10 @@ export function useAiAccess() {
     ) {
       if (!user) {
         throw new Error('You must be signed in to update AI settings.')
+      }
+
+      if ((input.planTier ?? settings.planTier) === 'premium' && !canAccessPremium(user.email)) {
+        throw new Error('Premium is not available on this account yet.')
       }
 
       const nextSettings = await saveAiAccessSettings(user.id, {

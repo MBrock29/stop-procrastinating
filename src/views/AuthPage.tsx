@@ -39,12 +39,13 @@ export function AuthPage() {
       badge:
         billingCadence === 'monthly'
           ? 'Annual discount available'
-          : 'Best value',
+          : 'Most popular',
+      secondaryBadge: billingCadence === 'annual' ? '12 months for 10' : undefined,
       benefits: [
         'Store up to 500 cards',
         'Generate up to 25 packs per month',
         'Generate up to 100 cards per pack',
-        'Access to our strongest model',
+        'Access to a stronger model',
       ],
     },
     {
@@ -53,13 +54,21 @@ export function AuthPage() {
       cadence: billingCadence === 'monthly' ? '/month' : '/year',
       badge:
         billingCadence === 'monthly'
-          ? 'Advanced learning tools'
-          : 'Best for serious learners',
+          ? 'Annual discount available'
+          : 'Best value',
+      secondaryBadge: billingCadence === 'annual' ? '12 months for 10' : undefined,
       benefits: [
         'Store up to 1,000 cards',
         'Generate up to 100 packs per month',
         'Generate up to 100 cards per pack',
-        'Unlock summaries, charts, and deeper practice',
+        'Access to our strongest model',
+        'Unlock weekly progress charts',
+        'See confidence breakdowns across every review',
+        'Spot strongest and weakest topics instantly',
+        'Save AI-generated topic summaries',
+        'Save weekly-style topic briefings',
+        'Generate deeper follow-up packs from any topic',
+        'Choose summary-first premium redirects',
       ],
     },
     {
@@ -174,9 +183,18 @@ export function AuthPage() {
                     'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
                   ].join(' ')}
                 >
-                  {plan.badge ? (
-                    <div className='absolute right-4 top-4 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900'>
-                      {plan.badge}
+                  {plan.badge || plan.secondaryBadge ? (
+                    <div className='absolute right-4 top-4 flex flex-col items-end gap-2'>
+                      {plan.badge ? (
+                        <div className='rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900'>
+                          {plan.badge}
+                        </div>
+                      ) : null}
+                      {plan.secondaryBadge ? (
+                        <div className='rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white'>
+                          {plan.secondaryBadge}
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
 

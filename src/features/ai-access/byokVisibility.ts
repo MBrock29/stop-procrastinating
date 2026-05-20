@@ -19,3 +19,7 @@ export function canAccessByok(email?: string | null) {
 
   return hasInternalAccess(email)
 }
+
+export function canAccessPremium(email?: string | null) {
+  return hasInternalAccess(email)
+}

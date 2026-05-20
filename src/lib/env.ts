@@ -4,7 +4,8 @@ const browserOrigin =
 const appUrl = import.meta.env.VITE_APP_URL ?? browserOrigin
 const enableByok = String(import.meta.env.VITE_ENABLE_BYOK ?? 'false') === 'true'
 const internalAccessEmails = String(
-  import.meta.env.VITE_INTERNAL_ACCESS_EMAILS ?? 'mbrock19@gmail.com',
+  import.meta.env.VITE_INTERNAL_ACCESS_EMAILS ??
+    'mbrock19@gmail.com,brockstaayt@gmail.com',
 )
   .split(',')
   .map((value) => value.trim().toLowerCase())

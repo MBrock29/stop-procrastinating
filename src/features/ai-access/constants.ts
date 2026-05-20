@@ -8,7 +8,11 @@ export interface TierPolicy {
   defaultModel: SupportedAiModel
 }
 
-export const SUPPORTED_AI_MODELS: SupportedAiModel[] = ['gpt-4.1-mini', 'gpt-5.4-mini']
+export const SUPPORTED_AI_MODELS: SupportedAiModel[] = [
+  'gpt-4.1-mini',
+  'gpt-5-mini',
+  'gpt-5.4-mini',
+]
 export const SUPPORTED_AI_PROVIDERS: AiProvider[] = ['openai', 'openrouter']
 
 export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
@@ -24,7 +28,7 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
     description: 'Higher-output packs on the stronger hosted model.',
     monthlyPackLimit: 25,
     maxCardsPerPack: 100,
-    defaultModel: 'gpt-5.4-mini',
+    defaultModel: 'gpt-5-mini',
   },
   premium: {
     label: 'Premium',
@@ -43,6 +47,6 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
 }
 
 export const FREE_PLAN_MODEL: SupportedAiModel = 'gpt-4.1-mini'
-export const PRO_PLAN_MODEL: SupportedAiModel = 'gpt-5.4-mini'
+export const PRO_PLAN_MODEL: SupportedAiModel = 'gpt-5-mini'
 
 export const AI_REQUEST_COOLDOWN_SECONDS = 10
