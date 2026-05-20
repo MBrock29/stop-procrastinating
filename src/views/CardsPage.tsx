@@ -24,6 +24,16 @@ const initialAiDraft: AiDraft = {
   cardCount: '10',
 }
 
+const demoBriefs = [
+  {
+    id: 'demo-brief-react-performance',
+    title: 'React performance summary',
+    topic: 'React performance interview pack',
+    content:
+      'This sample summary shows how Premium can recap a pack after you study it. In a real summary, Better Focus groups the cards into the main ideas, highlights one practical example, and reminds you about a key pitfall to remember.\n\nHere, the recap would likely connect rendering costs, memoisation trade-offs, and when to prioritise simpler code over premature optimisation.',
+  },
+]
+
 function CardEditor({
   draft,
   heading,
@@ -357,6 +367,7 @@ export function CardsPage() {
                 parsedCardCount > remainingStorageSlots
               ? `You can only add ${remainingStorageSlots} more card${remainingStorageSlots === 1 ? '' : 's'} before reaching this plan’s ${storageCap}-card limit.`
           : null
+  const previewBriefs = showPremiumTools ? briefs : demoBriefs
 
   async function handleUpdate(cardId: string, nextDraft: CardDraft) {
     if (!nextDraft.question.trim() || !nextDraft.answer.trim()) {
@@ -757,11 +768,8 @@ export function CardsPage() {
           </button>
 
           {!showPremiumTools ? (
-            <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
-              Premium unlocks saved pack summaries and deeper follow-up learning packs.
-              <Link to="/app/pricing" className="ml-2 font-semibold text-reef">
-                Unlock premium
-              </Link>
+            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+              Please upgrade to premium for this feature.
             </div>
           ) : null}
 
@@ -771,18 +779,18 @@ export function CardsPage() {
             </div>
           ) : null}
 
-          {showPremiumTools && briefsExpanded ? (
+          {briefsExpanded ? (
             briefsLoading ? (
               <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
                 Loading saved summaries…
               </div>
-            ) : briefs.length === 0 ? (
+            ) : previewBriefs.length === 0 ? (
               <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
                 No saved summaries yet. Use `Summarise pack` on one of your saved packs below.
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                {briefs.map((brief) => (
+                {previewBriefs.map((brief) => (
                   <article
                     key={brief.id}
                     className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
@@ -808,6 +816,7 @@ export function CardsPage() {
                         type="button"
                         className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
                         onClick={() => void removeBrief(brief.id)}
+                        disabled={!showPremiumTools}
                       >
                         Delete
                       </button>
@@ -903,7 +912,26 @@ export function CardsPage() {
                               </button>
                             ) : null}
                           </>
-                        ) : null}
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className="ghost-button whitespace-nowrap px-3 py-2 text-xs opacity-60"
+                              disabled
+                            >
+                              Summarise pack
+                            </button>
+                            {canGoDeeper ? (
+                              <button
+                                type="button"
+                                className="ghost-button whitespace-nowrap px-3 py-2 text-xs opacity-60"
+                                disabled
+                              >
+                                Go deeper
+                              </button>
+                            ) : null}
+                          </>
+                        )}
                         <button
                           type="button"
                           className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
@@ -924,6 +952,12 @@ export function CardsPage() {
                           ].join(' ')}
                         >
                           {packMessage}
+                        </div>
+                      ) : null}
+
+                      {!showPremiumTools ? (
+                        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                          Please upgrade to premium for this feature.
                         </div>
                       ) : null}
 

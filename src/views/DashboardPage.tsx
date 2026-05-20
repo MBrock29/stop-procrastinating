@@ -16,6 +16,54 @@ import {
 } from '../features/insights/InsightsCharts'
 import { useLearningInsights } from '../features/insights/useLearningInsights'
 
+const demoDailyReviews = [
+  { label: 'Mon', total: 8, know: 4, semi: 2, notConfident: 2 },
+  { label: 'Tue', total: 11, know: 5, semi: 4, notConfident: 2 },
+  { label: 'Wed', total: 7, know: 3, semi: 3, notConfident: 1 },
+  { label: 'Thu', total: 13, know: 7, semi: 4, notConfident: 2 },
+  { label: 'Fri', total: 10, know: 5, semi: 3, notConfident: 2 },
+  { label: 'Sat', total: 6, know: 2, semi: 2, notConfident: 2 },
+  { label: 'Sun', total: 9, know: 4, semi: 3, notConfident: 2 },
+]
+
+const demoWeakestTopics = [
+  {
+    topic: 'System design basics',
+    totalCards: 12,
+    knowCount: 3,
+    semiCount: 4,
+    notConfidentCount: 5,
+    score: 0.42,
+  },
+  {
+    topic: 'React performance',
+    totalCards: 10,
+    knowCount: 3,
+    semiCount: 4,
+    notConfidentCount: 3,
+    score: 0.5,
+  },
+]
+
+const demoStrongestTopics = [
+  {
+    topic: 'JavaScript fundamentals',
+    totalCards: 14,
+    knowCount: 10,
+    semiCount: 3,
+    notConfidentCount: 1,
+    score: 0.86,
+  },
+  {
+    topic: 'HTML and CSS',
+    totalCards: 9,
+    knowCount: 6,
+    semiCount: 2,
+    notConfidentCount: 1,
+    score: 0.78,
+  },
+]
+
 export function DashboardPage() {
   const { user } = useAuth()
   const { domains } = useBlockedDomains()
@@ -64,6 +112,20 @@ export function DashboardPage() {
   const completedSetupSteps = onboardingSteps.filter((step) => step.done).length
   const setupIsComplete = completedSetupSteps === onboardingSteps.length
   const [isSetupOpen, setIsSetupOpen] = useState(!setupIsComplete)
+  const previewDailyReviews = showPremiumInsights
+    ? insights.dailyReviews
+    : demoDailyReviews
+  const previewKnowReviews = showPremiumInsights ? insights.metrics.knowReviews : 36
+  const previewSemiReviews = showPremiumInsights ? insights.metrics.semiReviews : 21
+  const previewNotConfidentReviews = showPremiumInsights
+    ? insights.metrics.notConfidentReviews
+    : 14
+  const previewWeakestTopics = showPremiumInsights
+    ? insights.weakestTopics
+    : demoWeakestTopics
+  const previewStrongestTopics = showPremiumInsights
+    ? insights.strongestTopics
+    : demoStrongestTopics
 
   useEffect(() => {
     setIsSetupOpen(!setupIsComplete)
@@ -204,7 +266,14 @@ export function DashboardPage() {
                 Track momentum, confidence, and the topics that need more attention.
               </p>
             </div>
-            <div className="rounded-full bg-reef/10 px-4 py-2 text-sm font-semibold text-reef">
+            <div
+              className={[
+                'rounded-full px-4 py-2 text-sm font-semibold',
+                showPremiumInsights
+                  ? 'bg-reef/10 text-reef'
+                  : 'bg-rose-50 text-rose-700',
+              ].join(' ')}
+            >
               {showPremiumInsights ? 'Premium active' : 'Premium feature'}
             </div>
           </div>
@@ -250,30 +319,30 @@ export function DashboardPage() {
             </div>
           ) : null}
 
-          {showPremiumInsights ? (
-            <div className="mt-5 grid gap-4 xl:grid-cols-2">
-              <WeeklyReviewChart snapshots={insights.dailyReviews} />
-              <ConfidenceBreakdownChart
-                know={insights.metrics.knowReviews}
-                semi={insights.metrics.semiReviews}
-                notConfident={insights.metrics.notConfidentReviews}
-              />
-              <TopicInsightList
-                title="Weakest topics"
-                subtitle="The areas where confidence is lagging most"
-                items={insights.weakestTopics}
-              />
-              <TopicInsightList
-                title="Strongest topics"
-                subtitle="The areas where your review confidence is strongest"
-                items={insights.strongestTopics}
-              />
+          {!showPremiumInsights ? (
+            <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+              Please upgrade to premium for this feature.
             </div>
-          ) : (
-            <div className="mt-5 rounded-3xl border border-dashed border-[var(--app-border)] px-5 py-6 text-sm muted-copy">
-              Premium unlocks weekly progress charts, confidence breakdowns, and weak-topic insights so users can see how their learning changes over time.
-            </div>
-          )}
+          ) : null}
+
+          <div className="mt-5 grid gap-4 xl:grid-cols-2">
+            <WeeklyReviewChart snapshots={previewDailyReviews} />
+            <ConfidenceBreakdownChart
+              know={previewKnowReviews}
+              semi={previewSemiReviews}
+              notConfident={previewNotConfidentReviews}
+            />
+            <TopicInsightList
+              title="Weakest topics"
+              subtitle="The areas where confidence is lagging most"
+              items={previewWeakestTopics}
+            />
+            <TopicInsightList
+              title="Strongest topics"
+              subtitle="The areas where your review confidence is strongest"
+              items={previewStrongestTopics}
+            />
+          </div>
         </div>
     </section>
   )
