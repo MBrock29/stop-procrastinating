@@ -148,9 +148,9 @@ export function BlockedDomainsPage() {
               <p className='mt-1'>
                 {extensionStatus.status === 'connected'
                   ? extensionStatus.isStale
-                    ? 'The extension is connected, but the last sync looks old. Send the latest rules again.'
-                    : 'The extension is connected. Use this if you want to push your latest active rules again.'
-                  : 'If the extension is installed, this sends your active rules to it from the app.'}
+                    ? 'The extension is connected, but the last sync looks old. Your blocked-site changes should usually update automatically, but you can use the button here to manually refresh the rules.'
+                    : 'Your blocked-site changes should usually update automatically. Use the button here if you want to manually refresh the extension rules.'
+                  : 'If the extension is installed, your active rules should usually sync automatically. Use the button here if you want to try a manual refresh from the app.'}
               </p>
               {extensionStatus.details?.lastSyncedAt ? (
                 <p className='mt-2 text-sm text-slate-500 dark:text-slate-300'>
@@ -163,10 +163,10 @@ export function BlockedDomainsPage() {
             </div>
             <button
               type='button'
-              className='ghost-button'
+              className='ghost-button text-sm'
               onClick={handleManualSync}
             >
-              Sync browser extension
+              Manual refresh
             </button>
           </div>
           {syncMessage ? (
