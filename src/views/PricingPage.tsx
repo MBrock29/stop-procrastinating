@@ -6,6 +6,10 @@ import {
   canAccessPremium,
 } from '../features/ai-access/byokVisibility';
 import { useAuth } from '../features/auth/useAuth';
+import {
+  type PricingCurrency,
+  usePricingCurrency,
+} from '../features/pricing/usePricingCurrency';
 import type { PlanTier } from '../types/domain';
 
 type BillingCadence = 'monthly' | 'annual';
@@ -29,6 +33,7 @@ export function PricingPage() {
   const { isLoading, settings, setPlanTier } = useAiAccess();
   const [billingCadence, setBillingCadence] =
     useState<BillingCadence>('monthly');
+  const { currency, setCurrency, prices } = usePricingCurrency();
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackTone, setFeedbackTone] = useState<'success' | 'error'>(
@@ -38,9 +43,13 @@ export function PricingPage() {
   const canUsePremium = canAccessPremium(user?.email);
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
-    const proPrice = billingCadence === 'monthly' ? '$3.99' : '$39.90';
+    const proPrice =
+      billingCadence === 'monthly' ? prices.proMonthly : prices.proAnnual;
     const proCadenceLabel = billingCadence === 'monthly' ? '/month' : '/year';
-    const premiumPrice = billingCadence === 'monthly' ? '$9.99' : '$99.90';
+    const premiumPrice =
+      billingCadence === 'monthly'
+        ? prices.premiumMonthly
+        : prices.premiumAnnual;
     const premiumCadenceLabel =
       billingCadence === 'monthly' ? '/month' : '/year';
 
@@ -48,7 +57,7 @@ export function PricingPage() {
       {
         tier: 'free',
         title: 'Free',
-        price: '$0',
+        price: prices.freeMonthly,
         cadenceLabel: '/month',
         benefits: [
           'Store up to 100 cards',
@@ -131,7 +140,17 @@ export function PricingPage() {
     ];
 
     return cards.filter((plan) => showByok || plan.tier !== 'byok');
-  }, [billingCadence, canUsePremium, settings.planTier, showByok]);
+  }, [
+    billingCadence,
+    canUsePremium,
+    prices.freeMonthly,
+    prices.premiumAnnual,
+    prices.premiumMonthly,
+    prices.proAnnual,
+    prices.proMonthly,
+    settings.planTier,
+    showByok,
+  ]);
 
   async function handleSwitchToFree() {
     setPending(true);
@@ -176,7 +195,7 @@ export function PricingPage() {
   return (
     <div className='space-y-6'>
       <section className='overflow-hidden'>
-        <div className='flex justify-end'>
+        <div className='flex flex-wrap justify-end gap-3'>
           <div className='soft-card inline-flex p-1'>
             {(['monthly', 'annual'] as BillingCadence[]).map((cadence) => (
               <button
@@ -193,6 +212,25 @@ export function PricingPage() {
                 {cadence === 'monthly' ? 'Monthly' : 'Annual'}
               </button>
             ))}
+          </div>
+          <div className='soft-card inline-flex p-1'>
+            {(['USD', 'GBP', 'EUR'] as PricingCurrency[]).map(
+              (nextCurrency) => (
+                <button
+                  key={nextCurrency}
+                  type='button'
+                  onClick={() => setCurrency(nextCurrency)}
+                  className={[
+                    'rounded-full px-4 py-2 text-sm font-semibold transition',
+                    currency === nextCurrency
+                      ? 'bg-reef text-white shadow-lg shadow-reef/20'
+                      : 'text-[var(--app-text)] hover:bg-[var(--app-surface-strong)]',
+                  ].join(' ')}
+                >
+                  {nextCurrency}
+                </button>
+              ),
+            )}
           </div>
         </div>
 

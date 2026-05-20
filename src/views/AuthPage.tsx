@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
 import { isByokPubliclyVisible } from '../features/ai-access/byokVisibility';
+import {
+  type PricingCurrency,
+  usePricingCurrency,
+} from '../features/pricing/usePricingCurrency';
 import { SiteFooter } from '../ui/SiteFooter';
 
 type BillingCadence = 'monthly' | 'annual';
@@ -18,12 +22,13 @@ export function AuthPage() {
   const { status } = useAuth();
   const [billingCadence, setBillingCadence] =
     useState<BillingCadence>('monthly');
+  const { currency, setCurrency, prices } = usePricingCurrency();
   const showByok = isByokPubliclyVisible();
 
   const planCards = [
     {
       title: 'Free',
-      price: '$0',
+      price: prices.freeMonthly,
       cadence: '/month',
       benefits: [
         'Store up to 100 cards',
@@ -34,7 +39,8 @@ export function AuthPage() {
     },
     {
       title: 'Pro',
-      price: billingCadence === 'monthly' ? '$3.99' : '$39.90',
+      price:
+        billingCadence === 'monthly' ? prices.proMonthly : prices.proAnnual,
       cadence: billingCadence === 'monthly' ? '/month' : '/year',
       badge:
         billingCadence === 'monthly'
@@ -50,7 +56,10 @@ export function AuthPage() {
     },
     {
       title: 'Premium',
-      price: billingCadence === 'monthly' ? '$9.99' : '$99.90',
+      price:
+        billingCadence === 'monthly'
+          ? prices.premiumMonthly
+          : prices.premiumAnnual,
       cadence: billingCadence === 'monthly' ? '/month' : '/year',
       badge:
         billingCadence === 'monthly'
@@ -153,7 +162,7 @@ export function AuthPage() {
             </h2>
           </div>
           <div className='mt-6 overflow-hidden'>
-            <div className='flex justify-end'>
+            <div className='flex flex-wrap justify-end gap-3'>
               <div className='soft-card inline-flex p-1'>
                 {(['monthly', 'annual'] as BillingCadence[]).map((cadence) => (
                   <button
@@ -168,6 +177,23 @@ export function AuthPage() {
                     ].join(' ')}
                   >
                     {cadence === 'monthly' ? 'Monthly' : 'Annual'}
+                  </button>
+                ))}
+              </div>
+              <div className='soft-card inline-flex p-1'>
+                {(['USD', 'GBP', 'EUR'] as PricingCurrency[]).map((nextCurrency) => (
+                  <button
+                    key={nextCurrency}
+                    type='button'
+                    onClick={() => setCurrency(nextCurrency)}
+                    className={[
+                      'rounded-full px-4 py-2 text-sm font-semibold transition',
+                      currency === nextCurrency
+                        ? 'bg-reef text-white shadow-lg shadow-reef/20'
+                        : 'text-[var(--app-text)] hover:bg-[var(--app-surface-strong)]',
+                    ].join(' ')}
+                  >
+                    {nextCurrency}
                   </button>
                 ))}
               </div>

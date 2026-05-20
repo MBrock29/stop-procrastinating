@@ -115,6 +115,59 @@ export function SettingsPage() {
     }
   }
 
+  async function handleRedirectBackModeChange(event: ChangeEvent<HTMLSelectElement>) {
+    const nextMode = event.target.value === 'after_cards' ? 'after_cards' : 'manual'
+
+    setPending(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      await updateSettings({ redirectBackMode: nextMode })
+      setMessage(
+        nextMode === 'after_cards'
+          ? 'Automatic return is now enabled for redirect sessions.'
+          : 'Automatic return is now turned off.',
+      )
+    } catch (nextError) {
+      const nextMessage =
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to update your redirect return setting.'
+      setError(nextMessage)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function handleRedirectBackCardCountChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const nextValue = Number(event.target.value)
+
+    if (!Number.isInteger(nextValue) || nextValue < 1 || nextValue > 20) {
+      setError('Choose a whole number of cards between 1 and 20.')
+      return
+    }
+
+    setPending(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      await updateSettings({ redirectBackCardCount: nextValue })
+      setMessage(`Users will now return after ${nextValue} reviewed card${nextValue === 1 ? '' : 's'}.`)
+    } catch (nextError) {
+      const nextMessage =
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to update your redirect return count.'
+      setError(nextMessage)
+    } finally {
+      setPending(false)
+    }
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
       <section className="panel px-6 py-6 sm:px-8">
@@ -262,6 +315,50 @@ export function SettingsPage() {
                 </span>
               </span>
             </label>
+
+            <div className="mt-5 border-t border-[var(--app-border)] pt-5">
+              <div className="font-semibold text-ink dark:text-white">
+                Automatic return
+              </div>
+              <p className="muted-copy mt-2 leading-6">
+                Choose whether Better Focus should send users back to the original
+                blocked site automatically after they review a set number of cards.
+              </p>
+              <label className="mt-4 block">
+                <span className="mb-2 block font-semibold text-ink dark:text-white">
+                  Redirect return mode
+                </span>
+                <select
+                  value={settings.redirectBackMode}
+                  onChange={(event) => void handleRedirectBackModeChange(event)}
+                  disabled={pending || isLoading}
+                  className="app-input"
+                >
+                  <option value="manual">Off</option>
+                  <option value="after_cards">Return after cards answered</option>
+                </select>
+              </label>
+              {settings.redirectBackMode === 'after_cards' ? (
+                <label className="mt-4 block">
+                  <span className="mb-2 block font-semibold text-ink dark:text-white">
+                    Cards before return
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    step={1}
+                    value={settings.redirectBackCardCount}
+                    onChange={(event) => void handleRedirectBackCardCountChange(event)}
+                    disabled={pending || isLoading}
+                    className="app-input max-w-[12rem]"
+                  />
+                  <span className="muted-copy mt-2 block leading-6">
+                    Better Focus will return users after they answer this many cards in a redirect session.
+                  </span>
+                </label>
+              ) : null}
+            </div>
           </div>
 
           {settings.planTier === 'premium' ? (

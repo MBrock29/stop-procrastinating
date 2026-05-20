@@ -3,6 +3,9 @@ const browserOrigin =
 
 const appUrl = import.meta.env.VITE_APP_URL ?? browserOrigin
 const enableByok = String(import.meta.env.VITE_ENABLE_BYOK ?? 'false') === 'true'
+const umamiWebsiteId = import.meta.env.VITE_UMAMI_WEBSITE_ID
+const umamiScriptUrl =
+  import.meta.env.VITE_UMAMI_SCRIPT_URL ?? 'https://cloud.umami.is/script.js'
 const internalAccessEmails = String(
   import.meta.env.VITE_INTERNAL_ACCESS_EMAILS ??
     'mbrock19@gmail.com,brockstaayt@gmail.com',
@@ -17,6 +20,8 @@ export const env = {
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
   openaiModel: import.meta.env.VITE_OPENAI_GENERATION_MODEL ?? 'gpt-4.1-mini',
   enableByok,
+  umamiWebsiteId,
+  umamiScriptUrl,
   internalAccessEmails,
 }
 
