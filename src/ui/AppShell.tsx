@@ -53,7 +53,12 @@ export function AppShell() {
                   aria-label='Settings'
                   title='Settings'
                 >
-                  <span aria-hidden='true'>⚙</span>
+                  <span
+                    aria-hidden='true'
+                    className='inline-flex -translate-y-px items-center justify-center leading-none'
+                  >
+                    ⚙
+                  </span>
                 </NavLink>
                 <button
                   type='button'

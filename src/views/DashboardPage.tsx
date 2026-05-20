@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { canAccessByok } from '../features/ai-access/byokVisibility'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
@@ -56,6 +57,13 @@ export function DashboardPage() {
       actionLabel: activeCount > 0 ? 'Review sites' : 'Add blocked sites',
     },
   ]
+  const completedSetupSteps = onboardingSteps.filter((step) => step.done).length
+  const setupIsComplete = completedSetupSteps === onboardingSteps.length
+  const [isSetupOpen, setIsSetupOpen] = useState(!setupIsComplete)
+
+  useEffect(() => {
+    setIsSetupOpen(!setupIsComplete)
+  }, [setupIsComplete])
 
   const extensionLabel =
     extensionStatus.status === 'connected'
@@ -124,40 +132,59 @@ export function DashboardPage() {
         <div className="soft-card mt-8 p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-lg font-bold text-ink dark:text-white">Get set up</h3>
-              <p className="muted-copy mt-2 text-sm leading-6">
-                Follow these steps once, then the habit-interrupt loop can take over.
-              </p>
+              <button
+                type="button"
+                onClick={() => setIsSetupOpen((current) => !current)}
+                className="inline-flex items-center gap-3 text-left"
+              >
+                <h3 className="text-lg font-bold text-ink dark:text-white">Get set up</h3>
+                <span
+                  className={[
+                    'inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--app-surface-strong)] text-sm font-bold text-slate-500 transition',
+                    isSetupOpen ? 'rotate-180' : '',
+                  ].join(' ')}
+                  aria-hidden="true"
+                >
+                  ˅
+                </span>
+              </button>
+              {isSetupOpen ? (
+                <p className="muted-copy mt-2 text-sm leading-6">
+                  Follow these steps once, then the habit-interrupt loop can take over.
+                </p>
+              ) : null}
             </div>
             <div className="rounded-full bg-reef/10 px-4 py-2 text-sm font-semibold text-reef">
-              {onboardingSteps.filter((step) => step.done).length}/{onboardingSteps.length} complete
+              {completedSetupSteps}/{onboardingSteps.length} complete
             </div>
           </div>
-          <div className="mt-5 space-y-3">
-            {onboardingSteps.map((step, index) => (
-              <div
-                key={step.label}
-                className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-3">
-                      <div className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${step.done ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
-                        {step.done ? '✓' : index + 1}
+          {isSetupOpen ? (
+            <div className="mt-5 space-y-3">
+              {onboardingSteps.map((step, index) => (
+                <div
+                  key={step.label}
+                  className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-3">
+                        <div className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${step.done ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+                          {step.done ? '✓' : index + 1}
+                        </div>
+                        <div className="text-base font-bold text-ink dark:text-white">{step.label}</div>
                       </div>
-                      <div className="text-base font-bold text-ink dark:text-white">{step.label}</div>
+                      <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+                        {step.description}
+                      </div>
                     </div>
-                    <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
-                      {step.description}
-                    </div>
+                    <Link to={step.actionHref} className="ghost-button">
+                      {step.actionLabel}
+                    </Link>
                   </div>
-                  <Link to={step.actionHref} className="ghost-button">
-                    {step.actionLabel}
-                  </Link>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : null}
           {showByok && settings.planTier === 'byok' && !byokCredentialStatus ? (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               BYOK is selected, but there is no saved provider key on your account yet. Add one on the BYOK page before generating more packs.
@@ -183,7 +210,7 @@ export function DashboardPage() {
               <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
                 Total reviews
               </div>
-              <div className="mt-3 text-3xl font-bold text-ink dark:text-white">
+              <div className="mt-3 text-4xl font-extrabold text-ink dark:text-white">
                 {insights.metrics.totalReviews}
               </div>
             </div>
@@ -191,7 +218,7 @@ export function DashboardPage() {
               <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
                 Know rate
               </div>
-              <div className="mt-3 text-3xl font-bold text-ink dark:text-white">
+              <div className="mt-3 text-4xl font-extrabold text-ink dark:text-white">
                 {insights.metrics.confidenceRate}%
               </div>
             </div>
@@ -199,7 +226,7 @@ export function DashboardPage() {
               <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
                 Active cards
               </div>
-              <div className="mt-3 text-3xl font-bold text-ink dark:text-white">
+              <div className="mt-3 text-4xl font-extrabold text-ink dark:text-white">
                 {insights.metrics.activeCards}
               </div>
             </div>
@@ -207,7 +234,7 @@ export function DashboardPage() {
               <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
                 Archived cards
               </div>
-              <div className="mt-3 text-3xl font-bold text-ink dark:text-white">
+              <div className="mt-3 text-4xl font-extrabold text-ink dark:text-white">
                 {insights.metrics.archivedCards}
               </div>
             </div>

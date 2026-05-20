@@ -66,7 +66,7 @@ export function PricingPage() {
         price: proPrice,
         cadenceLabel: proCadenceLabel,
         benefits: [
-          'Store up to 500 cards',
+          'Store up to 1,000 cards',
           'Generate up to 25 packs per month',
           'Generate up to 100 cards per pack',
           'Access to a stronger model',
@@ -90,12 +90,11 @@ export function PricingPage() {
           'Generate up to 100 packs per month',
           'Generate up to 100 cards per pack',
           'Access to our strongest model',
+          'Generate deeper follow-up packs from any topic',
+          'Generate pack summaries to solidify learning',
           'Unlock weekly progress charts',
           'See confidence breakdowns across every review',
           'Spot strongest and weakest topics instantly',
-          'Save AI-generated topic summaries',
-          'Generate deeper follow-up packs from any topic',
-          'Choose summary-first premium redirects',
         ],
         ctaLabel:
           settings.planTier === 'premium'
