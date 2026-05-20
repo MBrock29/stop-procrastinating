@@ -15,7 +15,7 @@ const byokAccessEmails = String(
   .filter(Boolean)
 const premiumAccessEmails = String(
   import.meta.env.VITE_PREMIUM_ACCESS_EMAILS ??
-    'mbrock19@gmail.com,brockstaayt@gmail.com,mafeco97@icloud.com',
+    'mbrock19@gmail.com,brockstaayt@gmail.com,mafeco97@icloud.com,asamshan456@gmail.com',
 )
   .split(',')
   .map((value) => value.trim().toLowerCase())
