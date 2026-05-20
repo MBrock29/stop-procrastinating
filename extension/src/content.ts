@@ -60,6 +60,14 @@ async function refreshPresence() {
 
 void refreshPresence()
 
+window.postMessage(
+  {
+    source: 'stop-procrastinating-extension',
+    type: EXTENSION_REQUEST_SYNC_MESSAGE,
+  },
+  window.location.origin,
+)
+
 window.addEventListener('message', (event) => {
   if (event.source !== window) {
     return

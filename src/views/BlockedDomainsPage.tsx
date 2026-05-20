@@ -17,6 +17,17 @@ export function BlockedDomainsPage() {
     .filter((item) => item.isActive)
     .map((item) => item.domain);
 
+  function queueStatusRefresh(delayMs = 600) {
+    window.setTimeout(() => {
+      void extensionStatus.refresh();
+    }, delayMs);
+  }
+
+  function syncActiveDomains(nextActiveDomains: string[]) {
+    syncExtensionRules(nextActiveDomains);
+    queueStatusRefresh();
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
@@ -27,7 +38,8 @@ export function BlockedDomainsPage() {
     const rawDomain = String(formData.get('domain') ?? '');
 
     try {
-      await addDomain(rawDomain);
+      const created = await addDomain(rawDomain);
+      syncActiveDomains([created.domain, ...activeDomains]);
       form.reset();
     } catch (nextError) {
       const message =
@@ -43,6 +55,7 @@ export function BlockedDomainsPage() {
   function handleManualSync() {
     setSyncMessage(null);
     syncExtensionRules(activeDomains);
+    queueStatusRefresh();
     window.setTimeout(() => {
       void extensionStatus.refresh().then(() => {
         setSyncMessage(
@@ -52,6 +65,28 @@ export function BlockedDomainsPage() {
         );
       });
     }, 600);
+  }
+
+  async function handleToggleDomain(domainId: string, isActive: boolean) {
+    await toggleDomain(domainId, isActive);
+
+    const nextActiveDomains = domains
+      .map((item) =>
+        item.id === domainId ? { ...item, isActive } : item,
+      )
+      .filter((item) => item.isActive)
+      .map((item) => item.domain);
+
+    syncActiveDomains(nextActiveDomains);
+  }
+
+  async function handleRemoveDomain(domainId: string) {
+    const nextActiveDomains = domains
+      .filter((item) => item.id !== domainId && item.isActive)
+      .map((item) => item.domain);
+
+    await removeDomain(domainId);
+    syncActiveDomains(nextActiveDomains);
   }
 
   return (
@@ -208,16 +243,14 @@ export function BlockedDomainsPage() {
                   <button
                     type='button'
                     className='ghost-button'
-                    onClick={() =>
-                      void toggleDomain(domain.id, !domain.isActive)
-                    }
+                    onClick={() => void handleToggleDomain(domain.id, !domain.isActive)}
                   >
                     {domain.isActive ? 'Pause rule' : 'Resume rule'}
                   </button>
                   <button
                     type='button'
                     className='rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100'
-                    onClick={() => void removeDomain(domain.id)}
+                    onClick={() => void handleRemoveDomain(domain.id)}
                   >
                     Delete
                   </button>
