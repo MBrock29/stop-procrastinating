@@ -6,9 +6,16 @@ const enableByok = String(import.meta.env.VITE_ENABLE_BYOK ?? 'false') === 'true
 const umamiWebsiteId = import.meta.env.VITE_UMAMI_WEBSITE_ID
 const umamiScriptUrl =
   import.meta.env.VITE_UMAMI_SCRIPT_URL ?? 'https://cloud.umami.is/script.js'
-const internalAccessEmails = String(
-  import.meta.env.VITE_INTERNAL_ACCESS_EMAILS ??
+const byokAccessEmails = String(
+  import.meta.env.VITE_BYOK_ACCESS_EMAILS ??
     'mbrock19@gmail.com,brockstaayt@gmail.com',
+)
+  .split(',')
+  .map((value) => value.trim().toLowerCase())
+  .filter(Boolean)
+const premiumAccessEmails = String(
+  import.meta.env.VITE_PREMIUM_ACCESS_EMAILS ??
+    'mbrock19@gmail.com,brockstaayt@gmail.com,mafeco97@icloud.com',
 )
   .split(',')
   .map((value) => value.trim().toLowerCase())
@@ -22,7 +29,8 @@ export const env = {
   enableByok,
   umamiWebsiteId,
   umamiScriptUrl,
-  internalAccessEmails,
+  byokAccessEmails,
+  premiumAccessEmails,
 }
 
 export const hasSupabaseEnv = Boolean(env.supabaseUrl && env.supabaseAnonKey)

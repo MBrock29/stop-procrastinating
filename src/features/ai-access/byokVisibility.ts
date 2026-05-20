@@ -4,12 +4,24 @@ export function isByokPubliclyVisible() {
   return env.enableByok
 }
 
-export function hasInternalAccess(email?: string | null) {
+function normalizeEmail(email?: string | null) {
+  return email?.trim().toLowerCase() ?? null
+}
+
+export function hasByokAccess(email?: string | null) {
   if (!email) {
     return false
   }
 
-  return env.internalAccessEmails.includes(email.trim().toLowerCase())
+  return env.byokAccessEmails.includes(normalizeEmail(email)!)
+}
+
+export function hasPremiumAccess(email?: string | null) {
+  if (!email) {
+    return false
+  }
+
+  return env.premiumAccessEmails.includes(normalizeEmail(email)!)
 }
 
 export function canAccessByok(email?: string | null) {
@@ -17,13 +29,13 @@ export function canAccessByok(email?: string | null) {
     return true
   }
 
-  return hasInternalAccess(email)
+  return hasByokAccess(email)
 }
 
 export function canAccessPremium(email?: string | null) {
-  return hasInternalAccess(email)
+  return hasPremiumAccess(email)
 }
 
 export function canAccessUsageTab(email?: string | null) {
-  return email?.trim().toLowerCase() === 'mbrock19@gmail.com'
+  return normalizeEmail(email) === 'mbrock19@gmail.com'
 }
