@@ -66,7 +66,7 @@ export function PricingPage() {
         price: proPrice,
         cadenceLabel: proCadenceLabel,
         benefits: [
-          'Store up to 1,000 cards',
+          'Store up to 2,500 cards',
           'Generate up to 25 packs per month',
           'Generate up to 100 cards per pack',
           'Access to a stronger model',
@@ -86,7 +86,7 @@ export function PricingPage() {
         price: premiumPrice,
         cadenceLabel: premiumCadenceLabel,
         benefits: [
-          'Store up to 5,000 cards',
+          'Store up to 10,000 cards',
           'Generate up to 100 packs per month',
           'Generate up to 100 cards per pack',
           'Access to our strongest model',

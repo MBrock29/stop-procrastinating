@@ -22,8 +22,8 @@ begin
 
   allowed_cards := case current_plan
     when 'free' then 100
-    when 'pro' then 1000
-    when 'premium' then 5000
+    when 'pro' then 2500
+    when 'premium' then 10000
     when 'byok' then 500
     else 100
   end;

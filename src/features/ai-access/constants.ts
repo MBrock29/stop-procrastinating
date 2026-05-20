@@ -30,7 +30,7 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
     description: 'Higher-output packs on the stronger hosted model.',
     monthlyPackLimit: 25,
     maxCardsPerPack: 100,
-    maxStoredCards: 1000,
+    maxStoredCards: 2500,
     defaultModel: 'gpt-5-mini',
   },
   premium: {
@@ -38,7 +38,7 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
     description: 'Deeper learning tools, summaries, and richer interrupts.',
     monthlyPackLimit: 100,
     maxCardsPerPack: 100,
-    maxStoredCards: 5000,
+    maxStoredCards: 10000,
     defaultModel: 'gpt-5.4-mini',
   },
   byok: {
