@@ -8,6 +8,7 @@ import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { useAuth } from '../features/auth/useAuth'
 import { useLearningCards } from '../features/cards/useLearningCards'
 import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains'
+import { syncExtensionRules } from '../features/extension/extensionBridge'
 import { useExtensionStatus } from '../features/extension/useExtensionStatus'
 import {
   ConfidenceBreakdownChart,
@@ -87,8 +88,9 @@ export function DashboardPage() {
           ? 'The extension is connected, but the last sync looks old.'
           : 'Chrome extension is connected and can receive fresh rules.'
         : 'Install or reopen the extension in Chrome, then sync from the app.',
-      actionHref: hasExtensionConnection ? '/app/sites' : '/app/setup',
-      actionLabel: hasExtensionConnection ? 'Sync extension' : 'Setup guide',
+      actionHref: null,
+      actionLabel: 'Manual refresh',
+      actionKind: 'manual-refresh',
     },
     {
       label: 'Add learning cards',
@@ -98,6 +100,7 @@ export function DashboardPage() {
         : 'Generate your first AI pack to start building your library.',
       actionHref: '/app/cards',
       actionLabel: hasAnyCards ? 'Open cards' : 'Add cards',
+      actionKind: 'link',
     },
     {
       label: 'Choose blocked sites',
@@ -107,11 +110,13 @@ export function DashboardPage() {
         : 'Add the sites you want to interrupt and redirect.',
       actionHref: '/app/sites',
       actionLabel: activeCount > 0 ? 'Review sites' : 'Add blocked sites',
+      actionKind: 'link',
     },
   ]
   const completedSetupSteps = onboardingSteps.filter((step) => step.done).length
   const setupIsComplete = completedSetupSteps === onboardingSteps.length
   const [isSetupOpen, setIsSetupOpen] = useState(!setupIsComplete)
+  const [setupMessage, setSetupMessage] = useState<string | null>(null)
   const previewDailyReviews = showPremiumInsights
     ? insights.dailyReviews
     : demoDailyReviews
@@ -130,6 +135,29 @@ export function DashboardPage() {
   useEffect(() => {
     setIsSetupOpen(!setupIsComplete)
   }, [setupIsComplete])
+
+  function queueStatusRefresh(delayMs = 600) {
+    window.setTimeout(() => {
+      void extensionStatus.refresh()
+    }, delayMs)
+  }
+
+  function handleManualExtensionRefresh() {
+    const activeDomains = domains.filter((item) => item.isActive).map((item) => item.domain)
+
+    setSetupMessage(null)
+    syncExtensionRules(activeDomains)
+    queueStatusRefresh()
+    window.setTimeout(() => {
+      void extensionStatus.refresh().then(() => {
+        setSetupMessage(
+          activeDomains.length === 0
+            ? 'Extension checked. No active blocked sites are available to sync yet.'
+            : 'Manual refresh sent. If Chrome is open with the extension installed, it should now have your latest active rules.',
+        )
+      })
+    }, 600)
+  }
 
   const extensionLabel =
     extensionStatus.status === 'connected'
@@ -234,12 +262,27 @@ export function DashboardPage() {
                         {step.description}
                       </div>
                     </div>
-                    <Link to={step.actionHref} className="ghost-button">
-                      {step.actionLabel}
-                    </Link>
+                    {step.actionKind === 'manual-refresh' ? (
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={handleManualExtensionRefresh}
+                      >
+                        {step.actionLabel}
+                      </button>
+                    ) : (
+                      <Link to={step.actionHref ?? '/app'} className="ghost-button">
+                        {step.actionLabel}
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}
+            </div>
+          ) : null}
+          {setupMessage ? (
+            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              {setupMessage}
             </div>
           ) : null}
           {showByok && settings.planTier === 'byok' && !byokCredentialStatus ? (
