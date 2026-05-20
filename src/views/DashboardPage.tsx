@@ -65,6 +65,9 @@ const demoStrongestTopics = [
   },
 ]
 
+const chromeStoreUrl =
+  'https://chromewebstore.google.com/detail/better-focus/nfnolfdknehkaligmklfcnganbnmlmll'
+
 export function DashboardPage() {
   const { user } = useAuth()
   const { domains } = useBlockedDomains()
@@ -88,9 +91,9 @@ export function DashboardPage() {
           ? 'The extension is connected, but the last sync looks old.'
           : 'Chrome extension is connected and can receive fresh rules.'
         : 'Install or reopen the extension in Chrome, then sync from the app.',
-      actionHref: null,
-      actionLabel: 'Manual refresh',
-      actionKind: 'manual-refresh',
+      actionHref: hasExtensionConnection ? null : chromeStoreUrl,
+      actionLabel: hasExtensionConnection ? 'Manual refresh' : 'Add extension',
+      actionKind: hasExtensionConnection ? 'manual-refresh' : 'external',
     },
     {
       label: 'Add learning cards',
@@ -270,6 +273,15 @@ export function DashboardPage() {
                       >
                         {step.actionLabel}
                       </button>
+                    ) : step.actionKind === 'external' ? (
+                      <a
+                        href={step.actionHref ?? chromeStoreUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="ghost-button"
+                      >
+                        {step.actionLabel}
+                      </a>
                     ) : (
                       <Link to={step.actionHref ?? '/app'} className="ghost-button">
                         {step.actionLabel}
