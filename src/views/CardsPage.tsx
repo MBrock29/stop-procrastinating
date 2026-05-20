@@ -7,7 +7,7 @@ import { generateLearningBrief } from '../features/briefs/briefGenerator'
 import { useLearningBriefs } from '../features/briefs/useLearningBriefs'
 import { generateCardsWithAi } from '../features/cards/aiGenerator'
 import { useLearningCards } from '../features/cards/useLearningCards'
-import type { LearningBriefKind, LearningCard } from '../types/domain'
+import type { LearningCard } from '../types/domain'
 
 interface CardDraft {
   question: string
@@ -177,6 +177,27 @@ interface GeneratedPackSummary {
   questions: string[]
 }
 
+function parsePackDepth(topic: string) {
+  if (topic.endsWith(' (deepest learning)')) {
+    return {
+      baseTopic: topic.slice(0, -' (deepest learning)'.length),
+      depth: 2 as const,
+    }
+  }
+
+  if (topic.endsWith(' (deeper learning)')) {
+    return {
+      baseTopic: topic.slice(0, -' (deeper learning)'.length),
+      depth: 1 as const,
+    }
+  }
+
+  return {
+    baseTopic: topic,
+    depth: 0 as const,
+  }
+}
+
 export function CardsPage() {
   const {
     byokCredentialStatus,
@@ -202,8 +223,18 @@ export function CardsPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [aiError, setAiError] = useState<string | null>(null)
   const [aiSuccess, setAiSuccess] = useState<string | null>(null)
-  const [briefError, setBriefError] = useState<string | null>(null)
-  const [briefSuccess, setBriefSuccess] = useState<string | null>(null)
+  const [packActionState, setPackActionState] = useState<{
+    packId: string | null
+    tone: 'success' | 'error'
+    message: string | null
+  }>({
+    packId: null,
+    tone: 'success',
+    message: null,
+  })
+  const [briefsExpanded, setBriefsExpanded] = useState(true)
+  const [packsExpanded, setPacksExpanded] = useState(true)
+  const [expandedBriefId, setExpandedBriefId] = useState<string | null>(null)
   const [expandedPackId, setExpandedPackId] = useState<string | null>(null)
   const [visibleCardCount, setVisibleCardCount] = useState(10)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
@@ -403,44 +434,51 @@ export function CardsPage() {
     }
   }
 
-  async function handleGenerateBrief(kind: LearningBriefKind) {
+  async function handleGenerateBrief(pack: GeneratedPackSummary) {
     if (!showPremiumTools) {
       return
     }
 
-    if (!aiDraft.topic.trim()) {
-      setBriefError('Add a topic first so Better Focus knows what to summarise.')
-      return
-    }
-
     setPending(true)
-    setBriefError(null)
-    setBriefSuccess(null)
+    setPackActionState({
+      packId: pack.batchId,
+      tone: 'success',
+      message: null,
+    })
 
     try {
       const generated = await generateLearningBrief({
-        topic: aiDraft.topic.trim(),
-        kind,
+        topic: pack.topic,
+        cards: cards
+          .filter((card) => pack.cardIds.includes(card.id))
+          .map((card) => ({
+            question: card.question,
+            answer: card.answer,
+          })),
       })
 
       await addBrief({
-        topic: aiDraft.topic.trim(),
+        topic: pack.topic,
         title: generated.title,
         content: generated.content,
-        kind,
+        kind: 'summary',
       })
 
-      setBriefSuccess(
-        kind === 'summary'
-          ? `Saved a short summary with ${generated.meta.model}.`
-          : `Saved a new briefing with ${generated.meta.model}.`,
-      )
+      setPackActionState({
+        packId: pack.batchId,
+        tone: 'success',
+        message: `Saved a summary for ${pack.topic} with ${generated.meta.model}.`,
+      })
     } catch (nextError) {
       const message =
         nextError instanceof Error
           ? nextError.message
           : 'Unable to generate a learning brief right now.'
-      setBriefError(message)
+      setPackActionState({
+        packId: pack.batchId,
+        tone: 'error',
+        message,
+      })
     } finally {
       setPending(false)
     }
@@ -454,13 +492,48 @@ export function CardsPage() {
     setPending(true)
     setAiError(null)
     setAiSuccess(null)
+    setPackActionState({
+      packId: pack.batchId,
+      tone: 'success',
+      message: null,
+    })
 
     try {
-      const deeperTopic = `Go deeper on ${pack.topic}. Increase the depth, add harder follow-up questions, and focus on edge cases and trade-offs.`
+      const { baseTopic, depth } = parsePackDepth(pack.topic)
+      const relatedPacks = generatedPacks
+        .filter((candidate) => parsePackDepth(candidate.topic).baseTopic === baseTopic)
+        .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+      const originalPack =
+        relatedPacks.find((candidate) => parsePackDepth(candidate.topic).depth === 0) ?? pack
+      const originalPackCount = originalPack.count
+      const currentCards = cards.filter((card) => pack.cardIds.includes(card.id))
+      const priorCards =
+        depth === 0
+          ? currentCards
+          : cards.filter((card) =>
+              relatedPacks
+                .filter((candidate) => parsePackDepth(candidate.topic).depth < depth)
+                .some((candidate) => candidate.cardIds.includes(card.id)),
+            )
+      const studiedDigest = [...priorCards, ...currentCards]
+        .map(
+          (card, index) =>
+            `${index + 1}. Q: ${card.question}\nA: ${card.answer}`,
+        )
+        .join('\n\n')
+      const nextTopic =
+        depth === 0
+          ? `${baseTopic} (deeper learning)`
+          : `${baseTopic} (deepest learning)`
+      const targetCardCount =
+        depth === 0
+          ? Math.min(originalPackCount, 50, aiCardLimit)
+          : Math.min(originalPackCount, 25, aiCardLimit)
+      const deeperTopic = `These are learning cards the user has already studied for "${baseTopic}". Generate ${targetCardCount} more advanced follow-up cards that build directly on the studied material. The new cards must be noticeably harder than the previous pack, go deeper into trade-offs and edge cases, and assume the learner already understands the earlier questions.\n\nAlready studied cards:\n${studiedDigest}`
       const generationBatchId = crypto.randomUUID()
       const generation = await generateCardsWithAi({
         topic: deeperTopic,
-        cardCount: Math.min(pack.count, aiCardLimit),
+        cardCount: targetCardCount,
       })
 
       await addGeneratedCards(
@@ -468,20 +541,31 @@ export function CardsPage() {
           question: card.question,
           answer: card.answer,
           source: 'ai',
-          generationTopic: `${pack.topic} (deeper practice)`,
+          generationTopic: nextTopic,
           generationBatchId,
           isUserEdited: false,
         })),
       )
 
       await refreshAiAccess()
-      setAiSuccess(`Generated a deeper follow-up pack for ${pack.topic}.`)
+      setPackActionState({
+        packId: pack.batchId,
+        tone: 'success',
+        message:
+          depth === 0
+            ? `Generated a deeper learning pack for ${baseTopic}.`
+            : `Generated the deepest learning pack for ${baseTopic}.`,
+      })
     } catch (nextError) {
       const message =
         nextError instanceof Error
           ? nextError.message
           : 'Unable to generate a deeper pack right now.'
-      setAiError(message)
+      setPackActionState({
+        packId: pack.batchId,
+        tone: 'error',
+        message,
+      })
     } finally {
       setPending(false)
     }
@@ -617,134 +701,137 @@ export function CardsPage() {
         </form>
 
         <div className="soft-card mt-6 p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-4 text-left"
+            onClick={() => setBriefsExpanded((current) => !current)}
+          >
             <div>
-              <p className="section-kicker">Premium learning tools</p>
-              <h3 className="mt-2 text-lg font-bold text-ink dark:text-white">
-                Turn topics into summaries and briefings
+              <h3 className="text-lg font-bold text-ink dark:text-white">
+                Summarised learning packs ({briefs.length})
               </h3>
-              <p className="muted-copy mt-2 text-sm leading-6">
-                Premium users can save short concept summaries, weekly-style briefings,
-                and deeper follow-up packs for the same topic.
-              </p>
+              {briefsExpanded ? (
+                <p className="muted-copy mt-2 text-sm leading-6">
+                  Review saved pack recaps here. Create them from the actions on each AI pack below.
+                </p>
+              ) : null}
             </div>
-            {!showPremiumTools ? (
-              <Link to="/app/pricing" className="ghost-button">
+            <span className="text-sm font-semibold text-reef">
+              {briefsExpanded ? 'Collapse' : 'Expand'}
+            </span>
+          </button>
+
+          {!showPremiumTools ? (
+            <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
+              Premium unlocks saved pack summaries and deeper follow-up learning packs.
+              <Link to="/app/pricing" className="ml-2 font-semibold text-reef">
                 Unlock premium
               </Link>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
-          {briefError || briefsError ? (
+          {showPremiumTools && briefsError ? (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              {briefError ?? briefsError}
+              {briefsError}
             </div>
           ) : null}
 
-          {briefSuccess ? (
-            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              {briefSuccess}
-            </div>
-          ) : null}
-
-          {showPremiumTools ? (
-            <>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className="action-button"
-                  onClick={() => void handleGenerateBrief('summary')}
-                  disabled={pending}
-                >
-                  Generate summary
-                </button>
-                <button
-                  type="button"
-                  className="ghost-button"
-                  onClick={() => void handleGenerateBrief('briefing')}
-                  disabled={pending}
-                >
-                  Generate briefing
-                </button>
+          {showPremiumTools && briefsExpanded ? (
+            briefsLoading ? (
+              <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
+                Loading saved summaries…
               </div>
-
-              {briefsLoading ? (
-                <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
-                  Loading saved briefs…
-                </div>
-              ) : briefs.length === 0 ? (
-                <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
-                  No summaries or briefings yet. Use the current topic above to save one.
-                </div>
-              ) : (
-                <div className="mt-4 space-y-3">
-                  {briefs.map((brief) => (
-                    <article
-                      key={brief.id}
-                      className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-reef">
-                            {brief.kind === 'summary' ? 'Topic summary' : 'Topic briefing'}
-                          </div>
-                          <h4 className="mt-2 text-base font-bold text-ink dark:text-white">
-                            {brief.title}
-                          </h4>
-                          <p className="muted-copy mt-2 text-sm leading-6">
-                            {brief.topic}
-                          </p>
+            ) : briefs.length === 0 ? (
+              <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
+                No saved summaries yet. Use `Summarise pack` on one of your saved packs below.
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {briefs.map((brief) => (
+                  <article
+                    key={brief.id}
+                    className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left"
+                        onClick={() =>
+                          setExpandedBriefId((current) =>
+                            current === brief.id ? null : brief.id,
+                          )
+                        }
+                      >
+                        <div className="text-base font-bold text-ink dark:text-white">
+                          {brief.title}
                         </div>
-                        <button
-                          type="button"
-                          className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
-                          onClick={() => void removeBrief(brief.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
+                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
+                          {brief.topic}
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+                        onClick={() => void removeBrief(brief.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    {expandedBriefId === brief.id ? (
                       <div className="mt-4 rounded-2xl bg-[var(--app-surface-muted)] px-4 py-4 text-sm leading-7 text-slate-700 dark:text-slate-200">
                         {brief.content}
                       </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
-              Premium adds saved topic summaries, weekly-style briefings, and
-              deeper follow-up packs that push beyond the first generated set.
-            </div>
-          )}
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            )
+          ) : null}
         </div>
 
         <div className="soft-card mt-6 p-5">
-          <div>
-            <h3 className="text-lg font-bold text-ink dark:text-white">Added packs</h3>
-            <p className="muted-copy mt-2 text-sm leading-6">
-              Open a pack to see the questions it added, or delete the whole pack from your learning card library.
-            </p>
-          </div>
-
-          {generatedPacks.length === 0 ? (
-            <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
-              No AI packs yet. Generate a topic-based pack to see it listed here.
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-4 text-left"
+            onClick={() => setPacksExpanded((current) => !current)}
+          >
+            <div>
+              <h3 className="text-lg font-bold text-ink dark:text-white">
+                Added packs ({generatedPacks.length})
+              </h3>
+              {packsExpanded ? (
+                <p className="muted-copy mt-2 text-sm leading-6">
+                  Open a pack to see the questions it added, or delete the whole pack from your learning card library.
+                </p>
+              ) : null}
             </div>
-          ) : (
-            <div className="mt-4 space-y-3">
-              {generatedPacks.map((pack) => {
-                const isExpanded = expandedPackId === pack.batchId
+            <span className="text-sm font-semibold text-reef">
+              {packsExpanded ? 'Collapse' : 'Expand'}
+            </span>
+          </button>
 
-                return (
-                  <div
-                    key={pack.batchId}
-                    className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {packsExpanded ? (
+            generatedPacks.length === 0 ? (
+              <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
+                No AI packs yet. Generate a topic-based pack to see it listed here.
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {generatedPacks.map((pack) => {
+                  const isExpanded = expandedPackId === pack.batchId
+                  const packMessage =
+                    packActionState.packId === pack.batchId ? packActionState.message : null
+                  const { depth } = parsePackDepth(pack.topic)
+                  const canGoDeeper = depth < 2
+
+                  return (
+                    <div
+                      key={pack.batchId}
+                      className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
+                    >
                       <button
                         type="button"
-                        className="min-w-0 text-left"
+                        className="w-full text-left"
                         onClick={() =>
                           setExpandedPackId((current) =>
                             current === pack.batchId ? null : pack.batchId,
@@ -758,47 +845,73 @@ export function CardsPage() {
                           Generated {new Date(pack.createdAt).toLocaleString()}
                         </div>
                       </button>
-                      <div className="flex flex-wrap gap-3 sm:justify-end">
+
+                      <div className="mt-4 flex w-full flex-wrap gap-2">
                         {showPremiumTools ? (
-                          <button
-                            type="button"
-                            className="ghost-button"
-                            onClick={() => void handleGoDeeper(pack)}
-                            disabled={pending}
-                          >
-                            Go deeper
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              className="ghost-button whitespace-nowrap px-3 py-2 text-xs"
+                              onClick={() => void handleGenerateBrief(pack)}
+                              disabled={pending}
+                            >
+                              Summarise pack
+                            </button>
+                            {canGoDeeper ? (
+                              <button
+                                type="button"
+                                className="ghost-button whitespace-nowrap px-3 py-2 text-xs"
+                                onClick={() => void handleGoDeeper(pack)}
+                                disabled={pending}
+                              >
+                                Go deeper
+                              </button>
+                            ) : null}
+                          </>
                         ) : null}
                         <button
                           type="button"
-                          className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+                          className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
                           onClick={() => void handleBulkDelete(pack.cardIds)}
                           disabled={pending}
                         >
                           Delete pack
                         </button>
                       </div>
-                    </div>
 
-                    {isExpanded ? (
-                      <div className="mt-4 border-t border-[var(--app-border)] pt-4">
-                        <div className="text-sm font-semibold text-ink dark:text-white">
-                          Questions in this pack
+                      {packMessage ? (
+                        <div
+                          className={[
+                            'mt-4 rounded-2xl px-4 py-3 text-sm',
+                            packActionState.tone === 'success'
+                              ? 'border border-emerald-200 bg-emerald-50 text-emerald-900'
+                              : 'border border-amber-200 bg-amber-50 text-amber-900',
+                          ].join(' ')}
+                        >
+                          {packMessage}
                         </div>
-                        <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                          {pack.questions.map((question) => (
-                            <li key={`${pack.batchId}-${question}`} className="rounded-2xl bg-[var(--app-surface-muted)] px-3 py-3">
-                              {question}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                      ) : null}
+
+                      {isExpanded ? (
+                        <div className="mt-4 border-t border-[var(--app-border)] pt-4">
+                          <div className="text-sm font-semibold text-ink dark:text-white">
+                            Questions in this pack
+                          </div>
+                          <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                            {pack.questions.map((question) => (
+                              <li key={`${pack.batchId}-${question}`} className="rounded-2xl bg-[var(--app-surface-muted)] px-3 py-3">
+                                {question}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          ) : null}
         </div>
       </section>
 
