@@ -33,6 +33,10 @@ interface AiUsageRecord {
   outputTokens: number | null;
 }
 
+interface ExistingLearningCardRow {
+  question: string;
+}
+
 interface GenerationResult {
   cards: Array<{ question: string; answer: string }>;
   usage: AiUsageRecord;
@@ -57,6 +61,8 @@ const BYOK_MAX_CARDS = 100;
 const REQUEST_COOLDOWN_MS = 10_000;
 const OWNER_OVERRIDE_EMAILS = new Set(['mbrock19@gmail.com']);
 const OWNER_OVERRIDE_MAX_CARDS = 100;
+const MAX_REQUEST_COST_USD = 0.01;
+const APPROX_CHARS_PER_TOKEN = 4;
 
 const MODEL_COSTS: Record<SupportedAiModel, { input: number; output: number }> =
   {
@@ -219,12 +225,44 @@ function estimateCostUsd(model: SupportedAiModel, usage: AiUsageRecord) {
   return Number((inputCost + outputCost).toFixed(6));
 }
 
+function estimateTokensFromText(value: string) {
+  return Math.max(1, Math.ceil(value.length / APPROX_CHARS_PER_TOKEN));
+}
+
+function getAffordableOutputTokens(
+  model: SupportedAiModel,
+  estimatedInputTokens: number,
+) {
+  const pricing = MODEL_COSTS[model];
+  const estimatedInputCost =
+    (estimatedInputTokens / 1_000_000) * pricing.input;
+  const remainingBudget = MAX_REQUEST_COST_USD - estimatedInputCost;
+
+  if (remainingBudget <= 0) {
+    return 0;
+  }
+
+  return Math.floor((remainingBudget * 1_000_000) / pricing.output);
+}
+
 function resolveProviderModel(model: SupportedAiModel, provider: AiProvider) {
   return MODEL_ALIASES[model][provider];
 }
 
-function buildPrompt(topic: string, cardCount: number) {
-  return `Create ${cardCount} learning cards for the topic "${topic}". Focus on practical, interview-style or production-useful knowledge. Avoid duplicates. Return only the requested JSON schema.`;
+function buildPrompt(
+  topic: string,
+  cardCount: number,
+  existingQuestions: string[],
+) {
+  const duplicateGuidance =
+    existingQuestions.length > 0
+      ? `\n\nThe learner has already generated cards for this exact topic before. Do not repeat or lightly rephrase any of these existing questions:\n${existingQuestions
+          .slice(0, 60)
+          .map((question, index) => `${index + 1}. ${question}`)
+          .join('\n')}`
+      : '';
+
+  return `Create ${cardCount} learning cards for the topic "${topic}". Focus on practical, interview-style or production-useful knowledge. Avoid duplicates. Return only the requested JSON schema.${duplicateGuidance}`;
 }
 
 function buildCardsSchema(cardCount: number) {
@@ -268,6 +306,37 @@ function parseCards(parsed: unknown) {
     }));
 }
 
+function normalizeQuestion(question: string) {
+  return question
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function ensureUniqueCards(
+  cards: Array<{ question: string; answer: string }>,
+  existingQuestions: string[],
+) {
+  const seen = new Set(existingQuestions.map((question) => normalizeQuestion(question)));
+
+  for (const card of cards) {
+    const normalized = normalizeQuestion(card.question);
+
+    if (!normalized) {
+      throw new HttpError(502, 'The model returned an invalid question.');
+    }
+
+    if (seen.has(normalized)) {
+      throw new HttpError(
+        502,
+        'The generated pack repeated cards you already have for this topic. Please try again.',
+      );
+    }
+
+    seen.add(normalized);
+  }
+}
+
 function extractJsonPayload(rawText: string) {
   const trimmed = rawText.trim();
 
@@ -293,10 +362,11 @@ function extractJsonPayload(rawText: string) {
 }
 
 async function generateWithOpenAi(
-  topic: string,
+  promptText: string,
   cardCount: number,
   model: string,
   apiKey: string,
+  maxOutputTokens: number,
 ) {
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -321,7 +391,7 @@ async function generateWithOpenAi(
           content: [
             {
               type: 'input_text',
-              text: buildPrompt(topic, cardCount),
+              text: promptText,
             },
           ],
         },
@@ -334,6 +404,7 @@ async function generateWithOpenAi(
           schema: buildCardsSchema(cardCount),
         },
       },
+      max_output_tokens: maxOutputTokens,
     }),
   });
 
@@ -381,10 +452,11 @@ async function generateWithOpenAi(
 }
 
 async function generateWithOpenRouter(
-  topic: string,
+  promptText: string,
   cardCount: number,
   model: string,
   apiKey: string,
+  maxOutputTokens: number,
 ) {
   const response = await fetch(
     'https://openrouter.ai/api/v1/chat/completions',
@@ -406,7 +478,7 @@ async function generateWithOpenRouter(
           },
           {
             role: 'user',
-            content: buildPrompt(topic, cardCount),
+            content: promptText,
           },
         ],
         response_format: {
@@ -417,6 +489,7 @@ async function generateWithOpenRouter(
             schema: buildCardsSchema(cardCount),
           },
         },
+        max_tokens: maxOutputTokens,
       }),
     },
   );
@@ -682,6 +755,20 @@ Deno.serve(async (request) => {
     );
   }
 
+  const { data: previousTopicCardsData } = await client
+    .from('learning_cards')
+    .select('question')
+    .eq('user_id', user.id)
+    .eq('generation_topic', topic)
+    .order('created_at', { ascending: false })
+    .limit(80);
+
+  const previousTopicQuestions = (
+    (previousTopicCardsData as ExistingLearningCardRow[] | null) ?? []
+  )
+    .map((row) => row.question?.trim())
+    .filter(Boolean) as string[];
+
   const byokApiKey = request.headers.get('x-byok-api-key');
   const byokProviderHeader = sanitizeProvider(
     request.headers.get('x-byok-provider'),
@@ -735,23 +822,89 @@ Deno.serve(async (request) => {
     );
   }
 
+  const promptText = buildPrompt(topic, requestedCardCount, previousTopicQuestions);
+  const estimatedInputTokens =
+    estimateTokensFromText(promptText) +
+    estimateTokensFromText(
+      'Generate concise, technically accurate learning flashcards. Each card must have a clear question and a compact answer with no markdown.',
+    );
+  const maxOutputTokens = getAffordableOutputTokens(
+    canonicalModel,
+    estimatedInputTokens,
+  );
+  const minimumNeededOutputTokens = Math.max(120, requestedCardCount * 30);
+
+  if (maxOutputTokens < minimumNeededOutputTokens) {
+    await insertGenerationEvent(client, {
+      userId: user.id,
+      topic,
+      planTier: settings.plan_tier,
+      provider: effectiveProvider,
+      model: canonicalModel,
+      cardCount: requestedCardCount,
+      status: 'limit_exceeded',
+      usedByok: settings.plan_tier === 'byok',
+      failureReason: 'Request exceeds the current per-request cost cap.',
+    });
+
+    return jsonResponse(
+      {
+        error:
+          'This pack request is too large for the current per-request cost cap. Reduce the card count or use a lower-cost plan/model.',
+      },
+      400,
+    );
+  }
+
   try {
     const generation =
       effectiveProvider === 'openrouter'
         ? await generateWithOpenRouter(
-            topic,
+            promptText,
             requestedCardCount,
             providerModel,
             apiKey,
+            maxOutputTokens,
           )
         : await generateWithOpenAi(
-            topic,
+            promptText,
             requestedCardCount,
             providerModel,
             apiKey,
+            maxOutputTokens,
           );
 
+    ensureUniqueCards(generation.cards, previousTopicQuestions);
+
     const estimatedCostUsd = estimateCostUsd(canonicalModel, generation.usage);
+
+    if (
+      estimatedCostUsd != null &&
+      estimatedCostUsd > MAX_REQUEST_COST_USD
+    ) {
+      await insertGenerationEvent(client, {
+        userId: user.id,
+        topic,
+        planTier: settings.plan_tier,
+        provider: effectiveProvider,
+        model: canonicalModel,
+        cardCount: requestedCardCount,
+        status: 'limit_exceeded',
+        inputTokens: generation.usage.inputTokens,
+        outputTokens: generation.usage.outputTokens,
+        estimatedCostUsd,
+        usedByok: settings.plan_tier === 'byok',
+        failureReason: 'Request exceeded the current per-request cost cap.',
+      });
+
+      return jsonResponse(
+        {
+          error:
+            'This pack request exceeded the current per-request cost cap. Reduce the card count and try again.',
+        },
+        429,
+      );
+    }
 
     await insertGenerationEvent(client, {
       userId: user.id,

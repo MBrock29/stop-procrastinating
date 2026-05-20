@@ -3,6 +3,7 @@ import { getSupabaseBrowserClient } from '../../lib/supabase'
 
 export interface GenerateLearningBriefInput {
   topic: string
+  generationBatchId?: string | null
   cards: Array<{
     question: string
     answer: string

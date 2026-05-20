@@ -76,6 +76,7 @@ export interface LearningBrief {
   id: string
   userId: string
   topic: string
+  generationBatchId: string | null
   title: string
   content: string
   kind: LearningBriefKind

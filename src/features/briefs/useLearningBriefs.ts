@@ -57,7 +57,12 @@ export function useLearningBriefs() {
     briefs,
     isLoading,
     error,
-    async addBrief(input: Pick<LearningBrief, 'topic' | 'title' | 'content' | 'kind'>) {
+    async addBrief(
+      input: Pick<
+        LearningBrief,
+        'topic' | 'generationBatchId' | 'title' | 'content' | 'kind'
+      >,
+    ) {
       if (!user) {
         throw new Error('You must be signed in to save briefs.')
       }

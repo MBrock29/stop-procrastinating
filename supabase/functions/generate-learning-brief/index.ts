@@ -20,6 +20,10 @@ interface LearningBriefCardInput {
   answer: string;
 }
 
+interface ExistingLearningBriefRow {
+  id: string;
+}
+
 interface BriefResult {
   title: string;
   content: string;
@@ -40,6 +44,25 @@ const platformProvider = (Deno.env.get('AI_GENERATION_PROVIDER') ??
   'openai') as AiProvider;
 const platformOpenAiApiKey = Deno.env.get('OPENAI_API_KEY');
 const platformOpenRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+const SUMMARY_MONTHLY_LIMIT = 100;
+const MAX_REQUEST_COST_USD = 0.01;
+const APPROX_CHARS_PER_TOKEN = 4;
+
+const MODEL_COSTS: Record<SupportedAiModel, { input: number; output: number }> =
+  {
+    'gpt-4.1-mini': {
+      input: 0.4,
+      output: 1.6,
+    },
+    'gpt-5-mini': {
+      input: 0.25,
+      output: 2,
+    },
+    'gpt-5.4-mini': {
+      input: 0.75,
+      output: 4.5,
+    },
+  };
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -56,6 +79,13 @@ function getDefaultSettings(): UserAiSettingsRow {
     plan_tier: 'free',
     preferred_model: 'gpt-4.1-mini',
   };
+}
+
+function getStartOfMonth() {
+  const date = new Date();
+  date.setUTCDate(1);
+  date.setUTCHours(0, 0, 0, 0);
+  return date.toISOString();
 }
 
 function resolveCanonicalModel(settings: UserAiSettingsRow): SupportedAiModel {
@@ -84,6 +114,41 @@ function truncate(value: string, maxLength: number) {
   }
 
   return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function estimateTokensFromText(value: string) {
+  return Math.max(1, Math.ceil(value.length / APPROX_CHARS_PER_TOKEN));
+}
+
+function getAffordableOutputTokens(
+  model: SupportedAiModel,
+  estimatedInputTokens: number,
+) {
+  const pricing = MODEL_COSTS[model];
+  const estimatedInputCost =
+    (estimatedInputTokens / 1_000_000) * pricing.input;
+  const remainingBudget = MAX_REQUEST_COST_USD - estimatedInputCost;
+
+  if (remainingBudget <= 0) {
+    return 0;
+  }
+
+  return Math.floor((remainingBudget * 1_000_000) / pricing.output);
+}
+
+function estimateCostUsd(model: SupportedAiModel, usage: {
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+}) {
+  if (usage.inputTokens == null || usage.outputTokens == null) {
+    return null;
+  }
+
+  const pricing = MODEL_COSTS[model];
+  const inputCost = (usage.inputTokens / 1_000_000) * pricing.input;
+  const outputCost = (usage.outputTokens / 1_000_000) * pricing.output;
+
+  return Number((inputCost + outputCost).toFixed(6));
 }
 
 function buildCardsDigest(cards: LearningBriefCardInput[]) {
@@ -172,6 +237,7 @@ async function generateWithOpenAi(
   cards: LearningBriefCardInput[],
   model: string,
   apiKey: string,
+  maxOutputTokens: number,
 ) {
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -209,12 +275,14 @@ async function generateWithOpenAi(
           schema: buildBriefSchema(),
         },
       },
+      max_output_tokens: maxOutputTokens,
     }),
   });
 
   const payload = (await response.json()) as {
     error?: { message?: string };
     output_text?: string;
+    usage?: { input_tokens?: number; output_tokens?: number };
   };
 
   if (!response.ok) {
@@ -224,7 +292,13 @@ async function generateWithOpenAi(
     );
   }
 
-  return parseBrief(extractJsonPayload(payload.output_text ?? ''));
+  return {
+    ...parseBrief(extractJsonPayload(payload.output_text ?? '')),
+    usage: {
+      inputTokens: payload.usage?.input_tokens ?? null,
+      outputTokens: payload.usage?.output_tokens ?? null,
+    },
+  };
 }
 
 async function generateWithOpenRouter(
@@ -232,6 +306,7 @@ async function generateWithOpenRouter(
   cards: LearningBriefCardInput[],
   model: string,
   apiKey: string,
+  maxOutputTokens: number,
 ) {
   const response = await fetch(
     'https://openrouter.ai/api/v1/chat/completions',
@@ -262,12 +337,14 @@ async function generateWithOpenRouter(
             schema: buildBriefSchema(),
           },
         },
+        max_tokens: maxOutputTokens,
       }),
     },
   );
 
   const payload = (await response.json()) as {
     error?: { message?: string };
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
     choices?: Array<{ message?: { content?: string } }>;
   };
 
@@ -279,7 +356,13 @@ async function generateWithOpenRouter(
   }
 
   const rawText = payload.choices?.[0]?.message?.content ?? '';
-  return parseBrief(extractJsonPayload(rawText));
+  return {
+    ...parseBrief(extractJsonPayload(rawText)),
+    usage: {
+      inputTokens: payload.usage?.prompt_tokens ?? null,
+      outputTokens: payload.usage?.completion_tokens ?? null,
+    },
+  };
 }
 
 Deno.serve(async (request) => {
@@ -311,10 +394,12 @@ Deno.serve(async (request) => {
 
     const body = (await request.json()) as {
       topic?: string;
+      generationBatchId?: string;
       cards?: LearningBriefCardInput[];
     };
 
     const topic = body.topic?.trim();
+    const generationBatchId = body.generationBatchId?.trim() ?? null;
     const cards = (body.cards ?? [])
       .filter((card) =>
         typeof card?.question === 'string' &&
@@ -347,6 +432,36 @@ Deno.serve(async (request) => {
       throw new HttpError(403, 'Premium is required to generate summaries.');
     }
 
+    const { count: monthlySummaryCount } = await supabase
+      .from('learning_briefs')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', getStartOfMonth());
+
+    if ((monthlySummaryCount ?? 0) >= SUMMARY_MONTHLY_LIMIT) {
+      throw new HttpError(
+        429,
+        `Premium users can save up to ${SUMMARY_MONTHLY_LIMIT} summaries per calendar month.`,
+      );
+    }
+
+    if (generationBatchId) {
+      const { data: existingSummary } = await supabase
+        .from('learning_briefs')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('generation_batch_id', generationBatchId)
+        .limit(1)
+        .maybeSingle<ExistingLearningBriefRow>();
+
+      if (existingSummary?.id) {
+        throw new HttpError(
+          409,
+          'A summary already exists for this learning pack.',
+        );
+      }
+    }
+
     const model = resolveCanonicalModel(settings);
     const providerModel = resolveProviderModel(model, platformProvider);
     const apiKey =
@@ -358,13 +473,54 @@ Deno.serve(async (request) => {
       throw new HttpError(500, 'The platform AI provider is not configured.');
     }
 
+    const promptText = buildPrompt(topic, cards);
+    const estimatedInputTokens =
+      estimateTokensFromText(promptText) +
+      estimateTokensFromText(
+        'Generate concise, technically accurate learning summaries with no markdown lists or headings beyond the title field.',
+      );
+    const maxOutputTokens = getAffordableOutputTokens(model, estimatedInputTokens);
+    const minimumNeededOutputTokens = 180;
+
+    if (maxOutputTokens < minimumNeededOutputTokens) {
+      throw new HttpError(
+        400,
+        'This summary request is too large for the current per-request cost cap.',
+      );
+    }
+
     const result =
       platformProvider === 'openrouter'
-        ? await generateWithOpenRouter(topic, cards, providerModel, apiKey)
-        : await generateWithOpenAi(topic, cards, providerModel, apiKey);
+        ? await generateWithOpenRouter(
+            topic,
+            cards,
+            providerModel,
+            apiKey,
+            maxOutputTokens,
+          )
+        : await generateWithOpenAi(
+            topic,
+            cards,
+            providerModel,
+            apiKey,
+            maxOutputTokens,
+          );
+
+    const estimatedCostUsd = estimateCostUsd(model, result.usage);
+
+    if (
+      estimatedCostUsd != null &&
+      estimatedCostUsd > MAX_REQUEST_COST_USD
+    ) {
+      throw new HttpError(
+        429,
+        'This summary request exceeded the current per-request cost cap.',
+      );
+    }
 
     return jsonResponse({
-      ...result,
+      title: result.title,
+      content: result.content,
       meta: {
         model,
         kind: 'summary',

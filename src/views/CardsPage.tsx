@@ -449,6 +449,20 @@ export function CardsPage() {
       return
     }
 
+    const existingBrief = briefs.find(
+      (brief) => brief.generationBatchId === pack.batchId,
+    )
+
+    if (existingBrief) {
+      setExpandedBriefId(existingBrief.id)
+      setPackActionState({
+        packId: pack.batchId,
+        tone: 'success',
+        message: `A summary already exists for ${pack.topic}.`,
+      })
+      return
+    }
+
     setPending(true)
     setPackActionState({
       packId: pack.batchId,
@@ -459,6 +473,7 @@ export function CardsPage() {
     try {
       const generated = await generateLearningBrief({
         topic: pack.topic,
+        generationBatchId: pack.batchId,
         cards: cards
           .filter((card) => pack.cardIds.includes(card.id))
           .map((card) => ({
@@ -469,6 +484,7 @@ export function CardsPage() {
 
       await addBrief({
         topic: pack.topic,
+        generationBatchId: pack.batchId,
         title: generated.title,
         content: generated.content,
         kind: 'summary',

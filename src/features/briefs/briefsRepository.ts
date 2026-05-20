@@ -5,6 +5,7 @@ interface LearningBriefRow {
   id: string
   user_id: string
   topic: string
+  generation_batch_id: string | null
   title: string
   content: string
   kind: LearningBriefKind
@@ -39,6 +40,7 @@ function mapRow(row: LearningBriefRow): LearningBrief {
     id: row.id,
     userId: row.user_id,
     topic: row.topic,
+    generationBatchId: row.generation_batch_id,
     title: row.title,
     content: row.content,
     kind: row.kind,
@@ -72,7 +74,10 @@ export async function listLearningBriefs(userId: string) {
 
 export async function createLearningBrief(
   userId: string,
-  input: Pick<LearningBrief, 'topic' | 'title' | 'content' | 'kind'>,
+  input: Pick<
+    LearningBrief,
+    'topic' | 'generationBatchId' | 'title' | 'content' | 'kind'
+  >,
 ) {
   const client = getSupabaseBrowserClient()
 
@@ -82,6 +87,7 @@ export async function createLearningBrief(
       id: crypto.randomUUID(),
       userId,
       topic: input.topic,
+      generationBatchId: input.generationBatchId ?? null,
       title: input.title,
       content: input.content,
       kind: input.kind,
@@ -97,6 +103,7 @@ export async function createLearningBrief(
     .insert({
       user_id: userId,
       topic: input.topic,
+      generation_batch_id: input.generationBatchId ?? null,
       title: input.title,
       content: input.content,
       kind: input.kind,
