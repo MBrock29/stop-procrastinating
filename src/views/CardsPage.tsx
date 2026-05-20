@@ -778,7 +778,7 @@ export function CardsPage() {
                       </button>
                     </div>
                     {expandedBriefId === brief.id ? (
-                      <div className="mt-4 rounded-2xl bg-[var(--app-surface-muted)] px-4 py-4 text-sm leading-7 text-slate-700 dark:text-slate-200">
+                      <div className="mt-4 whitespace-pre-wrap rounded-2xl bg-[var(--app-surface-muted)] px-4 py-4 text-sm leading-7 text-slate-700 dark:text-slate-200">
                         {brief.content}
                       </div>
                     ) : null}

@@ -108,6 +108,7 @@ Your summary should:
 - mention one practical example or application if useful
 - mention one important pitfall, misconception, or trade-off to remember
 - feel like a helpful recap of this specific pack, not a generic topic overview
+- be written in 2 to 4 short paragraphs separated by blank lines
 
 Flashcard pack:
 ${cardsDigest}`;
