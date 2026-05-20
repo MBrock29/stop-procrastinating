@@ -196,24 +196,24 @@ export function DashboardPage() {
         </div>
 
         <div className="soft-card mt-8 p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <button
+            type="button"
+            onClick={() => setIsSetupOpen((current) => !current)}
+            className="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-start sm:justify-between"
+          >
             <div>
-              <button
-                type="button"
-                onClick={() => setIsSetupOpen((current) => !current)}
-                className="inline-flex items-center gap-3 text-left"
-              >
+              <div className="inline-flex items-center gap-3">
                 <h3 className="text-lg font-bold text-ink dark:text-white">Get set up</h3>
                 <span
                   className={[
-                    'inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--app-surface-strong)] text-sm font-bold text-slate-500 transition',
+                    'inline-flex items-center justify-center text-xl font-black leading-none text-ink transition dark:text-white',
                     isSetupOpen ? 'rotate-180' : '',
                   ].join(' ')}
                   aria-hidden="true"
                 >
-                  ˅
+                  ⌄
                 </span>
-              </button>
+              </div>
               {isSetupOpen ? (
                 <p className="muted-copy mt-2 text-sm leading-6">
                   Follow these steps once, then the habit-interrupt loop can take over.
@@ -223,7 +223,7 @@ export function DashboardPage() {
             <div className="rounded-full bg-reef/10 px-4 py-2 text-sm font-semibold text-reef">
               {completedSetupSteps}/{onboardingSteps.length} complete
             </div>
-          </div>
+          </button>
           {isSetupOpen ? (
             <div className="mt-5 space-y-3">
               {onboardingSteps.map((step, index) => (
