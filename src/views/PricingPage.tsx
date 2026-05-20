@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAiAccess } from '../features/ai-access/useAiAccess';
-import { canAccessByok, hasInternalAccess } from '../features/ai-access/byokVisibility';
+import { canAccessByok } from '../features/ai-access/byokVisibility';
 import { useAuth } from '../features/auth/useAuth';
 import type { PlanTier } from '../types/domain';
 
@@ -31,7 +31,6 @@ export function PricingPage() {
     'success',
   );
   const showByok = canAccessByok(user?.email);
-  const canTestPremium = hasInternalAccess(user?.email);
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
     const proPrice = billingCadence === 'monthly' ? '$3.99' : '$39.90';
@@ -44,7 +43,7 @@ export function PricingPage() {
       {
         tier: 'free',
         title: 'Free',
-        price: '£0',
+        price: '$0',
         cadenceLabel: '/month',
         benefits: [
           'Store up to 100 cards',
@@ -88,10 +87,8 @@ export function PricingPage() {
         ctaLabel:
           settings.planTier === 'premium'
             ? 'Current plan'
-            : canTestPremium
-              ? 'Use premium plan'
-              : 'Premium coming soon',
-        ctaKind: canTestPremium ? 'premium' : 'coming-soon',
+            : 'Use premium plan',
+        ctaKind: 'premium',
         badge:
           billingCadence === 'monthly'
             ? 'Advanced learning tools'
@@ -118,7 +115,7 @@ export function PricingPage() {
     ];
 
     return cards.filter((plan) => showByok || plan.tier !== 'byok');
-  }, [billingCadence, canTestPremium, settings.planTier, showByok]);
+  }, [billingCadence, settings.planTier, showByok]);
 
   async function handleSwitchToFree() {
     setPending(true);

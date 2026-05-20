@@ -90,6 +90,31 @@ export function SettingsPage() {
     }
   }
 
+  async function handlePremiumInterruptModeChange(event: ChangeEvent<HTMLSelectElement>) {
+    const nextMode = event.target.value === 'summary' ? 'summary' : 'cards'
+
+    setPending(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      await updateSettings({ premiumInterruptMode: nextMode })
+      setMessage(
+        nextMode === 'summary'
+          ? 'Premium redirects now open with a saved summary first when one is available.'
+          : 'Premium redirects now open straight into cards.',
+      )
+    } catch (nextError) {
+      const nextMessage =
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to update your premium interrupt mode.'
+      setError(nextMessage)
+    } finally {
+      setPending(false)
+    }
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
       <section className="panel px-6 py-6 sm:px-8">
@@ -238,6 +263,32 @@ export function SettingsPage() {
               </span>
             </label>
           </div>
+
+          {settings.planTier === 'premium' ? (
+            <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm">
+              <div className="font-semibold text-ink dark:text-white">
+                Premium interrupt mode
+              </div>
+              <p className="muted-copy mt-2 leading-6">
+                Choose whether Premium redirect sessions should open with quick cards
+                or a saved topic summary first.
+              </p>
+              <label className="mt-4 block">
+                <span className="mb-2 block font-semibold text-ink dark:text-white">
+                  Redirect format
+                </span>
+                <select
+                  value={settings.premiumInterruptMode}
+                  onChange={(event) => void handlePremiumInterruptModeChange(event)}
+                  disabled={pending || isLoading}
+                  className="app-input"
+                >
+                  <option value="cards">Cards first</option>
+                  <option value="summary">Summary first</option>
+                </select>
+              </label>
+            </div>
+          ) : null}
         </div>
 
         {showByok ? (

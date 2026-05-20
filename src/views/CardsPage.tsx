@@ -3,9 +3,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TIER_POLICIES } from '../features/ai-access/constants'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
+import { generateLearningBrief } from '../features/briefs/briefGenerator'
+import { useLearningBriefs } from '../features/briefs/useLearningBriefs'
 import { generateCardsWithAi } from '../features/cards/aiGenerator'
 import { useLearningCards } from '../features/cards/useLearningCards'
-import type { LearningCard } from '../types/domain'
+import type { LearningBriefKind, LearningCard } from '../types/domain'
 
 interface CardDraft {
   question: string
@@ -183,6 +185,8 @@ export function CardsPage() {
     tierPolicy,
     usage,
   } = useAiAccess()
+  const { briefs, isLoading: briefsLoading, error: briefsError, addBrief, removeBrief } =
+    useLearningBriefs()
   const {
     addGeneratedCards,
     archiveCard,
@@ -198,10 +202,13 @@ export function CardsPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [aiError, setAiError] = useState<string | null>(null)
   const [aiSuccess, setAiSuccess] = useState<string | null>(null)
+  const [briefError, setBriefError] = useState<string | null>(null)
+  const [briefSuccess, setBriefSuccess] = useState<string | null>(null)
   const [expandedPackId, setExpandedPackId] = useState<string | null>(null)
   const [visibleCardCount, setVisibleCardCount] = useState(10)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const aiCardLimit = tierPolicy.maxCardsPerPack
+  const showPremiumTools = settings.planTier === 'premium'
 
   const generatedPacks = useMemo<GeneratedPackSummary[]>(() => {
     const packMap = new Map<string, GeneratedPackSummary>()
@@ -396,6 +403,90 @@ export function CardsPage() {
     }
   }
 
+  async function handleGenerateBrief(kind: LearningBriefKind) {
+    if (!showPremiumTools) {
+      return
+    }
+
+    if (!aiDraft.topic.trim()) {
+      setBriefError('Add a topic first so Better Focus knows what to summarise.')
+      return
+    }
+
+    setPending(true)
+    setBriefError(null)
+    setBriefSuccess(null)
+
+    try {
+      const generated = await generateLearningBrief({
+        topic: aiDraft.topic.trim(),
+        kind,
+      })
+
+      await addBrief({
+        topic: aiDraft.topic.trim(),
+        title: generated.title,
+        content: generated.content,
+        kind,
+      })
+
+      setBriefSuccess(
+        kind === 'summary'
+          ? `Saved a short summary with ${generated.meta.model}.`
+          : `Saved a new briefing with ${generated.meta.model}.`,
+      )
+    } catch (nextError) {
+      const message =
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to generate a learning brief right now.'
+      setBriefError(message)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function handleGoDeeper(pack: GeneratedPackSummary) {
+    if (!showPremiumTools) {
+      return
+    }
+
+    setPending(true)
+    setAiError(null)
+    setAiSuccess(null)
+
+    try {
+      const deeperTopic = `Go deeper on ${pack.topic}. Increase the depth, add harder follow-up questions, and focus on edge cases and trade-offs.`
+      const generationBatchId = crypto.randomUUID()
+      const generation = await generateCardsWithAi({
+        topic: deeperTopic,
+        cardCount: Math.min(pack.count, aiCardLimit),
+      })
+
+      await addGeneratedCards(
+        generation.cards.map((card) => ({
+          question: card.question,
+          answer: card.answer,
+          source: 'ai',
+          generationTopic: `${pack.topic} (deeper practice)`,
+          generationBatchId,
+          isUserEdited: false,
+        })),
+      )
+
+      await refreshAiAccess()
+      setAiSuccess(`Generated a deeper follow-up pack for ${pack.topic}.`)
+    } catch (nextError) {
+      const message =
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to generate a deeper pack right now.'
+      setAiError(message)
+    } finally {
+      setPending(false)
+    }
+  }
+
   async function handleBulkDelete(cardIds: string[]) {
     if (cardIds.length === 0) {
       return
@@ -438,6 +529,8 @@ export function CardsPage() {
           <div className="mt-1">
             {settings.planTier === 'byok'
               ? `Using ${settings.preferredModel} through ${settings.byokProvider}.`
+              : settings.planTier === 'premium'
+                ? '100 cards per pack, 100 packs per month, deeper practice, and premium learning tools.'
               : `${tierPolicy.maxCardsPerPack} cards per pack, ${
                   tierPolicy.monthlyPackLimit ?? 'unlimited'
                 } packs per month.`}
@@ -524,6 +617,109 @@ export function CardsPage() {
         </form>
 
         <div className="soft-card mt-6 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="section-kicker">Premium learning tools</p>
+              <h3 className="mt-2 text-lg font-bold text-ink dark:text-white">
+                Turn topics into summaries and briefings
+              </h3>
+              <p className="muted-copy mt-2 text-sm leading-6">
+                Premium users can save short concept summaries, weekly-style briefings,
+                and deeper follow-up packs for the same topic.
+              </p>
+            </div>
+            {!showPremiumTools ? (
+              <Link to="/app/pricing" className="ghost-button">
+                Unlock premium
+              </Link>
+            ) : null}
+          </div>
+
+          {briefError || briefsError ? (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {briefError ?? briefsError}
+            </div>
+          ) : null}
+
+          {briefSuccess ? (
+            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              {briefSuccess}
+            </div>
+          ) : null}
+
+          {showPremiumTools ? (
+            <>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="action-button"
+                  onClick={() => void handleGenerateBrief('summary')}
+                  disabled={pending}
+                >
+                  Generate summary
+                </button>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => void handleGenerateBrief('briefing')}
+                  disabled={pending}
+                >
+                  Generate briefing
+                </button>
+              </div>
+
+              {briefsLoading ? (
+                <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
+                  Loading saved briefs…
+                </div>
+              ) : briefs.length === 0 ? (
+                <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
+                  No summaries or briefings yet. Use the current topic above to save one.
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {briefs.map((brief) => (
+                    <article
+                      key={brief.id}
+                      className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-reef">
+                            {brief.kind === 'summary' ? 'Topic summary' : 'Topic briefing'}
+                          </div>
+                          <h4 className="mt-2 text-base font-bold text-ink dark:text-white">
+                            {brief.title}
+                          </h4>
+                          <p className="muted-copy mt-2 text-sm leading-6">
+                            {brief.topic}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+                          onClick={() => void removeBrief(brief.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                      <div className="mt-4 rounded-2xl bg-[var(--app-surface-muted)] px-4 py-4 text-sm leading-7 text-slate-700 dark:text-slate-200">
+                        {brief.content}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
+              Premium adds saved topic summaries, weekly-style briefings, and
+              deeper follow-up packs that push beyond the first generated set.
+            </div>
+          )}
+        </div>
+
+        <div className="soft-card mt-6 p-5">
           <div>
             <h3 className="text-lg font-bold text-ink dark:text-white">Added packs</h3>
             <p className="muted-copy mt-2 text-sm leading-6">
@@ -562,14 +758,26 @@ export function CardsPage() {
                           Generated {new Date(pack.createdAt).toLocaleString()}
                         </div>
                       </button>
-                      <button
-                        type="button"
-                        className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
-                        onClick={() => void handleBulkDelete(pack.cardIds)}
-                        disabled={pending}
-                      >
-                        Delete pack
-                      </button>
+                      <div className="flex flex-wrap gap-3 sm:justify-end">
+                        {showPremiumTools ? (
+                          <button
+                            type="button"
+                            className="ghost-button"
+                            onClick={() => void handleGoDeeper(pack)}
+                            disabled={pending}
+                          >
+                            Go deeper
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+                          onClick={() => void handleBulkDelete(pack.cardIds)}
+                          disabled={pending}
+                        >
+                          Delete pack
+                        </button>
+                      </div>
                     </div>
 
                     {isExpanded ? (

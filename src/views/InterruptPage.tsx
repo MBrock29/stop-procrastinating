@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { canAccessByok } from '../features/ai-access/byokVisibility'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { listLearningCards } from '../features/cards/cardsRepository'
+import { listLearningBriefs } from '../features/briefs/briefsRepository'
 import { sortCardsForReview } from '../features/cards/scheduling'
 import { useAuth } from '../features/auth/useAuth'
 import { allowExtensionReturnOnce } from '../features/extension/extensionBridge'
@@ -11,7 +12,12 @@ import {
   createInterruptSession,
   submitInterruptReview,
 } from '../features/interrupts/interruptRepository'
-import type { ConfidenceRating, InterruptSession, LearningCard } from '../types/domain'
+import type {
+  ConfidenceRating,
+  InterruptSession,
+  LearningBrief,
+  LearningCard,
+} from '../types/domain'
 
 export function InterruptPage() {
   const { user } = useAuth()
@@ -28,6 +34,8 @@ export function InterruptPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [summaryBrief, setSummaryBrief] = useState<LearningBrief | null>(null)
+  const [summaryDismissed, setSummaryDismissed] = useState(false)
 
   const card = cards[currentIndex] ?? null
   const reviewedCount = currentIndex
@@ -49,6 +57,9 @@ export function InterruptPage() {
       return null
     }
   })()
+  const shouldShowSummaryFirst =
+    settings.planTier === 'premium' && settings.premiumInterruptMode === 'summary'
+  const showSummaryCard = shouldShowSummaryFirst && summaryBrief && !summaryDismissed
 
   function continueToOriginalSite() {
     if (!safeReturnUrl) {
@@ -73,6 +84,7 @@ export function InterruptPage() {
       setError(null)
       setAnswerRevealed(false)
       setCurrentIndex(0)
+      setSummaryDismissed(false)
 
       try {
         const nextSession = await createInterruptSession(user.id, site ?? source)
@@ -103,6 +115,37 @@ export function InterruptPage() {
       cancelled = true
     }
   }, [site, source, user])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadSummaryBrief() {
+      if (!user || !shouldShowSummaryFirst) {
+        setSummaryBrief(null)
+        return
+      }
+
+      try {
+        const nextBriefs = await listLearningBriefs(user.id)
+        const preferredBrief =
+          nextBriefs.find((brief) => brief.kind === 'summary') ?? nextBriefs[0] ?? null
+
+        if (!cancelled) {
+          setSummaryBrief(preferredBrief)
+        }
+      } catch {
+        if (!cancelled) {
+          setSummaryBrief(null)
+        }
+      }
+    }
+
+    void loadSummaryBrief()
+
+    return () => {
+      cancelled = true
+    }
+  }, [shouldShowSummaryFirst, user])
 
   async function handleConfidence(confidence: ConfidenceRating) {
     if (!user || !session || !card) {
@@ -233,7 +276,37 @@ export function InterruptPage() {
             </div>
           ) : null}
 
-          {!isLoading && card ? (
+          {!isLoading && showSummaryCard ? (
+            <div className="mt-8 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
+              <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef">
+                Premium summary
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
+                <span>{summaryBrief.kind === 'summary' ? 'Topic summary' : 'Topic briefing'}</span>
+                <span>{summaryBrief.topic}</span>
+              </div>
+              <h2 className="mt-4 text-2xl font-bold leading-tight text-ink">
+                {summaryBrief.title}
+              </h2>
+              <div className="mt-6 rounded-3xl bg-white p-5 text-sm leading-7 text-slate-700">
+                {summaryBrief.content}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="action-button"
+                  onClick={() => setSummaryDismissed(true)}
+                >
+                  Start card session
+                </button>
+                <Link to="/app/cards" className="ghost-button">
+                  Open saved briefs
+                </Link>
+              </div>
+            </div>
+          ) : null}
+
+          {!isLoading && card && !showSummaryCard ? (
             <div className="mt-8 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
               <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef">
                 Learning session
