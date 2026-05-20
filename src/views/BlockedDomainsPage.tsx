@@ -140,7 +140,7 @@ export function BlockedDomainsPage() {
         </div>
 
         <div className='mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm muted-copy'>
-          <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+          <div className='flex flex-col gap-3'>
             <div>
               <h3 className='text-base font-bold text-ink dark:text-white'>
                 Extension sync
@@ -161,14 +161,14 @@ export function BlockedDomainsPage() {
                 </p>
               ) : null}
             </div>
-            <button
-              type='button'
-              className='ghost-button text-sm'
-              onClick={handleManualSync}
-            >
-              Manual refresh
-            </button>
           </div>
+          <button
+            type='button'
+            className='ghost-button mt-4 w-full text-sm'
+            onClick={handleManualSync}
+          >
+            Manual refresh
+          </button>
           {syncMessage ? (
             <div className='mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900'>
               {syncMessage}
