@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useExtensionStatus } from '../features/extension/useExtensionStatus'
 
 const chromeStoreUrl =
-  'https://chromewebstore.google.com/search/Better%20Focus'
+  'https://chromewebstore.google.com/detail/better-focus/nfnolfdknehkaligmklfcnganbnmlmll'
 
 export function SetupGuidePage() {
   const extensionStatus = useExtensionStatus()
@@ -51,7 +51,18 @@ export function SetupGuidePage() {
             </h3>
             <ol className="mt-4 space-y-3 text-sm text-slate-600">
               <li>1. Open the extension listing in the Chrome Web Store.</li>
-              <li>2. Add the Better Focus extension to Chrome.</li>
+              <li>
+                2.{' '}
+                <a
+                  href={chromeStoreUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-reef underline decoration-reef/40 underline-offset-4 transition hover:decoration-reef"
+                >
+                  Add the Better Focus extension
+                </a>{' '}
+                to Chrome.
+              </li>
               <li>3. Return to Better Focus in the same browser.</li>
               <li>4. Add at least one blocked site in the app.</li>
               <li>5. Visit one of your blocked sites to confirm the redirect works.</li>
@@ -84,7 +95,7 @@ export function SetupGuidePage() {
 
         <div className="mt-8 flex flex-wrap gap-3">
           <a href={chromeStoreUrl} target="_blank" rel="noreferrer" className="action-button">
-            Search Chrome Web Store
+            Open Chrome Web Store
           </a>
           <Link to="/app/sites" className="ghost-button">
             Go to blocked sites
