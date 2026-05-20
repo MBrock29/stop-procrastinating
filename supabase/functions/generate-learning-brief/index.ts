@@ -45,7 +45,7 @@ const platformProvider = (Deno.env.get('AI_GENERATION_PROVIDER') ??
 const platformOpenAiApiKey = Deno.env.get('OPENAI_API_KEY');
 const platformOpenRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
 const SUMMARY_MONTHLY_LIMIT = 100;
-const MAX_REQUEST_COST_USD = 0.01;
+const MAX_REQUEST_COST_USD = 0.02;
 const APPROX_CHARS_PER_TOKEN = 4;
 
 const MODEL_COSTS: Record<SupportedAiModel, { input: number; output: number }> =

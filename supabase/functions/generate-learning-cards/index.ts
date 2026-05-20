@@ -61,7 +61,12 @@ const BYOK_MAX_CARDS = 100;
 const REQUEST_COOLDOWN_MS = 10_000;
 const OWNER_OVERRIDE_EMAILS = new Set(['mbrock19@gmail.com']);
 const OWNER_OVERRIDE_MAX_CARDS = 100;
-const MAX_REQUEST_COST_USD = 0.01;
+const PACK_COST_CAPS_USD: Record<PlanTier, number> = {
+  free: 0.01,
+  pro: 0.04,
+  premium: 0.05,
+  byok: 0.05,
+};
 const APPROX_CHARS_PER_TOKEN = 4;
 
 const MODEL_COSTS: Record<SupportedAiModel, { input: number; output: number }> =
@@ -232,11 +237,12 @@ function estimateTokensFromText(value: string) {
 function getAffordableOutputTokens(
   model: SupportedAiModel,
   estimatedInputTokens: number,
+  maxRequestCostUsd: number,
 ) {
   const pricing = MODEL_COSTS[model];
   const estimatedInputCost =
     (estimatedInputTokens / 1_000_000) * pricing.input;
-  const remainingBudget = MAX_REQUEST_COST_USD - estimatedInputCost;
+  const remainingBudget = maxRequestCostUsd - estimatedInputCost;
 
   if (remainingBudget <= 0) {
     return 0;
@@ -823,6 +829,8 @@ Deno.serve(async (request) => {
   }
 
   const promptText = buildPrompt(topic, requestedCardCount, previousTopicQuestions);
+  const maxRequestCostUsd =
+    PACK_COST_CAPS_USD[settings.plan_tier] ?? PACK_COST_CAPS_USD.free;
   const estimatedInputTokens =
     estimateTokensFromText(promptText) +
     estimateTokensFromText(
@@ -831,6 +839,7 @@ Deno.serve(async (request) => {
   const maxOutputTokens = getAffordableOutputTokens(
     canonicalModel,
     estimatedInputTokens,
+    maxRequestCostUsd,
   );
   const minimumNeededOutputTokens = Math.max(120, requestedCardCount * 30);
 
@@ -880,7 +889,7 @@ Deno.serve(async (request) => {
 
     if (
       estimatedCostUsd != null &&
-      estimatedCostUsd > MAX_REQUEST_COST_USD
+      estimatedCostUsd > maxRequestCostUsd
     ) {
       await insertGenerationEvent(client, {
         userId: user.id,
