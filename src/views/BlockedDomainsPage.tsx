@@ -22,12 +22,13 @@ export function BlockedDomainsPage() {
     setPending(true);
     setFormError(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const rawDomain = String(formData.get('domain') ?? '');
 
     try {
       await addDomain(rawDomain);
-      event.currentTarget.reset();
+      form.reset();
     } catch (nextError) {
       const message =
         nextError instanceof Error
