@@ -90,6 +90,32 @@ export interface ByokCredentialStatus {
   updatedAt: string
 }
 
+export type BillingInterval = 'month' | 'year'
+export type BillingSubscriptionStatus =
+  | 'inactive'
+  | 'trialing'
+  | 'active'
+  | 'past_due'
+  | 'canceled'
+  | 'unpaid'
+  | 'incomplete'
+  | 'incomplete_expired'
+
+export interface UserBillingAccount {
+  userId: string
+  stripeCustomerId: string | null
+  stripeSubscriptionId: string | null
+  stripePriceId: string | null
+  planTier: Exclude<PlanTier, 'byok'>
+  billingInterval: BillingInterval | null
+  billingCurrency: string | null
+  subscriptionStatus: BillingSubscriptionStatus
+  cancelAtPeriodEnd: boolean
+  currentPeriodEnd: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export type AiGenerationStatus = 'success' | 'limit_exceeded' | 'rate_limited' | 'blocked' | 'failed'
 
 export interface AiGenerationEvent {
