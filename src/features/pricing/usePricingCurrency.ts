@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 export type PricingCurrency = 'USD' | 'GBP' | 'EUR'
-
-const storageKey = 'better-focus.pricing-currency'
 
 const priceMap = {
   USD: {
@@ -66,28 +64,11 @@ function detectCurrency(): PricingCurrency {
 }
 
 export function usePricingCurrency() {
-  const [currency, setCurrency] = useState<PricingCurrency>(() => {
-    if (typeof window === 'undefined') {
-      return 'USD'
-    }
-
-    const stored = window.localStorage.getItem(storageKey)
-    if (stored === 'USD' || stored === 'GBP' || stored === 'EUR') {
-      return stored
-    }
-
-    return detectCurrency()
-  })
-
-  useEffect(() => {
-    window.localStorage.setItem(storageKey, currency)
-  }, [currency])
-
+  const currency = typeof window === 'undefined' ? 'USD' : detectCurrency()
   const prices = useMemo(() => priceMap[currency], [currency])
 
   return {
     currency,
-    setCurrency,
     prices,
   }
 }

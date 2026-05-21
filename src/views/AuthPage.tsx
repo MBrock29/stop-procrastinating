@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
-import {
-  type PricingCurrency,
-  usePricingCurrency,
-} from '../features/pricing/usePricingCurrency';
+import { usePricingCurrency } from '../features/pricing/usePricingCurrency';
 import { SiteFooter } from '../ui/SiteFooter';
 
 type BillingCadence = 'monthly' | 'annual';
@@ -21,7 +18,7 @@ export function AuthPage() {
   const { status } = useAuth();
   const [billingCadence, setBillingCadence] =
     useState<BillingCadence>('monthly');
-  const { currency, setCurrency, prices } = usePricingCurrency();
+  const { prices } = usePricingCurrency();
 
   const planCards = [
     {
@@ -164,23 +161,6 @@ export function AuthPage() {
                     ].join(' ')}
                   >
                     {cadence === 'monthly' ? 'Monthly' : 'Annual'}
-                  </button>
-                ))}
-              </div>
-              <div className='soft-card inline-flex p-1'>
-                {(['USD', 'GBP', 'EUR'] as PricingCurrency[]).map((nextCurrency) => (
-                  <button
-                    key={nextCurrency}
-                    type='button'
-                    onClick={() => setCurrency(nextCurrency)}
-                    className={[
-                      'rounded-full px-4 py-2 text-sm font-semibold transition',
-                      currency === nextCurrency
-                        ? 'bg-reef text-white shadow-lg shadow-reef/20'
-                        : 'text-[var(--app-text)] hover:bg-[var(--app-surface-strong)]',
-                    ].join(' ')}
-                  >
-                    {nextCurrency}
                   </button>
                 ))}
               </div>
