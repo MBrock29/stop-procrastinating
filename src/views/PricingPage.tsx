@@ -24,18 +24,26 @@ interface PlanCardDefinition {
 export function PricingPage() {
   const location = useLocation();
   const { isLoading, settings } = useAiAccess();
-  const { billingAccount, isLoading: isBillingLoading, startCheckout, openPortal } =
+  const {
+    billingAccount,
+    error: billingError,
+    isLoading: isBillingLoading,
+    startCheckout,
+    openPortal,
+  } =
     useBillingAccount();
   const [billingCadence, setBillingCadence] =
     useState<BillingCadence>('monthly');
   const { currency, prices } = usePricingCurrency();
   const [pendingTier, setPendingTier] = useState<'pro' | 'premium' | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const billingQueryMessage = new URLSearchParams(location.search).get('billing');
 
   const hasManagedSubscription =
     billingAccount?.subscriptionStatus === 'active' ||
     billingAccount?.subscriptionStatus === 'trialing' ||
     billingAccount?.subscriptionStatus === 'past_due';
+  const hasBillingPortal = Boolean(billingAccount?.stripeCustomerId);
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
     const proPrice =
@@ -60,8 +68,17 @@ export function PricingPage() {
           'Generate up to 10 cards per pack',
           'Access to the lighter hosted language learning model',
         ],
-        ctaLabel: settings.planTier === 'free' ? 'Current plan' : 'Not active',
-        ctaKind: settings.planTier === 'free' ? 'current' : 'coming-soon',
+        ctaLabel:
+          settings.planTier === 'free'
+            ? 'Current plan'
+            : hasBillingPortal
+              ? 'Manage plan'
+              : 'Not active',
+        ctaKind: settings.planTier === 'free'
+          ? 'current'
+          : hasBillingPortal
+            ? 'portal'
+            : 'coming-soon',
       },
       {
         tier: 'pro',
@@ -77,12 +94,14 @@ export function PricingPage() {
         ctaLabel:
           settings.planTier === 'pro'
             ? 'Current plan'
-            : hasManagedSubscription
-              ? 'Manage in billing portal'
-              : 'Start Pro',
+            : settings.planTier === 'premium'
+              ? 'Manage plan'
+              : hasBillingPortal
+                ? 'Manage plan'
+                : 'Start Pro',
         ctaKind: settings.planTier === 'pro'
           ? 'current'
-          : hasManagedSubscription
+          : settings.planTier === 'premium' || hasBillingPortal
             ? 'portal'
             : 'checkout',
         badge:
@@ -111,14 +130,22 @@ export function PricingPage() {
         ctaLabel:
           settings.planTier === 'premium'
             ? 'Current plan'
-            : hasManagedSubscription
-              ? 'Manage in billing portal'
-              : 'Start Premium',
+            : settings.planTier === 'pro'
+              ? hasBillingPortal
+                ? 'Upgrade plan'
+                : 'Start Premium'
+              : hasBillingPortal
+                ? 'Manage plan'
+                : 'Start Premium',
         ctaKind: settings.planTier === 'premium'
           ? 'current'
-          : hasManagedSubscription
-            ? 'portal'
-            : 'checkout',
+          : settings.planTier === 'pro'
+            ? hasBillingPortal
+              ? 'portal'
+              : 'checkout'
+            : hasBillingPortal
+              ? 'portal'
+              : 'checkout',
         badge:
           billingCadence === 'monthly'
             ? 'Annual discount available'
@@ -131,7 +158,7 @@ export function PricingPage() {
     return cards;
   }, [
     billingCadence,
-    hasManagedSubscription,
+    hasBillingPortal,
     prices.freeMonthly,
     prices.premiumAnnual,
     prices.premiumMonthly,
@@ -141,26 +168,40 @@ export function PricingPage() {
   ]);
 
   async function handleCheckout(planTier: 'pro' | 'premium') {
-    setPendingTier(planTier)
+    setPendingTier(planTier);
+    setActionError(null);
 
     try {
       await startCheckout({
         planTier,
         billingInterval: billingCadence === 'monthly' ? 'month' : 'year',
         currency,
-      })
+      });
+    } catch (nextError) {
+      setActionError(
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to open checkout right now.',
+      );
     } finally {
-      setPendingTier(null)
+      setPendingTier(null);
     }
   }
 
   async function handlePortal() {
-    setPendingTier('pro')
+    setPendingTier('pro');
+    setActionError(null);
 
     try {
-      await openPortal()
+      await openPortal();
+    } catch (nextError) {
+      setActionError(
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to open billing right now.',
+      );
     } finally {
-      setPendingTier(null)
+      setPendingTier(null);
     }
   }
 
@@ -189,6 +230,16 @@ export function PricingPage() {
         {billingQueryMessage === 'cancelled' ? (
           <div className='mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900'>
             Checkout was cancelled. No billing changes were made.
+          </div>
+        ) : null}
+        {actionError || billingError ? (
+          <div className='mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900'>
+            {actionError ?? billingError}
+          </div>
+        ) : null}
+        {hasManagedSubscription ? (
+          <div className='mt-6 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-3 text-sm text-slate-700 dark:text-slate-200'>
+            Paid plan changes are handled in your billing portal. Upgrades can take effect straight away, while downgrades and cancellations stay active until the end of the current billing period.
           </div>
         ) : null}
         <div className='mt-8 grid gap-4 xl:grid-cols-3'>

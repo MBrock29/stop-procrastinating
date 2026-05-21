@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TIER_POLICIES } from '../features/ai-access/constants'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
+import { useAuth } from '../features/auth/useAuth'
 import { generateLearningBrief } from '../features/briefs/briefGenerator'
 import { useLearningBriefs } from '../features/briefs/useLearningBriefs'
 import { generateCardsWithAi } from '../features/cards/aiGenerator'
@@ -208,7 +209,55 @@ function parsePackDepth(topic: string) {
   }
 }
 
+function mergeStoredOrder(existingOrder: string[], currentIds: string[]) {
+  const nextOrder = existingOrder.filter((id) => currentIds.includes(id))
+
+  currentIds.forEach((id) => {
+    if (!nextOrder.includes(id)) {
+      nextOrder.push(id)
+    }
+  })
+
+  return nextOrder
+}
+
+function sortItemsByStoredOrder<T>(
+  items: T[],
+  storedOrder: string[],
+  getId: (item: T) => string,
+) {
+  const normalizedOrder = mergeStoredOrder(storedOrder, items.map(getId))
+  const orderMap = new Map(normalizedOrder.map((id, index) => [id, index]))
+
+  return [...items].sort(
+    (left, right) =>
+      (orderMap.get(getId(left)) ?? Number.MAX_SAFE_INTEGER) -
+      (orderMap.get(getId(right)) ?? Number.MAX_SAFE_INTEGER),
+  )
+}
+
+function reorderStoredIds(
+  storedOrder: string[],
+  currentIds: string[],
+  draggedId: string,
+  targetId: string,
+) {
+  const normalizedOrder = mergeStoredOrder(storedOrder, currentIds)
+  const nextOrder = [...normalizedOrder]
+  const draggedIndex = nextOrder.indexOf(draggedId)
+  const targetIndex = nextOrder.indexOf(targetId)
+
+  if (draggedIndex === -1 || targetIndex === -1 || draggedIndex === targetIndex) {
+    return normalizedOrder
+  }
+
+  const [draggedItem] = nextOrder.splice(draggedIndex, 1)
+  nextOrder.splice(targetIndex, 0, draggedItem)
+  return nextOrder
+}
+
 export function CardsPage() {
+  const { user } = useAuth()
   const {
     byokCredentialStatus,
     refresh: refreshAiAccess,
@@ -246,11 +295,17 @@ export function CardsPage() {
   const [packsExpanded, setPacksExpanded] = useState(true)
   const [expandedBriefId, setExpandedBriefId] = useState<string | null>(null)
   const [expandedPackId, setExpandedPackId] = useState<string | null>(null)
+  const [draggedBriefId, setDraggedBriefId] = useState<string | null>(null)
+  const [draggedPackId, setDraggedPackId] = useState<string | null>(null)
+  const [briefOrder, setBriefOrder] = useState<string[]>([])
+  const [packOrder, setPackOrder] = useState<string[]>([])
   const [visibleCardCount, setVisibleCardCount] = useState(10)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const aiCardLimit = tierPolicy.maxCardsPerPack
   const storageCap = tierPolicy.maxStoredCards
   const showPremiumTools = settings.planTier === 'premium'
+  const briefOrderStorageKey = user ? `better-focus-brief-order:${user.id}` : null
+  const packOrderStorageKey = user ? `better-focus-pack-order:${user.id}` : null
 
   const generatedPacks = useMemo<GeneratedPackSummary[]>(() => {
     const packMap = new Map<string, GeneratedPackSummary>()
@@ -312,6 +367,68 @@ export function CardsPage() {
   }, [cards.length])
 
   useEffect(() => {
+    if (!briefOrderStorageKey || typeof window === 'undefined') {
+      setBriefOrder([])
+      return
+    }
+
+    try {
+      const saved = window.localStorage.getItem(briefOrderStorageKey)
+      setBriefOrder(saved ? (JSON.parse(saved) as string[]) : [])
+    } catch {
+      setBriefOrder([])
+    }
+  }, [briefOrderStorageKey])
+
+  useEffect(() => {
+    if (!packOrderStorageKey || typeof window === 'undefined') {
+      setPackOrder([])
+      return
+    }
+
+    try {
+      const saved = window.localStorage.getItem(packOrderStorageKey)
+      setPackOrder(saved ? (JSON.parse(saved) as string[]) : [])
+    } catch {
+      setPackOrder([])
+    }
+  }, [packOrderStorageKey])
+
+  useEffect(() => {
+    setBriefOrder((current) =>
+      mergeStoredOrder(
+        current,
+        briefs.map((brief) => brief.id),
+      ),
+    )
+  }, [briefs])
+
+  useEffect(() => {
+    setPackOrder((current) =>
+      mergeStoredOrder(
+        current,
+        generatedPacks.map((pack) => pack.batchId),
+      ),
+    )
+  }, [generatedPacks])
+
+  useEffect(() => {
+    if (!briefOrderStorageKey || typeof window === 'undefined') {
+      return
+    }
+
+    window.localStorage.setItem(briefOrderStorageKey, JSON.stringify(briefOrder))
+  }, [briefOrder, briefOrderStorageKey])
+
+  useEffect(() => {
+    if (!packOrderStorageKey || typeof window === 'undefined') {
+      return
+    }
+
+    window.localStorage.setItem(packOrderStorageKey, JSON.stringify(packOrder))
+  }, [packOrder, packOrderStorageKey])
+
+  useEffect(() => {
     const sentinel = loadMoreRef.current
 
     if (!sentinel || cards.length <= 10) {
@@ -368,6 +485,14 @@ export function CardsPage() {
               ? `You can only add ${remainingStorageSlots} more card${remainingStorageSlots === 1 ? '' : 's'} before reaching this plan’s ${storageCap}-card limit.`
           : null
   const previewBriefs = showPremiumTools ? briefs : demoBriefs
+  const orderedBriefs = useMemo(
+    () => sortItemsByStoredOrder(previewBriefs, briefOrder, (brief) => brief.id),
+    [briefOrder, previewBriefs],
+  )
+  const orderedGeneratedPacks = useMemo(
+    () => sortItemsByStoredOrder(generatedPacks, packOrder, (pack) => pack.batchId),
+    [generatedPacks, packOrder],
+  )
 
   async function handleUpdate(cardId: string, nextDraft: CardDraft) {
     if (!nextDraft.question.trim() || !nextDraft.answer.trim()) {
@@ -790,10 +915,38 @@ export function CardsPage() {
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                {previewBriefs.map((brief) => (
+                {orderedBriefs.map((brief) => (
                   <article
                     key={brief.id}
-                    className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
+                    className={[
+                      'rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4 transition',
+                      draggedBriefId === brief.id ? 'opacity-60' : '',
+                    ].join(' ')}
+                    draggable={showPremiumTools && orderedBriefs.length > 1}
+                    onDragStart={() => setDraggedBriefId(brief.id)}
+                    onDragEnd={() => setDraggedBriefId(null)}
+                    onDragOver={(event) => {
+                      if (!showPremiumTools) {
+                        return
+                      }
+
+                      event.preventDefault()
+                    }}
+                    onDrop={() => {
+                      if (!showPremiumTools || !draggedBriefId) {
+                        return
+                      }
+
+                      setBriefOrder((current) =>
+                        reorderStoredIds(
+                          current,
+                          orderedBriefs.map((item) => item.id),
+                          draggedBriefId,
+                          brief.id,
+                        ),
+                      )
+                      setDraggedBriefId(null)
+                    }}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <button
@@ -811,6 +964,11 @@ export function CardsPage() {
                         <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
                           {brief.topic}
                         </div>
+                        {showPremiumTools && orderedBriefs.length > 1 ? (
+                          <div className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                            Drag to reorder
+                          </div>
+                        ) : null}
                       </button>
                       <button
                         type="button"
@@ -861,7 +1019,7 @@ export function CardsPage() {
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                {generatedPacks.map((pack) => {
+                {orderedGeneratedPacks.map((pack) => {
                   const isExpanded = expandedPackId === pack.batchId
                   const packMessage =
                     packActionState.packId === pack.batchId ? packActionState.message : null
@@ -871,7 +1029,31 @@ export function CardsPage() {
                   return (
                     <div
                       key={pack.batchId}
-                      className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4"
+                      className={[
+                        'rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-4 transition',
+                        draggedPackId === pack.batchId ? 'opacity-60' : '',
+                      ].join(' ')}
+                      draggable={orderedGeneratedPacks.length > 1}
+                      onDragStart={() => setDraggedPackId(pack.batchId)}
+                      onDragEnd={() => setDraggedPackId(null)}
+                      onDragOver={(event) => {
+                        event.preventDefault()
+                      }}
+                      onDrop={() => {
+                        if (!draggedPackId) {
+                          return
+                        }
+
+                        setPackOrder((current) =>
+                          reorderStoredIds(
+                            current,
+                            orderedGeneratedPacks.map((item) => item.batchId),
+                            draggedPackId,
+                            pack.batchId,
+                          ),
+                        )
+                        setDraggedPackId(null)
+                      }}
                     >
                       <button
                         type="button"
@@ -888,6 +1070,11 @@ export function CardsPage() {
                         <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
                           Generated {new Date(pack.createdAt).toLocaleString()}
                         </div>
+                        {orderedGeneratedPacks.length > 1 ? (
+                          <div className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                            Drag to reorder
+                          </div>
+                        ) : null}
                       </button>
 
                       <div className="mt-4 flex w-full flex-wrap gap-2">

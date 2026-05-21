@@ -7,6 +7,7 @@ import { useBillingAccount } from '../features/billing/useBillingAccount'
 import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains'
 import { useLearningCards } from '../features/cards/useLearningCards'
 import { useExtensionStatus } from '../features/extension/useExtensionStatus'
+import { usePricingCurrency } from '../features/pricing/usePricingCurrency'
 
 export function SettingsPage() {
   const navigate = useNavigate()
@@ -22,8 +23,15 @@ export function SettingsPage() {
   const { domains } = useBlockedDomains()
   const { cards } = useLearningCards()
   const extensionStatus = useExtensionStatus()
-  const { billingAccount, openPortal, isLoading: isBillingLoading } = useBillingAccount()
+  const {
+    billingAccount,
+    openPortal,
+    startCheckout,
+    isLoading: isBillingLoading,
+  } = useBillingAccount()
+  const { currency } = usePricingCurrency()
   const [pending, setPending] = useState(false)
+  const [billingCadence, setBillingCadence] = useState<'month' | 'year'>('month')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,6 +42,22 @@ export function SettingsPage() {
     session?.user.app_metadata.provider ??
     (mode === 'demo' ? 'demo' : 'email')
   const billingQueryMessage = new URLSearchParams(location.search).get('billing')
+  const hasManagedSubscription =
+    billingAccount?.subscriptionStatus === 'active' ||
+    billingAccount?.subscriptionStatus === 'trialing' ||
+    billingAccount?.subscriptionStatus === 'past_due'
+  const hasBillingPortal = Boolean(billingAccount?.stripeCustomerId)
+  const currentPlanLabel =
+    settings.planTier === 'byok'
+      ? 'Bring your own key'
+      : settings.planTier === 'premium'
+        ? 'Premium'
+        : settings.planTier === 'pro'
+          ? 'Pro'
+          : 'Free'
+  const nextBillingDate = billingAccount?.currentPeriodEnd
+    ? new Date(billingAccount.currentPeriodEnd).toLocaleDateString()
+    : null
 
   async function handleClearByok() {
     setPending(true)
@@ -81,6 +105,28 @@ export function SettingsPage() {
         nextError instanceof Error
           ? nextError.message
           : 'Unable to open the billing portal right now.'
+      setError(nextMessage)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function handleStartCheckout(planTier: 'pro' | 'premium') {
+    setPending(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      await startCheckout({
+        planTier,
+        billingInterval: billingCadence,
+        currency,
+      })
+    } catch (nextError) {
+      const nextMessage =
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to open checkout right now.'
       setError(nextMessage)
     } finally {
       setPending(false)
@@ -261,40 +307,214 @@ export function SettingsPage() {
         </div>
 
         <div className="soft-card mt-6 p-5">
-          <h3 className="text-lg font-bold text-ink dark:text-white">Billing</h3>
+          <h3 className="text-lg font-bold text-ink dark:text-white">Plan management</h3>
           <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm">
-            <div className="font-semibold text-ink dark:text-white">
-              {billingAccount?.stripeSubscriptionId
-                ? billingAccount.cancelAtPeriodEnd
-                  ? 'Subscription ends at the end of the current billing period'
-                  : 'Stripe billing is active on this account'
-                : 'No Stripe subscription on this account yet'}
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="font-semibold text-ink dark:text-white">
+                  {hasManagedSubscription
+                    ? billingAccount?.cancelAtPeriodEnd
+                      ? `Your ${currentPlanLabel} plan stays active until ${nextBillingDate ?? 'the end of the current billing period'}`
+                      : `${currentPlanLabel} billing is active on this account`
+                    : `You are currently on ${currentPlanLabel}`}
+                </div>
+                <div className="muted-copy mt-2 leading-6">
+                  {hasManagedSubscription
+                    ? billingAccount?.currentPeriodEnd
+                      ? `Status: ${billingAccount.subscriptionStatus}. Changes, downgrades, and cancellations are managed in Stripe. ${
+                          billingAccount.cancelAtPeriodEnd
+                            ? 'Your access will end at the close of the current billing period.'
+                            : 'Upgrades can take effect straight away, while downgrades and cancellations stay active until the end of the billing period.'
+                        }`
+                      : `Status: ${billingAccount?.subscriptionStatus}.`
+                    : 'Start a paid plan here, then use Stripe billing to upgrade, downgrade, change billing cadence, or cancel later.'}
+                </div>
+              </div>
+              <div className="rounded-full bg-[var(--app-surface-muted)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300">
+                {billingAccount?.billingInterval === 'year'
+                  ? 'Annual billing'
+                  : billingAccount?.billingInterval === 'month'
+                    ? 'Monthly billing'
+                    : billingCadence === 'year'
+                      ? 'Annual selected'
+                      : 'Monthly selected'}
+              </div>
             </div>
-            <div className="muted-copy mt-2 leading-6">
-              {billingAccount?.stripeSubscriptionId
-                ? billingAccount.currentPeriodEnd
-                  ? `Status: ${billingAccount.subscriptionStatus}. Current period ends ${new Date(
-                      billingAccount.currentPeriodEnd,
-                    ).toLocaleString()}.`
-                  : `Status: ${billingAccount.subscriptionStatus}.`
-                : 'When you start a paid plan, billing management will appear here.'}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {billingAccount?.stripeCustomerId ? (
+
+            {!hasManagedSubscription ? (
+              <div className="mt-5 inline-flex rounded-full border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-1">
                 <button
                   type="button"
-                  className="action-button"
+                  className={[
+                    'rounded-full px-4 py-2 text-sm font-semibold transition',
+                    billingCadence === 'month'
+                      ? 'bg-reef text-white shadow-lg shadow-reef/20'
+                      : 'text-[var(--app-text)] hover:bg-[var(--app-surface-strong)]',
+                  ].join(' ')}
+                  onClick={() => setBillingCadence('month')}
+                  disabled={pending || isBillingLoading}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  className={[
+                    'rounded-full px-4 py-2 text-sm font-semibold transition',
+                    billingCadence === 'year'
+                      ? 'bg-reef text-white shadow-lg shadow-reef/20'
+                      : 'text-[var(--app-text)] hover:bg-[var(--app-surface-strong)]',
+                  ].join(' ')}
+                  onClick={() => setBillingCadence('year')}
+                  disabled={pending || isBillingLoading}
+                >
+                  Annual
+                </button>
+              </div>
+            ) : null}
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              {settings.planTier === 'free' ? (
+                <>
+                  <button
+                    type="button"
+                    className="action-button"
+                    onClick={() => void handleStartCheckout('pro')}
+                    disabled={pending || isBillingLoading}
+                  >
+                    Start Pro
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => void handleStartCheckout('premium')}
+                    disabled={pending || isBillingLoading}
+                  >
+                    Start Premium
+                  </button>
+                </>
+              ) : null}
+
+              {settings.planTier === 'pro' ? (
+                <>
+                  {hasBillingPortal ? (
+                    <>
+                      <button
+                        type="button"
+                        className="action-button"
+                        onClick={() => void handleOpenBillingPortal()}
+                        disabled={pending || isBillingLoading}
+                      >
+                        Upgrade to Premium
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => void handleOpenBillingPortal()}
+                        disabled={pending || isBillingLoading}
+                      >
+                        Manage plan
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="action-button"
+                      onClick={() => void handleStartCheckout('premium')}
+                      disabled={pending || isBillingLoading}
+                    >
+                      Start Premium
+                    </button>
+                  )}
+                </>
+              ) : null}
+
+              {settings.planTier === 'premium' ? (
+                hasBillingPortal ? (
+                  <button
+                    type="button"
+                    className="action-button"
+                    onClick={() => void handleOpenBillingPortal()}
+                    disabled={pending || isBillingLoading}
+                  >
+                    Manage plan
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="action-button"
+                    onClick={() => void handleStartCheckout('premium')}
+                    disabled={pending || isBillingLoading}
+                  >
+                    Start Premium billing
+                  </button>
+                )
+              ) : null}
+
+              {settings.planTier === 'byok' ? (
+                <>
+                  <button
+                    type="button"
+                    className="action-button"
+                    onClick={() => void handleStartCheckout('pro')}
+                    disabled={pending || isBillingLoading}
+                  >
+                    Start Pro
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => void handleStartCheckout('premium')}
+                    disabled={pending || isBillingLoading}
+                  >
+                    Start Premium
+                  </button>
+                </>
+              ) : null}
+
+              <Link to="/app/pricing" className="ghost-button">
+                Compare plan details
+              </Link>
+            </div>
+
+            {hasBillingPortal ? (
+              <div className="mt-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                Open Stripe billing to upgrade, downgrade, switch between monthly and annual billing, or cancel. Downgrades and cancellations remain active until the current billing period ends.
+              </div>
+            ) : null}
+
+            {!hasManagedSubscription ? (
+              <div className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-300">
+                New subscriptions will open in Stripe Checkout using your local pricing currency ({currency.toUpperCase()}).
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="soft-card mt-6 p-5">
+          <h3 className="text-lg font-bold text-ink dark:text-white">Billing history</h3>
+          <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm">
+            <div className="font-semibold text-ink dark:text-white">
+              {hasBillingPortal
+                ? 'Invoices, payment methods, and cancellation all live in Stripe billing.'
+                : 'Billing history appears once you start a paid subscription.'}
+            </div>
+            <div className="muted-copy mt-2 leading-6">
+              {hasBillingPortal
+                ? 'Use the billing portal whenever you need receipts, card changes, or a clean place to manage your subscription.'
+                : 'There is nothing to manage yet on this account.'}
+            </div>
+            {hasBillingPortal ? (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  className="ghost-button"
                   onClick={() => void handleOpenBillingPortal()}
                   disabled={pending || isBillingLoading}
                 >
-                  Manage billing
+                  Open billing portal
                 </button>
-              ) : (
-                <Link to="/app/pricing" className="action-button">
-                  Upgrade plan
-                </Link>
-              )}
-            </div>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -315,9 +535,6 @@ export function SettingsPage() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link to="/app/pricing" className="action-button">
-            Manage plans
-          </Link>
           <Link to="/app/setup" className="action-button">
             Open setup guide
           </Link>
