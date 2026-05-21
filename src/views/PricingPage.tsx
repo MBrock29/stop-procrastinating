@@ -43,7 +43,6 @@ export function PricingPage() {
     billingAccount?.subscriptionStatus === 'active' ||
     billingAccount?.subscriptionStatus === 'trialing' ||
     billingAccount?.subscriptionStatus === 'past_due';
-  const hasBillingPortal = Boolean(billingAccount?.stripeCustomerId);
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
     const proPrice =
@@ -71,12 +70,12 @@ export function PricingPage() {
         ctaLabel:
           settings.planTier === 'free'
             ? 'Current plan'
-            : hasBillingPortal
+            : hasManagedSubscription
               ? 'Manage plan'
               : 'Not active',
         ctaKind: settings.planTier === 'free'
           ? 'current'
-          : hasBillingPortal
+          : hasManagedSubscription
             ? 'portal'
             : 'coming-soon',
       },
@@ -96,12 +95,12 @@ export function PricingPage() {
             ? 'Current plan'
             : settings.planTier === 'premium'
               ? 'Manage plan'
-              : hasBillingPortal
+              : hasManagedSubscription
                 ? 'Manage plan'
                 : 'Start Pro',
         ctaKind: settings.planTier === 'pro'
           ? 'current'
-          : settings.planTier === 'premium' || hasBillingPortal
+          : settings.planTier === 'premium' || hasManagedSubscription
             ? 'portal'
             : 'checkout',
         badge:
@@ -131,19 +130,19 @@ export function PricingPage() {
           settings.planTier === 'premium'
             ? 'Current plan'
             : settings.planTier === 'pro'
-              ? hasBillingPortal
+              ? hasManagedSubscription
                 ? 'Upgrade plan'
                 : 'Start Premium'
-              : hasBillingPortal
+              : hasManagedSubscription
                 ? 'Manage plan'
                 : 'Start Premium',
         ctaKind: settings.planTier === 'premium'
           ? 'current'
           : settings.planTier === 'pro'
-            ? hasBillingPortal
+            ? hasManagedSubscription
               ? 'portal'
               : 'checkout'
-            : hasBillingPortal
+            : hasManagedSubscription
               ? 'portal'
               : 'checkout',
         badge:
@@ -158,7 +157,7 @@ export function PricingPage() {
     return cards;
   }, [
     billingCadence,
-    hasBillingPortal,
+    hasManagedSubscription,
     prices.freeMonthly,
     prices.premiumAnnual,
     prices.premiumMonthly,

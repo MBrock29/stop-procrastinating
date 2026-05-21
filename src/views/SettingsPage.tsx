@@ -396,7 +396,7 @@ export function SettingsPage() {
 
               {settings.planTier === 'pro' ? (
                 <>
-                  {hasBillingPortal ? (
+                  {hasManagedSubscription ? (
                     <>
                       <button
                         type="button"
@@ -429,7 +429,7 @@ export function SettingsPage() {
               ) : null}
 
               {settings.planTier === 'premium' ? (
-                hasBillingPortal ? (
+                hasManagedSubscription ? (
                   <button
                     type="button"
                     className="action-button"
