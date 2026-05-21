@@ -1,14 +1,16 @@
 import { useState, type ChangeEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { canAccessByok } from '../features/ai-access/byokVisibility'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { useAuth } from '../features/auth/useAuth'
+import { useBillingAccount } from '../features/billing/useBillingAccount'
 import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains'
 import { useLearningCards } from '../features/cards/useLearningCards'
 import { useExtensionStatus } from '../features/extension/useExtensionStatus'
 
 export function SettingsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { mode, session, signOut, user } = useAuth()
   const {
     byokCredentialStatus,
@@ -20,6 +22,7 @@ export function SettingsPage() {
   const { domains } = useBlockedDomains()
   const { cards } = useLearningCards()
   const extensionStatus = useExtensionStatus()
+  const { billingAccount, openPortal, isLoading: isBillingLoading } = useBillingAccount()
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -30,6 +33,7 @@ export function SettingsPage() {
   const authProvider =
     session?.user.app_metadata.provider ??
     (mode === 'demo' ? 'demo' : 'email')
+  const billingQueryMessage = new URLSearchParams(location.search).get('billing')
 
   async function handleClearByok() {
     setPending(true)
@@ -59,6 +63,24 @@ export function SettingsPage() {
     } catch (nextError) {
       const nextMessage =
         nextError instanceof Error ? nextError.message : 'Unable to sign out right now.'
+      setError(nextMessage)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function handleOpenBillingPortal() {
+    setPending(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      await openPortal()
+    } catch (nextError) {
+      const nextMessage =
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to open the billing portal right now.'
       setError(nextMessage)
     } finally {
       setPending(false)
@@ -181,9 +203,9 @@ export function SettingsPage() {
             : 'Review your sign-in details and extension connection from one place.'}
         </p>
 
-        {message ? (
+        {message || billingQueryMessage === 'success' ? (
           <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            {message}
+            {message ?? 'Checkout completed. Billing details will appear here once Stripe confirms the subscription.'}
           </div>
         ) : null}
 
@@ -235,6 +257,44 @@ export function SettingsPage() {
               Active cards
             </div>
             <div className="mt-3 text-3xl font-bold text-ink dark:text-white">{activeCards}</div>
+          </div>
+        </div>
+
+        <div className="soft-card mt-6 p-5">
+          <h3 className="text-lg font-bold text-ink dark:text-white">Billing</h3>
+          <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm">
+            <div className="font-semibold text-ink dark:text-white">
+              {billingAccount?.stripeSubscriptionId
+                ? billingAccount.cancelAtPeriodEnd
+                  ? 'Subscription ends at the end of the current billing period'
+                  : 'Stripe billing is active on this account'
+                : 'No Stripe subscription on this account yet'}
+            </div>
+            <div className="muted-copy mt-2 leading-6">
+              {billingAccount?.stripeSubscriptionId
+                ? billingAccount.currentPeriodEnd
+                  ? `Status: ${billingAccount.subscriptionStatus}. Current period ends ${new Date(
+                      billingAccount.currentPeriodEnd,
+                    ).toLocaleString()}.`
+                  : `Status: ${billingAccount.subscriptionStatus}.`
+                : 'When you start a paid plan, billing management will appear here.'}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {billingAccount?.stripeCustomerId ? (
+                <button
+                  type="button"
+                  className="action-button"
+                  onClick={() => void handleOpenBillingPortal()}
+                  disabled={pending || isBillingLoading}
+                >
+                  Manage billing
+                </button>
+              ) : (
+                <Link to="/app/pricing" className="action-button">
+                  Upgrade plan
+                </Link>
+              )}
+            </div>
           </div>
         </div>
 

@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useAiAccess } from '../features/ai-access/useAiAccess';
-import { canAccessPremium } from '../features/ai-access/byokVisibility';
-import { useAuth } from '../features/auth/useAuth';
 import { usePricingCurrency } from '../features/pricing/usePricingCurrency';
+import { useBillingAccount } from '../features/billing/useBillingAccount';
 import type { PlanTier } from '../types/domain';
 
 type BillingCadence = 'monthly' | 'annual';
@@ -17,18 +16,26 @@ interface PlanCardDefinition {
   priceRowClassName?: string;
   benefits: string[];
   ctaLabel: string;
-  ctaKind: 'current' | 'coming-soon' | 'contact';
+  ctaKind: 'current' | 'coming-soon' | 'checkout' | 'portal';
   badge?: string;
   secondaryBadge?: string;
 }
 
 export function PricingPage() {
-  const { user } = useAuth();
+  const location = useLocation();
   const { isLoading, settings } = useAiAccess();
+  const { billingAccount, isLoading: isBillingLoading, startCheckout, openPortal } =
+    useBillingAccount();
   const [billingCadence, setBillingCadence] =
     useState<BillingCadence>('monthly');
-  const { prices } = usePricingCurrency();
-  const canUsePremium = canAccessPremium(user?.email);
+  const { currency, prices } = usePricingCurrency();
+  const [pendingTier, setPendingTier] = useState<'pro' | 'premium' | null>(null);
+  const billingQueryMessage = new URLSearchParams(location.search).get('billing');
+
+  const hasManagedSubscription =
+    billingAccount?.subscriptionStatus === 'active' ||
+    billingAccount?.subscriptionStatus === 'trialing' ||
+    billingAccount?.subscriptionStatus === 'past_due';
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
     const proPrice =
@@ -68,8 +75,16 @@ export function PricingPage() {
           'Access to a stronger model',
         ],
         ctaLabel:
-          settings.planTier === 'pro' ? 'Current plan' : 'Billing coming soon',
-        ctaKind: settings.planTier === 'pro' ? 'current' : 'coming-soon',
+          settings.planTier === 'pro'
+            ? 'Current plan'
+            : hasManagedSubscription
+              ? 'Manage in billing portal'
+              : 'Start Pro',
+        ctaKind: settings.planTier === 'pro'
+          ? 'current'
+          : hasManagedSubscription
+            ? 'portal'
+            : 'checkout',
         badge:
           billingCadence === 'monthly'
             ? 'Annual discount available'
@@ -96,14 +111,14 @@ export function PricingPage() {
         ctaLabel:
           settings.planTier === 'premium'
             ? 'Current plan'
-            : canUsePremium
-              ? 'Included on your account'
-              : 'Premium coming soon',
+            : hasManagedSubscription
+              ? 'Manage in billing portal'
+              : 'Start Premium',
         ctaKind: settings.planTier === 'premium'
           ? 'current'
-          : canUsePremium
-            ? 'contact'
-            : 'coming-soon',
+          : hasManagedSubscription
+            ? 'portal'
+            : 'checkout',
         badge:
           billingCadence === 'monthly'
             ? 'Annual discount available'
@@ -116,7 +131,7 @@ export function PricingPage() {
     return cards;
   }, [
     billingCadence,
-    canUsePremium,
+    hasManagedSubscription,
     prices.freeMonthly,
     prices.premiumAnnual,
     prices.premiumMonthly,
@@ -124,6 +139,30 @@ export function PricingPage() {
     prices.proMonthly,
     settings.planTier,
   ]);
+
+  async function handleCheckout(planTier: 'pro' | 'premium') {
+    setPendingTier(planTier)
+
+    try {
+      await startCheckout({
+        planTier,
+        billingInterval: billingCadence === 'monthly' ? 'month' : 'year',
+        currency,
+      })
+    } finally {
+      setPendingTier(null)
+    }
+  }
+
+  async function handlePortal() {
+    setPendingTier('pro')
+
+    try {
+      await openPortal()
+    } finally {
+      setPendingTier(null)
+    }
+  }
 
   return (
     <div className='space-y-6'>
@@ -147,6 +186,11 @@ export function PricingPage() {
             ))}
           </div>
         </div>
+        {billingQueryMessage === 'cancelled' ? (
+          <div className='mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900'>
+            Checkout was cancelled. No billing changes were made.
+          </div>
+        ) : null}
         <div className='mt-8 grid gap-4 xl:grid-cols-3'>
           {planCards.map((plan) => {
             const isCurrent = !isLoading && settings.planTier === plan.tier;
@@ -221,13 +265,34 @@ export function PricingPage() {
                 </ul>
 
                 <div className='mt-auto pt-6'>
-                  {plan.ctaKind === 'contact' ? (
-                    <Link
-                      to='/contact'
-                      className='ghost-button min-h-[44px] w-full px-4 py-2 text-sm'
+                  {plan.ctaKind === 'checkout' ? (
+                    <button
+                      type='button'
+                      className='action-button min-h-[44px] w-full px-4 py-2 text-sm'
+                      onClick={() =>
+                        void handleCheckout(plan.tier === 'premium' ? 'premium' : 'pro')
+                      }
+                      disabled={isLoading || isBillingLoading || pendingTier !== null}
                     >
-                      {isLoading ? 'Loading…' : plan.ctaLabel}
-                    </Link>
+                      {isLoading || isBillingLoading
+                        ? 'Loading…'
+                        : pendingTier === plan.tier
+                          ? 'Opening checkout…'
+                          : plan.ctaLabel}
+                    </button>
+                  ) : plan.ctaKind === 'portal' ? (
+                    <button
+                      type='button'
+                      className='ghost-button min-h-[44px] w-full px-4 py-2 text-sm'
+                      onClick={() => void handlePortal()}
+                      disabled={isLoading || isBillingLoading || pendingTier !== null}
+                    >
+                      {isLoading || isBillingLoading
+                        ? 'Loading…'
+                        : pendingTier
+                          ? 'Opening billing…'
+                          : plan.ctaLabel}
+                    </button>
                   ) : (
                     <button
                       type='button'
