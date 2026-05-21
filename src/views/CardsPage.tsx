@@ -461,6 +461,10 @@ export function CardsPage() {
   )
   const parsedCardCount = Number(aiDraft.cardCount)
   const storedCardsCount = cards.length
+  const remainingPackAllowance =
+    tierPolicy.monthlyPackLimit == null
+      ? null
+      : Math.max(tierPolicy.monthlyPackLimit - usage.currentMonthPacksUsed, 0)
   const remainingStorageSlots =
     storageCap == null ? Number.POSITIVE_INFINITY : Math.max(storageCap - storedCardsCount, 0)
   const isCardCountEmpty = aiDraft.cardCount.trim().length === 0
@@ -564,7 +568,7 @@ export function CardsPage() {
           ? generation.meta.monthlyPacksUsed
           : usage.currentMonthPacksUsed + 1
       setAiSuccess(
-        `Generated ${generation.cards.length} cards with ${generation.meta.model}. ${
+        `Generated ${generation.cards.length} cards successfully. ${
           generation.meta.monthlyPackLimit != null
             ? `${nextPacksUsed}/${generation.meta.monthlyPackLimit} packs used this month.`
             : 'This request used your own key.'
@@ -780,6 +784,7 @@ export function CardsPage() {
               : `${tierPolicy.maxCardsPerPack} cards per pack, ${
                   tierPolicy.monthlyPackLimit ?? 'unlimited'
                 } packs per month.`}{' '}
+            {remainingPackAllowance != null ? `${remainingPackAllowance} pack${remainingPackAllowance === 1 ? '' : 's'} left this month. ` : ''}
             {storageCap != null
               ? `${storedCardsCount}/${storageCap} cards stored.`
               : `${storedCardsCount} cards stored.`}
@@ -892,12 +897,6 @@ export function CardsPage() {
             </span>
           </button>
 
-          {!showPremiumTools ? (
-            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-              Please upgrade to premium for this feature.
-            </div>
-          ) : null}
-
           {showPremiumTools && briefsError ? (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               {briefsError}
@@ -970,14 +969,15 @@ export function CardsPage() {
                           </div>
                         ) : null}
                       </button>
-                      <button
-                        type="button"
-                        className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
-                        onClick={() => void removeBrief(brief.id)}
-                        disabled={!showPremiumTools}
-                      >
-                        Delete
-                      </button>
+                      {showPremiumTools ? (
+                        <button
+                          type="button"
+                          className="shrink-0 whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-100"
+                          onClick={() => void removeBrief(brief.id)}
+                        >
+                          Delete
+                        </button>
+                      ) : null}
                     </div>
                     {expandedBriefId === brief.id ? (
                       <div className="mt-4 whitespace-pre-wrap rounded-2xl bg-[var(--app-surface-muted)] px-4 py-4 text-sm leading-7 text-slate-700 dark:text-slate-200">
@@ -1101,21 +1101,31 @@ export function CardsPage() {
                           </>
                         ) : (
                           <>
-                            <button
-                              type="button"
-                              className="ghost-button whitespace-nowrap px-3 py-2 text-xs opacity-60"
-                              disabled
+                            <span
+                              title="Upgrade to Premium to summarise saved packs."
+                              className="inline-flex"
                             >
-                              Summarise pack
-                            </button>
-                            {canGoDeeper ? (
                               <button
                                 type="button"
                                 className="ghost-button whitespace-nowrap px-3 py-2 text-xs opacity-60"
                                 disabled
                               >
-                                Go deeper
+                                Summarise pack
                               </button>
+                            </span>
+                            {canGoDeeper ? (
+                              <span
+                                title="Upgrade to Premium to generate deeper follow-up packs."
+                                className="inline-flex"
+                              >
+                                <button
+                                  type="button"
+                                  className="ghost-button whitespace-nowrap px-3 py-2 text-xs opacity-60"
+                                  disabled
+                                >
+                                  Go deeper
+                                </button>
+                              </span>
                             ) : null}
                           </>
                         )}
@@ -1139,12 +1149,6 @@ export function CardsPage() {
                           ].join(' ')}
                         >
                           {packMessage}
-                        </div>
-                      ) : null}
-
-                      {!showPremiumTools ? (
-                        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-                          Please upgrade to premium for this feature.
                         </div>
                       ) : null}
 

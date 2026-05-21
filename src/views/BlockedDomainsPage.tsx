@@ -16,6 +16,13 @@ export function BlockedDomainsPage() {
   const activeDomains = domains
     .filter((item) => item.isActive)
     .map((item) => item.domain);
+  const [lastRequestedSyncSignature, setLastRequestedSyncSignature] = useState<string | null>(
+    null,
+  );
+
+  function getDomainSignature(nextDomains: string[]) {
+    return [...nextDomains].sort().join('|');
+  }
 
   function queueStatusRefresh(delayMs = 600) {
     window.setTimeout(() => {
@@ -25,7 +32,15 @@ export function BlockedDomainsPage() {
 
   function syncActiveDomains(nextActiveDomains: string[]) {
     syncExtensionRules(nextActiveDomains);
+    setLastRequestedSyncSignature(getDomainSignature(nextActiveDomains));
     queueStatusRefresh();
+  }
+
+  function queueSyncRetry(nextActiveDomains: string[], delayMs = 1200) {
+    window.setTimeout(() => {
+      syncExtensionRules(nextActiveDomains);
+      queueStatusRefresh(400);
+    }, delayMs);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -39,7 +54,9 @@ export function BlockedDomainsPage() {
 
     try {
       const created = await addDomain(rawDomain);
-      syncActiveDomains([created.domain, ...activeDomains]);
+      const nextActiveDomains = [created.domain, ...activeDomains];
+      syncActiveDomains(nextActiveDomains);
+      queueSyncRetry(nextActiveDomains);
       form.reset();
     } catch (nextError) {
       const message =
@@ -55,6 +72,7 @@ export function BlockedDomainsPage() {
   function handleManualSync() {
     setSyncMessage(null);
     syncExtensionRules(activeDomains);
+    setLastRequestedSyncSignature(getDomainSignature(activeDomains));
     queueStatusRefresh();
     window.setTimeout(() => {
       void extensionStatus.refresh().then(() => {
@@ -78,6 +96,7 @@ export function BlockedDomainsPage() {
       .map((item) => item.domain);
 
     syncActiveDomains(nextActiveDomains);
+    queueSyncRetry(nextActiveDomains);
   }
 
   async function handleRemoveDomain(domainId: string) {
@@ -87,7 +106,17 @@ export function BlockedDomainsPage() {
 
     await removeDomain(domainId);
     syncActiveDomains(nextActiveDomains);
+    queueSyncRetry(nextActiveDomains);
   }
+
+  const syncedDomainSignature = getDomainSignature(
+    extensionStatus.details?.blockedDomains ?? [],
+  );
+  const desiredDomainSignature = getDomainSignature(activeDomains);
+  const syncLooksCurrent =
+    extensionStatus.status === 'connected' &&
+    extensionStatus.details?.appBaseUrl === window.location.origin &&
+    syncedDomainSignature === desiredDomainSignature;
 
   return (
     <div className='grid gap-6 lg:grid-cols-[0.9fr_1.1fr]'>
@@ -149,9 +178,16 @@ export function BlockedDomainsPage() {
                 {extensionStatus.status === 'connected'
                   ? extensionStatus.isStale
                     ? 'The extension is connected, but the last sync looks old. Your blocked-site changes should usually update automatically, but you can use the button here to manually refresh the rules.'
-                    : 'Your blocked-site changes should usually update automatically. Use the button here if you want to manually refresh the extension rules.'
+                    : syncLooksCurrent
+                      ? 'Your blocked-site changes should usually update automatically. Use the button here if you want to manually refresh the extension rules.'
+                      : 'The extension is connected and a rules update has been sent. If the latest blocked site has not kicked in yet, the app will keep nudging the extension in the background and you can still use the manual refresh button below.'
                   : 'If the extension is installed, your active rules should usually sync automatically. Use the button here if you want to try a manual refresh from the app.'}
               </p>
+              {lastRequestedSyncSignature && !syncLooksCurrent ? (
+                <p className='mt-2 text-sm text-slate-500 dark:text-slate-300'>
+                  Waiting for the extension to confirm the newest blocked-site rules.
+                </p>
+              ) : null}
               {extensionStatus.details?.lastSyncedAt ? (
                 <p className='mt-2 text-sm text-slate-500 dark:text-slate-300'>
                   Last synced{' '}
