@@ -247,14 +247,6 @@ export function BlockedDomainsPage() {
           <div className='soft-card mt-6 border-dashed px-5 py-8 text-sm muted-copy'>
             No blocked domains yet. Add your first habit-trigger site to start
             shaping the redirect behavior.
-            <div className='mt-4 flex flex-wrap gap-3'>
-              <Link to='/app/cards' className='ghost-button'>
-                Prepare learning cards
-              </Link>
-              <Link to='/app/setup' className='ghost-button'>
-                Open setup guide
-              </Link>
-            </div>
           </div>
         ) : null}
 

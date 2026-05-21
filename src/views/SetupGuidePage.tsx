@@ -94,14 +94,11 @@ export function SetupGuidePage() {
         </ul>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <a href={chromeStoreUrl} target="_blank" rel="noreferrer" className="action-button">
+          <a href={chromeStoreUrl} target="_blank" rel="noreferrer" className="ghost-button">
             Open Chrome Web Store
           </a>
           <Link to="/app/sites" className="ghost-button">
             Go to blocked sites
-          </Link>
-          <Link to="/app" className="ghost-button">
-            Back to dashboard
           </Link>
         </div>
       </section>

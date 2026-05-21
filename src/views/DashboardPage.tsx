@@ -320,7 +320,7 @@ export function DashboardPage() {
                   : 'bg-rose-50 text-rose-700',
               ].join(' ')}
             >
-              {showPremiumInsights ? 'Premium active' : 'Premium feature'}
+              {showPremiumInsights ? 'Premium active' : 'Premium preview'}
             </div>
           </div>
 
@@ -367,7 +367,7 @@ export function DashboardPage() {
 
           {!showPremiumInsights ? (
             <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-              Please upgrade to premium for this feature.
+              Please upgrade to premium for the features below.
             </div>
           ) : null}
 

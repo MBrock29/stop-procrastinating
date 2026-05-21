@@ -789,7 +789,7 @@ export function CardsPage() {
               ? `${storedCardsCount}/${storageCap} cards stored.`
               : `${storedCardsCount} cards stored.`}
           </div>
-          <Link to="/app/pricing" className="mt-3 inline-block font-semibold text-reef">
+          <Link to="/app/settings" className="mt-3 inline-block font-semibold text-reef">
             Manage plans
           </Link>
         </div>
