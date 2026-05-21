@@ -26,9 +26,30 @@ const priceMap = {
   },
 } as const
 
+function getRegionFromLocale(locale: string) {
+  if (!locale) {
+    return null
+  }
+
+  try {
+    if (typeof Intl.Locale === 'function') {
+      const intlLocale = new Intl.Locale(locale)
+      return intlLocale.region?.toUpperCase() ?? null
+    }
+  } catch {
+    // Fall back to simple parsing below.
+  }
+
+  return locale.split('-')[1]?.toUpperCase() ?? null
+}
+
 function detectCurrency(): PricingCurrency {
-  const locale = Intl.DateTimeFormat().resolvedOptions().locale
-  const region = locale.split('-')[1]?.toUpperCase()
+  const localeCandidates = [
+    Intl.DateTimeFormat().resolvedOptions().locale,
+    ...(typeof navigator !== 'undefined' ? navigator.languages ?? [] : []),
+    typeof navigator !== 'undefined' ? navigator.language : null,
+  ].filter((value): value is string => Boolean(value))
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const euroRegions = new Set([
     'AT',
     'BE',
@@ -52,12 +73,20 @@ function detectCurrency(): PricingCurrency {
     'SK',
   ])
 
-  if (region === 'GB') {
-    return 'GBP'
+  for (const locale of localeCandidates) {
+    const region = getRegionFromLocale(locale)
+
+    if (region === 'GB') {
+      return 'GBP'
+    }
+
+    if (region && euroRegions.has(region)) {
+      return 'EUR'
+    }
   }
 
-  if (region && euroRegions.has(region)) {
-    return 'EUR'
+  if (timezone === 'Europe/London') {
+    return 'GBP'
   }
 
   return 'USD'
