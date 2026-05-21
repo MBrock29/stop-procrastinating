@@ -46,7 +46,11 @@ export function SettingsPage() {
     billingAccount?.subscriptionStatus === 'active' ||
     billingAccount?.subscriptionStatus === 'trialing' ||
     billingAccount?.subscriptionStatus === 'past_due'
-  const hasBillingPortal = Boolean(billingAccount?.stripeCustomerId)
+  const hasStripeSubscription = Boolean(billingAccount?.stripeSubscriptionId)
+  const hasEntitledPaidAccess =
+    (settings.planTier === 'pro' || settings.planTier === 'premium') &&
+    !hasManagedSubscription &&
+    !hasStripeSubscription
   const currentPlanLabel =
     settings.planTier === 'byok'
       ? 'Bring your own key'
@@ -316,6 +320,8 @@ export function SettingsPage() {
                     ? billingAccount?.cancelAtPeriodEnd
                       ? `Your ${currentPlanLabel} plan stays active until ${nextBillingDate ?? 'the end of the current billing period'}`
                       : `${currentPlanLabel} billing is active on this account`
+                    : hasEntitledPaidAccess
+                      ? `${currentPlanLabel} access is enabled on this account`
                     : `You are currently on ${currentPlanLabel}`}
                 </div>
                 <div className="muted-copy mt-2 leading-6">
@@ -327,6 +333,8 @@ export function SettingsPage() {
                             : 'Upgrades can take effect straight away, while downgrades and cancellations stay active until the end of the billing period.'
                         }`
                       : `Status: ${billingAccount?.subscriptionStatus}.`
+                    : hasEntitledPaidAccess
+                      ? 'This account currently has paid access enabled outside Stripe, so there is no subscription to cancel, downgrade, or invoice history to manage in the billing portal.'
                     : 'Start a paid plan here, then use Stripe billing to upgrade, downgrade, change billing cadence, or cancel later.'}
                 </div>
               </div>
@@ -415,6 +423,14 @@ export function SettingsPage() {
                         Manage plan
                       </button>
                     </>
+                  ) : hasEntitledPaidAccess ? (
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      disabled
+                    >
+                      Included access
+                    </button>
                   ) : (
                     <button
                       type="button"
@@ -437,6 +453,14 @@ export function SettingsPage() {
                     disabled={pending || isBillingLoading}
                   >
                     Manage plan
+                  </button>
+                ) : hasEntitledPaidAccess ? (
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    disabled
+                  >
+                    Included access
                   </button>
                 ) : (
                   <button
@@ -476,7 +500,7 @@ export function SettingsPage() {
               </Link>
             </div>
 
-            {hasBillingPortal ? (
+            {hasManagedSubscription ? (
               <div className="mt-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Open Stripe billing to upgrade, downgrade, switch between monthly and annual billing, or cancel. Downgrades and cancellations remain active until the current billing period ends.
               </div>
@@ -494,16 +518,16 @@ export function SettingsPage() {
           <h3 className="text-lg font-bold text-ink dark:text-white">Billing history</h3>
           <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm">
             <div className="font-semibold text-ink dark:text-white">
-              {hasBillingPortal
+              {hasManagedSubscription
                 ? 'Invoices, payment methods, and cancellation all live in Stripe billing.'
                 : 'Billing history appears once you start a paid subscription.'}
             </div>
             <div className="muted-copy mt-2 leading-6">
-              {hasBillingPortal
+              {hasManagedSubscription
                 ? 'Use the billing portal whenever you need receipts, card changes, or a clean place to manage your subscription.'
                 : 'There is nothing to manage yet on this account.'}
             </div>
-            {hasBillingPortal ? (
+            {hasManagedSubscription ? (
               <div className="mt-4">
                 <button
                   type="button"

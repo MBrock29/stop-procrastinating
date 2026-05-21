@@ -43,6 +43,11 @@ export function PricingPage() {
     billingAccount?.subscriptionStatus === 'active' ||
     billingAccount?.subscriptionStatus === 'trialing' ||
     billingAccount?.subscriptionStatus === 'past_due';
+  const hasStripeSubscription = Boolean(billingAccount?.stripeSubscriptionId);
+  const hasEntitledPaidAccess =
+    (settings.planTier === 'pro' || settings.planTier === 'premium') &&
+    !hasManagedSubscription &&
+    !hasStripeSubscription;
 
   const planCards = useMemo<PlanCardDefinition[]>(() => {
     const proPrice =
@@ -70,11 +75,15 @@ export function PricingPage() {
         ctaLabel:
           settings.planTier === 'free'
             ? 'Current plan'
+            : hasEntitledPaidAccess
+              ? 'Included access'
             : hasManagedSubscription
               ? 'Manage plan'
               : 'Not active',
         ctaKind: settings.planTier === 'free'
           ? 'current'
+          : hasEntitledPaidAccess
+            ? 'coming-soon'
           : hasManagedSubscription
             ? 'portal'
             : 'coming-soon',
@@ -94,13 +103,19 @@ export function PricingPage() {
           settings.planTier === 'pro'
             ? 'Current plan'
             : settings.planTier === 'premium'
-              ? 'Manage plan'
+              ? hasEntitledPaidAccess
+                ? 'Included access'
+                : 'Manage plan'
               : hasManagedSubscription
                 ? 'Manage plan'
                 : 'Start Pro',
         ctaKind: settings.planTier === 'pro'
           ? 'current'
-          : settings.planTier === 'premium' || hasManagedSubscription
+          : settings.planTier === 'premium'
+            ? hasEntitledPaidAccess
+              ? 'coming-soon'
+              : 'portal'
+            : hasManagedSubscription
             ? 'portal'
             : 'checkout',
         badge:
@@ -139,7 +154,9 @@ export function PricingPage() {
         ctaKind: settings.planTier === 'premium'
           ? 'current'
           : settings.planTier === 'pro'
-            ? hasManagedSubscription
+            ? hasEntitledPaidAccess
+              ? 'coming-soon'
+              : hasManagedSubscription
               ? 'portal'
               : 'checkout'
             : hasManagedSubscription
@@ -157,6 +174,7 @@ export function PricingPage() {
     return cards;
   }, [
     billingCadence,
+    hasEntitledPaidAccess,
     hasManagedSubscription,
     prices.freeMonthly,
     prices.premiumAnnual,
@@ -239,6 +257,11 @@ export function PricingPage() {
         {hasManagedSubscription ? (
           <div className='mt-6 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-3 text-sm text-slate-700 dark:text-slate-200'>
             Paid plan changes are handled in your billing portal. Upgrades can take effect straight away, while downgrades and cancellations stay active until the end of the current billing period.
+          </div>
+        ) : null}
+        {hasEntitledPaidAccess ? (
+          <div className='mt-6 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900'>
+            This account currently has paid access enabled outside Stripe, so there is no subscription to manage or cancel in the billing portal yet.
           </div>
         ) : null}
         <div className='mt-8 grid gap-4 xl:grid-cols-3'>
