@@ -10,7 +10,12 @@
     "build:all": "npm run build && npm run build:extension",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:ai": "vitest run src/features/ai-evals",
+    "check:edge": "node scripts/check-edge-functions.mjs",
+    "quality": "npm run lint && npm test && npm run test:ai && npm run eval:ai && npm run check:edge && npm run build:all",
+    "eval:ai": "node scripts/eval-ai-cards.mjs",
+    "eval:ai:live": "node scripts/eval-ai-cards.mjs --live"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
@@ -19,11 +24,13 @@
     "react-router-dom": "^6.30.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
+    "@electric-sql/pglite-pgvector": "^0.0.11",
     "@eslint/js": "^9.17.0",
+    "@types/chrome": "^0.0.319",
     "@types/node": "^20.17.30",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@types/chrome": "^0.0.319",
     "@typescript-eslint/eslint-plugin": "^8.19.1",
     "@typescript-eslint/parser": "^8.19.1",
     "@vitejs/plugin-react": "^4.3.4",

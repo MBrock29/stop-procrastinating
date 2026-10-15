@@ -8,12 +8,19 @@ export type AiProvider = 'openai' | 'openrouter'
 export type SupportedAiModel = 'gpt-4.1-mini' | 'gpt-5-mini' | 'gpt-5.4-mini'
 export type RedirectBackMode = 'manual' | 'after_cards'
 export type PremiumInterruptMode = 'cards' | 'summary'
+export type InterventionMode = 'quick' | 'focus' | 'intentional' | 'soft' | 'hard' | 'smart'
 
 export interface BlockedDomain {
   id: string
   userId: string
   domain: string
   isActive: boolean
+  scheduleDays: number[]
+  scheduleAllDay: boolean
+  scheduleStart: string
+  scheduleEnd: string
+  interventionMode: InterventionMode
+  pausedUntil: string | null
   createdAt: string
   updatedAt: string
 }
@@ -26,6 +33,10 @@ export interface LearningCard {
   source: 'manual' | 'ai'
   generationTopic: string | null
   generationBatchId: string | null
+  groundedSourceId: string | null
+  citationChunkIds: string[]
+  citationExcerpts: string[]
+  groundingScore: number | null
   isUserEdited: boolean
   latestConfidence: ConfidenceRating | null
   isArchived: boolean
@@ -39,11 +50,14 @@ export interface LearningCard {
 }
 
 export interface InterruptSession {
+  source?: 'extension' | 'practice' | 'onboarding' | 'unknown'
   id: string
   userId: string
   blockedDomain: string
   triggeredAt: string
   completedAt: string | null
+  outcome: 'started' | 'completed' | 'bypassed'
+  interventionMode: InterventionMode
 }
 
 export type ConfidenceRating = 'know' | 'semi' | 'not_confident'
@@ -119,6 +133,9 @@ export interface UserBillingAccount {
 export type AiGenerationStatus = 'success' | 'limit_exceeded' | 'rate_limited' | 'blocked' | 'failed'
 
 export interface AiGenerationEvent {
+  requestId?: string | null
+  promptVersion?: string | null
+  latencyMs?: number | null
   id: string
   userId: string
   topic: string
@@ -133,4 +150,58 @@ export interface AiGenerationEvent {
   usedByok: boolean
   failureReason: string | null
   createdAt: string
+}
+
+export interface TutorRecommendation {
+  headline: string
+  focusTopic: string
+  reason: string
+  actions: string[]
+  estimatedMinutes: number
+  confidence: 'high' | 'medium' | 'low'
+}
+
+export type TutorToolName =
+  | 'get_topic_mastery'
+  | 'get_due_cards'
+  | 'get_recent_weaknesses'
+  | 'get_recent_learning_briefs'
+
+export interface TutorTraceItem {
+  sequence: number
+  tool: TutorToolName
+  status: 'success' | 'failed'
+  latencyMs: number
+}
+
+export interface TutorRun {
+  id: string
+  userId: string
+  requestId: string
+  model: string
+  promptVersion: string
+  status: 'success' | 'failed'
+  recommendation: TutorRecommendation | null
+  toolCount: number
+  latencyMs: number
+  inputTokens: number | null
+  outputTokens: number | null
+  estimatedCostUsd: number | null
+  failureReason: string | null
+  createdAt: string
+}
+
+export interface TutorResult {
+  runId: string
+  requestId: string
+  recommendation: TutorRecommendation
+  trace: TutorTraceItem[]
+  meta: {
+    model: string
+    promptVersion: string
+    latencyMs: number
+    inputTokens: number | null
+    outputTokens: number | null
+    estimatedCostUsd: number | null
+  }
 }

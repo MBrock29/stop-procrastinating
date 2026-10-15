@@ -7,7 +7,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'extension/dist']),
+  globalIgnores(['dist', 'extension/dist', '_ai-showcase-reference/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tsPlugin.configs['flat/recommended']],
