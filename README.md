@@ -1,143 +1,93 @@
 # Better Focus
 
-React, TypeScript, Tailwind, Supabase, and a Chrome Manifest V3 extension working together to turn habit-site visits into a short learning interrupt.
+**Turn distraction into learning.** Better Focus pairs a React web app with a Chrome Manifest V3 extension. When a configured site opens, the extension redirects the visit into a short learning interruption: answer one due card, record confidence, and continue with intent.
 
-## What it does
+The repository also explores production-oriented AI product engineering: structured card generation, plan and cost controls, a bounded tool-using tutor, source-grounded cards with citations, observable model calls, deterministic evals, human feedback, and an idempotent background queue.
 
-- Users manage blocked domains in the web app.
-- Users create their own question-and-answer learning cards.
-- Users can generate a cheap cached batch of AI cards for a topic and then review them like normal cards.
-- The extension caches active blocked domains locally.
-- When a blocked domain is visited, the extension redirects the browser to the app’s `/interrupt` route.
-- The interrupt route shows one due card, records a confidence rating, and reschedules the card.
+## Product flow
 
-## Project shape
+1. Choose distracting sites and a learning goal during a four-step setup.
+2. Preview a personalised or ready-made learning set before adding it to My learning.
+3. The app syncs active site schedules and snooze state to the extension.
+4. A matching navigation redirects to `/interrupt` with the original URL.
+5. The learner recalls an answer and rates it; familiar cards get longer review intervals.
+6. Today reports completed extension interruptions separately from manual practice.
 
-- `src/`: React app
-- `src/features/auth`: auth provider and session handling
-- `src/features/blocked-domains`: blocked-domain data layer and UI hooks
-- `src/features/cards`: card CRUD and scheduling logic
-- `src/features/interrupts`: interrupt session and review persistence
-- `src/features/extension`: app-side bridge that syncs rules to the extension
-- `extension/`: Manifest V3 extension source and static assets
-- `supabase/migrations/`: SQL schema for blocked domains, cards, interrupt sessions, and reviews
-- `supabase/functions/generate-learning-cards`: edge function that calls the LLM once and returns a stored card batch
+Without Supabase variables, the core web flow runs in local demo mode. Hosted AI, RAG, the tutor, feedback, and async jobs require Supabase and server secrets.
 
-## Local setup
+Local preview uses real curated learning sets and supports your own questions. It does
+not fabricate generated answers. The preview study guide uses a deterministic summary
+of local reviews; model-backed recommendations require the connected backend.
 
-1. Install dependencies:
+See the [commercial product review](docs/COMMERCIAL_PRODUCT_REVIEW.md) for feature
+decisions, competitor research, commercial risks, and the release priorities. The full
+question editor and existing summary tools remain at `/app/cards/manage`.
+
+## AI system
+
+- **Card generation:** OpenAI or OpenRouter, strict JSON schemas, provider/model routing, BYOK, monthly limits, cooldowns, cost caps, token usage, and duplicate checks.
+- **Adaptive tutor:** one bounded agent with up to three tool rounds and eight calls. It can inspect mastery, due cards, weak reviews, and recent briefs before returning a structured study recommendation.
+- **Grounded generation:** user-provided text is normalized, chunked, embedded, stored in pgvector, retrieved by cosine distance, and cited by chunk ID and excerpt. The lexical overlap score is a smoke test; it does not establish factual correctness.
+- **Quality and observability:** request IDs, prompt versions, latency, tokens, known estimated cost, persisted tutor traces, 28 offline evaluator fixtures, and 25 opt-in live cases. Saved live reports can compare score, pass rate, latency, and cost coverage.
+- **Async generation:** browser requests enter a service-owned queue. Workers use no persisted user JWT, claim with `FOR UPDATE SKIP LOCKED`, use fenced locks, retry with bounded exponential backoff, recover stale locks, and dead-letter exhausted jobs.
+
+See [Architecture](docs/ARCHITECTURE.md), [case study](docs/PORTFOLIO_CASE_STUDY.md), [hardening checklist](docs/HARDENING_CHECKLIST.md), and [interview evidence](docs/INTERVIEW_EVIDENCE.md).
+
+## Repository map
+
+| Path | Purpose |
+| --- | --- |
+| `src/` | React application and feature repositories |
+| `extension/` | Chrome extension background, content, popup, and redirect logic |
+| `supabase/migrations/` | Postgres schema, RLS, pgvector, telemetry, and queue functions |
+| `supabase/functions/` | Authenticated generation, tutor, ingestion, queue, and worker endpoints |
+| `evals/` | Stable offline fixtures and opt-in live topics |
+| `tests/database/` | PGlite migration, RLS, ownership, atomicity, and queue tests |
+
+## Local development
+
+Requirements: Node 20+, npm, and Chrome/Chromium for the extension.
 
 ```bash
-npm install
-```
-
-2. Copy environment variables:
-
-```bash
+npm ci
 cp .env.example .env
-```
-
-3. Fill in Supabase values if you want real auth/data.
-
-If `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are missing, the app still runs in demo mode with local-storage-backed auth and data so you can exercise the full flow locally.
-
-4. Optional for AI generation in production:
-
-- set `OPENAI_API_KEY` in your Supabase edge-function secrets
-- optionally set `OPENAI_GENERATION_MODEL=gpt-4.1-mini` for direct OpenAI usage
-- if you use OpenRouter, set `OPENROUTER_API_KEY` and `OPENROUTER_GENERATION_MODEL=openai/gpt-4.1-mini`
-
-5. Start the app:
-
-```bash
 npm run dev
 ```
 
-6. Build the extension:
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` enable real authentication and data. Keep service-role, provider, encryption, Stripe, and worker secrets outside `VITE_*` variables.
+
+Run the same local quality sequence as CI:
+
+```bash
+npm run quality
+```
+
+The normal CI suite is offline. Live model evals require a dedicated test account and are manual because they make 25 provider calls, consume quota, and incur cost. See [eval documentation](evals/README.md).
+
+## Supabase and Edge Functions
+
+Apply migrations in filename order, then deploy the functions used by your environment. AI paths need the standard Supabase URL/anon/service-role secrets and the relevant provider keys. Async processing additionally needs a strong `GENERATION_WORKER_SECRET`; call `process-learning-generation-job` from a trusted scheduler with that value in `x-worker-secret` and the project anon key as the normal Supabase gateway bearer token. The worker secret, rather than the public anon key, authorizes queue processing.
+
+The worker invokes the same generation handlers used by synchronous requests through a service-authenticated internal identity. Those handlers still enforce plan, quota, ownership, card-count, and source rules. Queue payloads contain sanitized product input only.
+
+No hosted migration, deployment, provider call, retrieval-quality baseline, or production-load result is asserted by this repository.
+
+## Chrome extension
 
 ```bash
 npm run build:extension
 ```
 
-7. Load the extension in Chrome:
+Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `extension/dist`. The extension caches the app origin and active domains, avoids redirect loops on the app itself, and includes the original destination as `returnUrl`.
 
-- Open `chrome://extensions`
-- Enable `Developer mode`
-- Click `Load unpacked`
-- Select `extension/dist`
+## Technical decisions
 
-## Supabase setup
+- A single bounded tutor makes tool use measurable and auditable without unnecessary multi-agent coordination.
+- RLS protects browser reads and writes; service-only functions handle derived telemetry, chunks, tutor traces, and queue state.
+- Unknown cost stays `null`, so coverage is visible and missing data is never reported as zero.
+- URLs on learning sources are citation metadata. Edge Functions do not fetch arbitrary URLs.
+- Queue status is operational state, not a claim of distributed or enterprise scale.
 
-Apply the SQL in `supabase/migrations/` to create:
+## Current evidence and limits
 
-- `blocked_domains`
-- `learning_cards`
-- `interrupt_sessions`
-- `card_reviews`
-
-Each table is protected with row-level security for the signed-in owner.
-
-To enable AI generation with Supabase:
-
-```bash
-supabase secrets set OPENAI_API_KEY=your-key
-supabase secrets set OPENAI_GENERATION_MODEL=gpt-4.1-mini
-supabase functions deploy generate-learning-cards
-```
-
-If the app is running without Supabase, the AI generator falls back to a deterministic local demo generator so the UI still works for testing.
-
-## Extension sync flow
-
-- The authenticated app shell mounts `ExtensionSyncBridge`.
-- Whenever active blocked domains change, the app posts a sync message to the page.
-- The extension content script forwards that payload to the background worker.
-- The background worker stores:
-  - `appBaseUrl`
-  - `blockedDomains`
-  - `lastSyncedAt`
-- The popup reads that status and can request a sync from the currently open app tab.
-
-## Redirect flow
-
-1. User navigates to a blocked domain.
-2. Background worker checks the cached rules.
-3. If the host matches, the tab is updated to:
-
-```text
-/interrupt?site=<hostname>&source=extension
-```
-
-4. The app creates an interrupt session.
-5. The app loads one due card.
-6. The user reveals the answer and rates confidence.
-7. The app records a `card_review`, updates scheduling fields on the card, and completes the interrupt session.
-
-## AI card generation flow
-
-1. User opens the cards page and enters a topic such as `mid-senior React interview questions`.
-2. The app sends one request to the `generate-learning-cards` edge function.
-3. The edge function calls the OpenAI Responses API once and asks for structured JSON output.
-4. The returned cards are saved into `learning_cards` with:
-   - `source = ai`
-   - `generation_topic = <topic>`
-   - `is_user_edited = false`
-5. From that point on, AI cards use the same review scheduling and interrupt flow as manual cards.
-
-## Scripts
-
-```bash
-npm run dev
-npm run build
-npm run build:extension
-npm run build:all
-npm run lint
-npm run test
-```
-
-## Notes
-
-- Browser target is Chrome/Chromium first.
-- Domain matching is domain-level, including subdomains.
-- v1 is designed to interrupt habits, not to be impossible to bypass.
-- The extension currently uses the app origin to avoid redirect loops; it will not redirect when you are already on the app itself.
+Vitest covers UI-independent logic, extension redirects, Edge parsing/policy helpers, and embedded Postgres migrations. CI also bundles Edge Function entry points and builds both artifacts. Full hosted Supabase, live LLM/embedding, browser interaction, and extension-to-review end-to-end checks remain environment-level validation work; see the hardening checklist for the exact boundary.

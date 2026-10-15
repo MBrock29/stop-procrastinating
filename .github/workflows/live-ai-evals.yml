@@ -1,0 +1,36 @@
+name: Live AI evals
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type RUN 25 LIVE CASES to confirm model usage and cost
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  live-evals:
+    if: inputs.confirmation == 'RUN 25 LIVE CASES'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run eval:ai:live
+        env:
+          SUPABASE_FUNCTION_URL: ${{ secrets.EVAL_SUPABASE_FUNCTION_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.EVAL_SUPABASE_ANON_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.EVAL_SUPABASE_ACCESS_TOKEN }}
+          EVAL_MODEL: ${{ vars.EVAL_MODEL }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: live-ai-eval-report
+          path: evals/results/live-latest.json
+          if-no-files-found: error
+          retention-days: 14
