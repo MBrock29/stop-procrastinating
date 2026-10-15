@@ -11,6 +11,10 @@ function createCard(overrides: Partial<LearningCard> = {}): LearningCard {
     source: 'manual',
     generationTopic: null,
     generationBatchId: null,
+    groundedSourceId: null,
+    citationChunkIds: [],
+    citationExcerpts: [],
+    groundingScore: null,
     isUserEdited: false,
     latestConfidence: null,
     isArchived: false,
@@ -43,7 +47,7 @@ describe('applyConfidenceToCard', () => {
     expect(updated.knowCount).toBe(0)
     expect(updated.notConfidentCount).toBe(0)
     expect(updated.latestConfidence).toBe('semi')
-    expect(updated.nextReviewAt).toBeNull()
+    expect(updated.nextReviewAt).toBe('2026-05-02T10:00:00.000Z')
   })
 })
 
@@ -80,10 +84,22 @@ describe('sortCardsForReview', () => {
 })
 
 describe('selectNextDueCard', () => {
+  it('returns no due card when every card is scheduled in the future', () => {
+    expect(selectNextDueCard([createCard({ nextReviewAt: '2099-01-01T00:00:00.000Z' })])).toBeNull()
+  })
   it('returns the first card in the review priority order', () => {
     const know = createCard({ id: 'know', latestConfidence: 'know' })
     const unmarked = createCard({ id: 'unmarked', latestConfidence: null })
 
     expect(selectNextDueCard([know, unmarked])?.id).toBe('unmarked')
   })
+})
+
+it('prioritizes due cards over future cards, and brings difficult cards back sooner', () => {
+  const now = new Date('2026-05-01T10:00:00Z')
+  const easy = createCard({ id: 'due', latestConfidence: 'know', nextReviewAt: now.toISOString() })
+  const future = createCard({ id: 'future', nextReviewAt: '2026-05-02T10:00:00Z' })
+  expect(sortCardsForReview([future, easy], now)[0].id).toBe('due')
+  expect(applyConfidenceToCard(easy, 'not_confident', now).nextReviewAt).toBe('2026-05-01T10:10:00.000Z')
+  expect(applyConfidenceToCard(easy, 'know', now).nextReviewAt).toBe('2026-05-04T10:00:00.000Z')
 })

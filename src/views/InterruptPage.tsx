@@ -1,409 +1,470 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { canAccessByok } from '../features/ai-access/byokVisibility'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { listLearningCards } from '../features/cards/cardsRepository'
 import { listLearningBriefs } from '../features/briefs/briefsRepository'
-import { sortCardsForReview } from '../features/cards/scheduling'
 import { useAuth } from '../features/auth/useAuth'
 import { allowExtensionReturnOnce } from '../features/extension/extensionBridge'
 import {
   completeInterruptSession,
   createInterruptSession,
+  bypassInterruptSession,
   submitInterruptReview,
 } from '../features/interrupts/interruptRepository'
+import {
+  getSafeReturnUrl,
+  selectInterruptCards,
+} from '../features/interrupts/interruptExperience'
+import { trackProductEvent } from '../features/product/productExperience'
 import type {
   ConfidenceRating,
   InterruptSession,
+  InterventionMode,
   LearningBrief,
   LearningCard,
 } from '../types/domain'
+import { BrandMark, Icon } from '../ui/Icon'
 
 export function InterruptPage() {
   const { user } = useAuth()
-  const { byokCredentialStatus, settings } = useAiAccess()
-  const showByok = canAccessByok(user?.email)
-  const [searchParams] = useSearchParams()
-  const site = searchParams.get('site')
-  const source = searchParams.get('source') ?? 'manual'
-  const returnUrl = searchParams.get('returnUrl')
+  const { settings } = useAiAccess()
+  const [params] = useSearchParams()
+  const site = params.get('site')
+  const topic = params.get('topic')
+  const rawSource = params.get('source')
+  const source =
+    rawSource === 'extension'
+      ? 'extension'
+      : rawSource === 'onboarding'
+        ? 'onboarding'
+        : 'practice'
+  const requestedMode = params.get('mode')
+  const mode: InterventionMode = [
+    'quick',
+    'focus',
+    'intentional',
+    'soft',
+    'hard',
+    'smart',
+  ].includes(requestedMode ?? '')
+    ? (requestedMode as InterventionMode)
+    : 'quick'
+  const safeReturnUrl = getSafeReturnUrl(params.get('returnUrl'), site)
   const [session, setSession] = useState<InterruptSession | null>(null)
   const [cards, setCards] = useState<LearningCard[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [answerRevealed, setAnswerRevealed] = useState(false)
+  const [index, setIndex] = useState(0)
+  const [revealed, setRevealed] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [summaryBrief, setSummaryBrief] = useState<LearningBrief | null>(null)
-  const [summaryDismissed, setSummaryDismissed] = useState(false)
+  const [complete, setComplete] = useState(false)
+  const [intent, setIntent] = useState('')
+  const [intentConfirmed, setIntentConfirmed] = useState(false)
+  const [brief, setBrief] = useState<LearningBrief | null>(null)
+  const bootstrap = useRef<{
+    key: string
+    promise: Promise<{ cards: LearningCard[]; session: InterruptSession }>
+  } | null>(null)
+  const card = cards[index]
+  const finished = cards.length > 0 && index >= cards.length
 
-  const card = cards[currentIndex] ?? null
-  const reviewedCount = currentIndex
-  const remainingCount = Math.max(cards.length - currentIndex - 1, 0)
-  const safeReturnUrl = (() => {
-    if (!returnUrl) {
-      return null
-    }
-
-    try {
-      const parsed = new URL(returnUrl)
-
-      if (site && parsed.hostname !== site) {
-        return null
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    setIndex(0)
+    setRevealed(false)
+    setComplete(false)
+    setIntentConfirmed(false)
+    const key = `${user.id}:${site}:${source}:${mode}:${topic}`
+    if (bootstrap.current?.key !== key) {
+      bootstrap.current = {
+        key,
+        promise: (async () => {
+          const nextCards = selectInterruptCards(
+            await listLearningCards(user.id),
+            mode,
+            topic,
+            source,
+          )
+          const nextSession = await createInterruptSession(
+            user.id,
+            site ?? 'practice',
+            mode,
+            source,
+          )
+          void trackProductEvent(
+            user.id,
+            source === 'onboarding'
+              ? 'test_interruption_started'
+              : 'interruption_started',
+            { source, mode },
+          )
+          return { cards: nextCards, session: nextSession }
+        })(),
       }
-
-      return parsed.toString()
-    } catch {
-      return null
     }
-  })()
-  const shouldShowSummaryFirst =
-    settings.planTier === 'premium' && settings.premiumInterruptMode === 'summary'
-  const showSummaryCard = shouldShowSummaryFirst && summaryBrief && !summaryDismissed
+    void bootstrap.current.promise
+      .then((result) => {
+        if (!cancelled) {
+          setSession(result.session)
+          setCards(result.cards)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError(
+            'We could not load your question. You can continue to your site or try again later.',
+          )
+          bootstrap.current = null
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [mode, site, source, topic, user])
 
-  function continueToOriginalSite() {
-    if (!safeReturnUrl) {
+  useEffect(() => {
+    let cancelled = false
+    if (
+      !user ||
+      settings.planTier !== 'premium' ||
+      settings.premiumInterruptMode !== 'summary'
+    )
       return
+    void listLearningBriefs(user.id)
+      .then((briefs) => {
+        if (!cancelled)
+          setBrief(
+            briefs.find(
+              (item) =>
+                !topic || item.topic.toLowerCase() === topic.toLowerCase(),
+            ) ?? null,
+          )
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
     }
+  }, [settings.planTier, settings.premiumInterruptMode, topic, user])
 
+  function navigateToSite() {
+    if (!safeReturnUrl) return
     allowExtensionReturnOnce(safeReturnUrl)
     window.setTimeout(() => {
       window.location.href = safeReturnUrl
     }, 75)
   }
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function bootstrapInterrupt() {
-      if (!user) {
-        return
-      }
-
-      setIsLoading(true)
-      setError(null)
-      setAnswerRevealed(false)
-      setCurrentIndex(0)
-      setSummaryDismissed(false)
-
-      try {
-        const nextSession = await createInterruptSession(user.id, site ?? source)
-        const nextCards = sortCardsForReview(await listLearningCards(user.id))
-
-        if (!cancelled) {
-          setSession(nextSession)
-          setCards(nextCards)
-        }
-      } catch (nextError) {
-        if (!cancelled) {
-          const message =
-            nextError instanceof Error
-              ? nextError.message
-              : 'Unable to start the interrupt session.'
-          setError(message)
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void bootstrapInterrupt()
-
-    return () => {
-      cancelled = true
-    }
-  }, [site, source, user])
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadSummaryBrief() {
-      if (!user || !shouldShowSummaryFirst) {
-        setSummaryBrief(null)
-        return
-      }
-
-      try {
-        const nextBriefs = await listLearningBriefs(user.id)
-        const preferredBrief =
-          nextBriefs.find((brief) => brief.kind === 'summary') ?? nextBriefs[0] ?? null
-
-        if (!cancelled) {
-          setSummaryBrief(preferredBrief)
-        }
-      } catch {
-        if (!cancelled) {
-          setSummaryBrief(null)
-        }
-      }
-    }
-
-    void loadSummaryBrief()
-
-    return () => {
-      cancelled = true
-    }
-  }, [shouldShowSummaryFirst, user])
-
-  async function handleConfidence(confidence: ConfidenceRating) {
-    if (!user || !session || !card) {
-      return
-    }
-
-    setIsSubmitting(true)
-    setError(null)
-
+  async function leave() {
+    if (busy || !safeReturnUrl) return
+    setBusy(true)
     try {
-      const result = await submitInterruptReview({
+      if (user && session && !complete) {
+        await bypassInterruptSession(user.id, session.id)
+        void trackProductEvent(user.id, 'interruption_bypassed', {
+          source,
+          mode,
+        })
+      }
+    } catch {
+      /* Returning to the user's site must not depend on telemetry availability. */
+    }
+    navigateToSite()
+    setBusy(false)
+  }
+
+  async function finishSession(reviewed: number) {
+    if (!user || !session) return
+    await completeInterruptSession(user.id, session.id)
+    setComplete(true)
+    void trackProductEvent(user.id, 'interruption_completed', {
+      source,
+      mode,
+      reviewed,
+    })
+    if (
+      safeReturnUrl &&
+      settings.redirectBackMode === 'after_cards' &&
+      reviewed >= Math.min(cards.length, settings.redirectBackCardCount)
+    )
+      navigateToSite()
+  }
+
+  async function rate(confidence: ConfidenceRating) {
+    if (!user || !session || !card || busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      await submitInterruptReview({
         userId: user.id,
         sessionId: session.id,
         card,
         confidence,
       })
-
-      const nextCards = cards.map((item, index) =>
-        index === currentIndex ? result.updatedCard : item,
+      const nextIndex = index + 1
+      setIndex(nextIndex)
+      setRevealed(false)
+      if (nextIndex >= cards.length) await finishSession(nextIndex)
+    } catch (next) {
+      setError(
+        next instanceof Error
+          ? next.message
+          : 'Unable to save your review. Please try again.',
       )
-      const prioritizedRemainder = sortCardsForReview(nextCards.slice(currentIndex + 1))
-      const updatedCards = [...nextCards.slice(0, currentIndex + 1), ...prioritizedRemainder]
-      const nextReviewedCount = currentIndex + 1
-
-      setCards(updatedCards)
-      setAnswerRevealed(false)
-
-      if (
-        safeReturnUrl &&
-        settings.redirectBackMode === 'after_cards' &&
-        nextReviewedCount >= settings.redirectBackCardCount
-      ) {
-        await completeInterruptSession(user.id, session.id)
-        continueToOriginalSite()
-        return
-      }
-
-      if (nextReviewedCount >= updatedCards.length) {
-        await completeInterruptSession(user.id, session.id)
-      } else {
-        setCurrentIndex((value) => value + 1)
-      }
-    } catch (nextError) {
-      const message =
-        nextError instanceof Error ? nextError.message : 'Unable to save your review.'
-      setError(message)
     } finally {
-      setIsSubmitting(false)
+      setBusy(false)
     }
   }
 
+  const hardBlocked = mode === 'hard' && index === 0 && Boolean(card) && !error
+
   return (
-    <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-3xl">
-        <section className="panel px-6 py-8 sm:px-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-reef">
-            Redirect interrupt
+    <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-5 py-8 sm:py-12">
+      <header>
+        <Link
+          to="/app"
+          className="mx-auto flex w-fit items-center gap-3 text-sm font-extrabold"
+        >
+          <BrandMark />
+          Better Focus
+        </Link>
+      </header>
+      <main className="my-auto py-12">
+        <div className="mb-7 text-center">
+          <p className="section-kicker">
+            {source === 'extension'
+              ? 'A small pause. A better choice.'
+              : source === 'onboarding'
+                ? 'Your first useful pause'
+                : 'A moment for your mind'}
           </p>
-          <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-ink">
-            Pause the habit loop.
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            {finished
+              ? 'That is a moment well spent.'
+              : 'Quick one before you go.'}
           </h1>
-          <p className="mt-4 text-base leading-7 text-slate-600">
-            {site ? (
+          <p className="mt-3 text-sm muted-copy">
+            {site && source === 'extension' ? (
               <>
-                You were redirected from <span className="font-semibold text-ink">{site}</span>.
+                You were on your way to <strong>{site}</strong>. Take a little
+                knowledge with you.
               </>
             ) : (
-              <>
-                You started a manual learning session from{' '}
-                <span className="font-semibold text-ink">{source}</span>.
-              </>
+              'One useful question. Then get on with your day.'
             )}
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link to="/app" className="ghost-button">
-              Return to dashboard
-            </Link>
-            {safeReturnUrl && settings.showContinueToSiteButton ? (
+        </div>
+        {error ? (
+          <p
+            role="alert"
+            className="mb-5 rounded-xl bg-rose-50 p-4 text-sm text-rose-800"
+          >
+            {error}
+          </p>
+        ) : null}
+        {loading ? (
+          <div
+            role="status"
+            className="panel p-10 text-center text-sm muted-copy"
+          >
+            Finding your next question…
+          </div>
+        ) : finished ? (
+          <section className="panel p-8 text-center">
+            <span className="feature-icon mx-auto">
+              <Icon name="check" />
+            </span>
+            <h2 className="mt-5 text-2xl font-bold">
+              {index} question{index === 1 ? '' : 's'}. A little progress.
+            </h2>
+            <p className="mt-3 text-sm leading-7 muted-copy">
+              Your next review is scheduled from how that felt. Difficult
+              questions come back sooner; familiar ones get more space.
+            </p>
+            {!complete ? (
               <button
-                type="button"
-                onClick={continueToOriginalSite}
-                className="ghost-button"
+                disabled={busy}
+                className="ghost-button mt-4"
+                onClick={() => {
+                  setBusy(true)
+                  void finishSession(index)
+                    .catch(() =>
+                      setError(
+                        'Unable to finish saving. Your answers are already recorded.',
+                      ),
+                    )
+                    .finally(() => setBusy(false))
+                }}
               >
-                Continue to site
+                Finish saving session
               </button>
             ) : null}
-            <Link to="/app/cards" className="ghost-button">
-              Manage cards
+            <Link className="action-button mt-6" to="/app">
+              Back to my day
+              <Icon name="arrow" />
             </Link>
-          </div>
-
-          {error ? (
-            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              {error}
+          </section>
+        ) : !card ? (
+          <section className="panel p-8 text-center">
+            <span className="feature-icon mx-auto">
+              <Icon name="book" />
+            </span>
+            <h2 className="mt-5 text-xl font-bold">
+              {source === 'extension'
+                ? 'Nothing due right now.'
+                : 'Give your next pause something to work with.'}
+            </h2>
+            <p className="mt-3 text-sm muted-copy">
+              {source === 'extension'
+                ? 'You can carry on, or add a new learning set for next time.'
+                : 'Choose a topic you care about and add a few questions.'}
+            </p>
+            <Link to="/app/cards" className="action-button mt-6">
+              Open my learning
+              <Icon name="arrow" />
+            </Link>
+          </section>
+        ) : mode === 'intentional' && !intentConfirmed ? (
+          <section className="panel p-7">
+            <p className="section-kicker">A moment of intention</p>
+            <h2 className="mt-4 text-2xl font-bold">What are you here for?</h2>
+            <label className="mt-5 block text-sm font-semibold">
+              Your reason
+              <input
+                autoFocus
+                className="app-input mt-2"
+                maxLength={200}
+                value={intent}
+                onChange={(event) => setIntent(event.target.value)}
+                placeholder="I want to check one specific thing…"
+              />
+            </label>
+            <p className="mt-2 text-xs muted-copy">
+              This stays on this screen. It is not saved.
+            </p>
+            <button
+              className="action-button mt-5"
+              disabled={!intent.trim()}
+              onClick={() => setIntentConfirmed(true)}
+            >
+              Take one question first
+              <Icon name="arrow" />
+            </button>
+          </section>
+        ) : (
+          <section className="panel overflow-hidden">
+            <div className="flex items-center justify-between border-b border-[var(--app-border)] px-6 py-4 text-xs muted-copy">
+              <span className="truncate pr-3">
+                {card.generationTopic ?? 'Your learning'}
+              </span>
+              <span className="shrink-0">
+                {index + 1} of {cards.length} · about 30 sec
+              </span>
             </div>
-          ) : null}
-
-          {isLoading ? (
-            <div className="mt-8 rounded-3xl bg-slate-50 px-5 py-8 text-center text-sm text-slate-600">
-              Preparing your focus interrupt…
-            </div>
-          ) : null}
-
-          {!isLoading && !card && cards.length === 0 ? (
-            <div className="mt-8 rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
-              <h2 className="text-2xl font-bold text-ink">No cards to review yet</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                Add your first learning card so redirects have something useful to show.
-              </p>
-              {showByok && settings.planTier === 'byok' && !byokCredentialStatus ? (
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  BYOK is selected on your account, but no provider key is saved yet.
-                </div>
-              ) : null}
-              <Link to="/app/cards" className="action-button mt-6">
-                Create learning cards
-              </Link>
-              <div className="mt-3 flex flex-wrap justify-center gap-3">
-                {showByok ? (
-                  <Link to="/app/byok" className="ghost-button">
-                    Check AI setup
-                  </Link>
-                ) : null}
-                <Link to="/app/sites" className="ghost-button">
-                  Check blocked sites
-                </Link>
-              </div>
-            </div>
-          ) : null}
-
-          {!isLoading && showSummaryCard ? (
-            <div className="mt-8 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
-              <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef">
-                Premium summary
-              </div>
-              <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
-                <span>{summaryBrief.kind === 'summary' ? 'Topic summary' : 'Topic briefing'}</span>
-                <span>{summaryBrief.topic}</span>
-              </div>
-              <h2 className="mt-4 text-2xl font-bold leading-tight text-ink">
-                {summaryBrief.title}
-              </h2>
-              <div className="mt-6 rounded-3xl bg-white p-5 text-sm leading-7 text-slate-700">
-                {summaryBrief.content}
-              </div>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className="action-button"
-                  onClick={() => setSummaryDismissed(true)}
-                >
-                  Start card session
-                </button>
-                <Link to="/app/cards" className="ghost-button">
-                  Open saved briefs
-                </Link>
-              </div>
-            </div>
-          ) : null}
-
-          {!isLoading && card && !showSummaryCard ? (
-            <div className="mt-8 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
-              <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef">
-                Learning session
-              </div>
-              <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
-                <span>{reviewedCount} reviewed</span>
-                <span>{remainingCount} remaining</span>
-                {safeReturnUrl && settings.redirectBackMode === 'after_cards' ? (
-                  <span>Returns after {settings.redirectBackCardCount} card{settings.redirectBackCardCount === 1 ? '' : 's'}</span>
-                ) : null}
-              </div>
-              <h2 className="mt-4 text-2xl font-bold leading-tight text-ink">
+            <div className="p-7 sm:p-9">
+              <h2 className="text-2xl font-bold leading-relaxed">
                 {card.question}
               </h2>
-
-              {!answerRevealed ? (
-                <button
-                  type="button"
-                  onClick={() => setAnswerRevealed(true)}
-                  className="action-button mt-6"
-                >
-                  Reveal answer
-                </button>
-              ) : (
+              {revealed ? (
                 <>
-                  <div className="mt-6 rounded-3xl bg-white p-5 text-sm leading-7 text-slate-700">
+                  <div className="soft-card mt-6 p-5 text-sm leading-7">
                     {card.answer}
                   </div>
-                  <div className="mt-6">
-                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-                      How did that feel?
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={() => void handleConfidence('know')}
-                        className="rounded-full bg-emerald-600 px-5 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        I know it
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={() => void handleConfidence('semi')}
-                        className="rounded-full bg-amber-500 px-5 py-3 font-semibold text-white transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        Semi-confident
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={() => void handleConfidence('not_confident')}
-                        className="rounded-full bg-rose-600 px-5 py-3 font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        Not confident
-                      </button>
-                    </div>
+                  {card.citationExcerpts?.length ? (
+                    <details className="mt-4 text-xs muted-copy">
+                      <summary>From your source material</summary>
+                      {card.citationExcerpts.map((excerpt, i) => (
+                        <p key={i} className="mt-3 leading-6">
+                          {excerpt}
+                        </p>
+                      ))}
+                    </details>
+                  ) : null}
+                  <p className="mt-7 text-center text-xs muted-copy">
+                    How well did you remember?
+                  </p>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <button
+                      disabled={busy}
+                      onClick={() => void rate('not_confident')}
+                      className="ghost-button px-2"
+                    >
+                      Need practice
+                    </button>
+                    <button
+                      disabled={busy}
+                      onClick={() => void rate('semi')}
+                      className="ghost-button px-2"
+                    >
+                      Almost there
+                    </button>
+                    <button
+                      disabled={busy}
+                      onClick={() => void rate('know')}
+                      className="action-button px-2"
+                    >
+                      Got it
+                    </button>
                   </div>
                 </>
-              )}
-
-            </div>
-          ) : null}
-
-          {!isLoading && !card && cards.length > 0 ? (
-            <div className="mt-8 rounded-[2rem] border border-slate-200 bg-slate-50 p-6 text-center">
-              <div className="text-sm font-semibold uppercase tracking-[0.28em] text-reef">
-                Session complete
-              </div>
-              <h2 className="mt-4 text-2xl font-bold text-ink">
-                You’ve worked through every available card in this session.
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                Highest-priority cards will surface first the next time you start learning.
-              </p>
-              <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <Link to="/app" className="action-button">
-                  Return to dashboard
-                </Link>
-                {safeReturnUrl && settings.showContinueToSiteButton ? (
+              ) : (
+                <>
+                  <p className="mt-4 text-sm muted-copy">
+                    Try answering in your head before you look.
+                  </p>
                   <button
-                    type="button"
-                    onClick={continueToOriginalSite}
-                    className="ghost-button"
+                    disabled={busy}
+                    className="action-button mt-7 w-full"
+                    onClick={() => setRevealed(true)}
                   >
-                    Continue to site
+                    Show answer
+                    <Icon name="arrow" />
                   </button>
-                ) : null}
-                <Link to="/app/cards" className="ghost-button">
-                  Manage cards
-                </Link>
-              </div>
+                </>
+              )}
+              {brief ? (
+                <details className="mt-5 border-t border-[var(--app-border)] pt-4 text-sm">
+                  <summary className="font-semibold text-reef">
+                    Read my topic summary
+                  </summary>
+                  <p className="mt-3 whitespace-pre-wrap leading-7 muted-copy">
+                    {brief.content}
+                  </p>
+                </details>
+              ) : null}
             </div>
+          </section>
+        )}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+          {safeReturnUrl ? (
+            <button
+              disabled={busy || hardBlocked}
+              onClick={() => void leave()}
+              className="text-sm font-medium muted-copy hover:text-reef"
+            >
+              {complete ? `Continue to ${site}` : 'Continue anyway'}
+            </button>
           ) : null}
-        </section>
-      </div>
+          <Link to="/app" className="text-link">
+            {finished ? 'View my progress' : 'Go back to my day'}
+            <Icon name="arrow" />
+          </Link>
+        </div>
+        {hardBlocked ? (
+          <p className="mt-3 text-center text-xs muted-copy">
+            You chose answer-first mode. Review one question to continue, or go
+            back to your day.
+          </p>
+        ) : null}
+      </main>
+      <footer className="text-center text-xs muted-copy">
+        Progress, without the pressure.
+      </footer>
     </div>
   )
 }

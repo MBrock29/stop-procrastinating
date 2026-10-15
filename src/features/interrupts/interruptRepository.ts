@@ -9,11 +9,14 @@ import type {
 } from '../../types/domain'
 
 interface InterruptSessionRow {
+  source?: InterruptSession['source']
   id: string
   user_id: string
   blocked_domain: string
   triggered_at: string
   completed_at: string | null
+  outcome?: InterruptSession['outcome']
+  intervention_mode?: InterruptSession['interventionMode']
 }
 
 interface CardReviewRow {
@@ -101,24 +104,43 @@ export async function listCardReviews(userId: string) {
 
 function mapInterruptRow(row: InterruptSessionRow): InterruptSession {
   return {
+    source: row.source ?? 'unknown',
     id: row.id,
     userId: row.user_id,
     blockedDomain: row.blocked_domain,
     triggeredAt: row.triggered_at,
     completedAt: row.completed_at,
+    outcome: row.outcome ?? (row.completed_at ? 'completed' : 'started'),
+    interventionMode: row.intervention_mode ?? 'quick',
   }
 }
 
-export async function createInterruptSession(userId: string, blockedDomain: string) {
+export async function listInterruptSessions(userId: string) {
+  const client = getSupabaseBrowserClient()
+  if (!client) return readInterruptSessions(userId).map(item => ({ ...item,
+    outcome: item.outcome ?? (item.completedAt ? 'completed' as const : 'started' as const),
+    interventionMode: item.interventionMode ?? 'quick' as const }))
+  const { data, error } = await client.from('interrupt_sessions').select('*').eq('user_id', userId)
+    .order('triggered_at', { ascending: false }).limit(1000)
+  if (error) throw error
+  return (data ?? []).map(item => mapInterruptRow(item as InterruptSessionRow))
+}
+
+export async function createInterruptSession(userId: string, blockedDomain: string,
+  interventionMode: InterruptSession['interventionMode'] = 'quick',
+  source: InterruptSession['source'] = 'practice') {
   const client = getSupabaseBrowserClient()
 
   if (!client) {
     const nextSession: InterruptSession = {
+      source,
       id: crypto.randomUUID(),
       userId,
       blockedDomain,
       triggeredAt: new Date().toISOString(),
       completedAt: null,
+      outcome: 'started',
+      interventionMode,
     }
     const existing = readInterruptSessions(userId)
     writeInterruptSessions(userId, [nextSession, ...existing])
@@ -130,6 +152,8 @@ export async function createInterruptSession(userId: string, blockedDomain: stri
     .insert({
       user_id: userId,
       blocked_domain: blockedDomain,
+      intervention_mode: interventionMode,
+      source,
     })
     .select()
     .single()
@@ -147,7 +171,7 @@ export async function completeInterruptSession(userId: string, sessionId: string
 
   if (!client) {
     const nextSessions = readInterruptSessions(userId).map((session) =>
-      session.id === sessionId ? { ...session, completedAt } : session,
+      session.id === sessionId ? { ...session, completedAt, outcome: 'completed' as const } : session,
     )
     writeInterruptSessions(userId, nextSessions)
     return
@@ -157,6 +181,7 @@ export async function completeInterruptSession(userId: string, sessionId: string
     .from('interrupt_sessions')
     .update({
       completed_at: completedAt,
+      outcome: 'completed',
     })
     .eq('id', sessionId)
     .eq('user_id', userId)
@@ -164,6 +189,17 @@ export async function completeInterruptSession(userId: string, sessionId: string
   if (error) {
     throw error
   }
+}
+
+export async function bypassInterruptSession(userId: string, sessionId: string) {
+  const completedAt = new Date().toISOString(); const client = getSupabaseBrowserClient()
+  if (!client) {
+    writeInterruptSessions(userId, readInterruptSessions(userId).map(item => item.id === sessionId ?
+      { ...item, completedAt, outcome: 'bypassed' } : item)); return
+  }
+  const { error } = await client.from('interrupt_sessions').update({ completed_at: completedAt,
+    outcome: 'bypassed' }).eq('id', sessionId).eq('user_id', userId)
+  if (error) throw error
 }
 
 export async function submitInterruptReview(input: {

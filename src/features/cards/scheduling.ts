@@ -21,7 +21,11 @@ export function applyConfidenceToCard(
     ...card,
     latestConfidence: confidence,
     lastReviewedAt: reviewedAt.toISOString(),
-    nextReviewAt: null,
+    nextReviewAt: new Date(reviewedAt.getTime() + (
+      confidence === 'not_confident' ? 10 * 60_000 :
+        confidence === 'semi' ? 24 * 60 * 60_000 :
+          Math.min(30, 3 * 2 ** Math.min(card.knowCount, 4)) * 24 * 60 * 60_000
+    )).toISOString(),
     knowCount: card.knowCount + (confidence === 'know' ? 1 : 0),
     semiCount: card.semiCount + (confidence === 'semi' ? 1 : 0),
     notConfidentCount: card.notConfidentCount + (confidence === 'not_confident' ? 1 : 0),
@@ -29,10 +33,16 @@ export function applyConfidenceToCard(
   }
 }
 
-export function sortCardsForReview(cards: LearningCard[]) {
+export function isCardDue(card: LearningCard, now = new Date()) {
+  return !card.isArchived && (!card.nextReviewAt || new Date(card.nextReviewAt) <= now)
+}
+
+export function sortCardsForReview(cards: LearningCard[], now = new Date()) {
   return cards
     .filter((card) => !card.isArchived)
     .sort((left, right) => {
+      const dueDelta = Number(isCardDue(right, now)) - Number(isCardDue(left, now))
+      if (dueDelta !== 0) return dueDelta
       const priorityDelta = getCardPriority(left) - getCardPriority(right)
 
       if (priorityDelta !== 0) {
@@ -46,5 +56,5 @@ export function sortCardsForReview(cards: LearningCard[]) {
 }
 
 export function selectNextDueCard(cards: LearningCard[]) {
-  return sortCardsForReview(cards)[0] ?? null
+  return sortCardsForReview(cards.filter(card => isCardDue(card)))[0] ?? null
 }
