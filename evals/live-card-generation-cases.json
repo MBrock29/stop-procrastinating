@@ -1,0 +1,177 @@
+[
+  {
+    "id": "live-01",
+    "topic": "HTTP cache invalidation",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-02",
+    "topic": "React effect cleanup",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-03",
+    "topic": "TypeScript discriminated unions",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-04",
+    "topic": "Postgres transaction isolation",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-05",
+    "topic": "Database index selectivity",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-06",
+    "topic": "Idempotent payment webhooks",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-07",
+    "topic": "CORS preflight requests",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-08",
+    "topic": "Content security policy",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-09",
+    "topic": "JWT audience validation",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-10",
+    "topic": "Row level security ownership",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-11",
+    "topic": "Queue exponential backoff",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-12",
+    "topic": "Dead letter job recovery",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-13",
+    "topic": "Vector similarity retrieval",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-14",
+    "topic": "Citation faithfulness evaluation",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-15",
+    "topic": "Structured output validation",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-16",
+    "topic": "LLM token budget enforcement",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-17",
+    "topic": "Prompt injection boundaries",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-18",
+    "topic": "Accessible modal focus management",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-19",
+    "topic": "Browser extension permissions",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-20",
+    "topic": "Service worker lifecycle",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-21",
+    "topic": "Optimistic concurrency control",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-22",
+    "topic": "Pagination cursor ordering",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-23",
+    "topic": "Rate limiting algorithms",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-24",
+    "topic": "Distributed tracing identifiers",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  },
+  {
+    "id": "live-25",
+    "topic": "Circuit breaker failure handling",
+    "cardCount": 3,
+    "maxAnswerChars": 480,
+    "forbiddenQuestionFragments": []
+  }
+]

@@ -1,0 +1,474 @@
+[
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "valid",
+    "payload": {
+      "cards": [
+        {
+          "question": "When should a response use private cache control?",
+          "answer": "Use private when shared caches must not store a response intended for one user."
+        }
+      ]
+    },
+    "expectedPass": true
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "missing-payload",
+    "payload": null,
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "missing-cards",
+    "payload": {},
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "empty-cards",
+    "payload": {
+      "cards": []
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "null-card",
+    "payload": {
+      "cards": [
+        null
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "missing-question",
+    "payload": {
+      "cards": [
+        {
+          "answer": "Answer"
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "missing-answer",
+    "payload": {
+      "cards": [
+        {
+          "question": "Question"
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "blank-question",
+    "payload": {
+      "cards": [
+        {
+          "question": "  ",
+          "answer": "Answer"
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "blank-answer",
+    "payload": {
+      "cards": [
+        {
+          "question": "Question",
+          "answer": "  "
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "numeric-question",
+    "payload": {
+      "cards": [
+        {
+          "question": 12,
+          "answer": "Answer"
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "numeric-answer",
+    "payload": {
+      "cards": [
+        {
+          "question": "Question",
+          "answer": 12
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "object-cards",
+    "payload": {
+      "cards": {}
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "too-many",
+    "payload": {
+      "cards": [
+        {
+          "question": "When should a response use private cache control?",
+          "answer": "Use private when shared caches must not store a response intended for one user."
+        },
+        {
+          "question": "When should a response use private cache control?",
+          "answer": "Use private when shared caches must not store a response intended for one user."
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "long-answer",
+    "payload": {
+      "cards": [
+        {
+          "question": "Explain cache keys?",
+          "answer": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "answer-at-limit",
+    "payload": {
+      "cards": [
+        {
+          "question": "Explain cache keys?",
+          "answer": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    "expectedPass": true
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "numbered-placeholder",
+    "payload": {
+      "cards": [
+        {
+          "question": "HTTP question 12",
+          "answer": "Answer"
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "forbidden-pattern",
+    "payload": {
+      "cards": [
+        {
+          "question": "Define everything about HTTP",
+          "answer": "Answer"
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "punctuation-only",
+    "payload": {
+      "cards": [
+        {
+          "question": "???",
+          "answer": "Answer"
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "unicode-question",
+    "payload": {
+      "cards": [
+        {
+          "question": "Pourquoi utiliser un cache privé ?",
+          "answer": "Pour limiter le stockage aux caches privés."
+        }
+      ]
+    },
+    "expectedPass": true
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "boolean-cards",
+    "payload": {
+      "cards": true
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "string-cards",
+    "payload": {
+      "cards": "invalid"
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 2,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "duplicate-case",
+    "payload": {
+      "cards": [
+        {
+          "question": "Cache keys?",
+          "answer": "A"
+        },
+        {
+          "question": "CACHE KEYS!",
+          "answer": "B"
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 2,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "duplicate-unicode",
+    "payload": {
+      "cards": [
+        {
+          "question": "Ｃａｃｈｅ keys?",
+          "answer": "A"
+        },
+        {
+          "question": "Cache keys",
+          "answer": "B"
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 2,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "distinct-questions",
+    "payload": {
+      "cards": [
+        {
+          "question": "When should a response use private cache control?",
+          "answer": "Use private when shared caches must not store a response intended for one user."
+        },
+        {
+          "question": "What does no-store prevent?",
+          "answer": "Storage by any cache."
+        }
+      ]
+    },
+    "expectedPass": true
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "null-answer",
+    "payload": {
+      "cards": [
+        {
+          "question": "Cache keys?",
+          "answer": null
+        }
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "array-payload",
+    "payload": [],
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "nonstring-card",
+    "payload": {
+      "cards": [
+        "a card"
+      ]
+    },
+    "expectedPass": false
+  },
+  {
+    "topic": "HTTP caching",
+    "cardCount": 1,
+    "maxAnswerChars": 160,
+    "forbiddenQuestionFragments": [
+      "define everything"
+    ],
+    "id": "extra-card-fields",
+    "payload": {
+      "cards": [
+        {
+          "question": "Cache keys?",
+          "answer": "A key identifies stored responses.",
+          "unexpected": true
+        }
+      ]
+    },
+    "expectedPass": false
+  }
+]
