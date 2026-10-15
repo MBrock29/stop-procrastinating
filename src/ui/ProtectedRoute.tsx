@@ -21,7 +21,7 @@ export function ProtectedRoute() {
   if (status !== 'authenticated') {
     const redirect = `${location.pathname}${location.search}`
 
-    return <Navigate to={`/?redirect=${encodeURIComponent(redirect)}`} replace />
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />
   }
 
   return <Outlet />

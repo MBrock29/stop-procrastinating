@@ -19,7 +19,7 @@ export const SUPPORTED_AI_PROVIDERS: AiProvider[] = ['openai', 'openrouter']
 export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
   free: {
     label: 'Free',
-    description: 'A light monthly allowance on the lighter hosted model.',
+    description: 'The core focus loop with a small monthly learning-material allowance.',
     monthlyPackLimit: 3,
     maxCardsPerPack: 10,
     maxStoredCards: 100,
@@ -27,7 +27,7 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
   },
   pro: {
     label: 'Pro',
-    description: 'Higher-output packs on the stronger hosted model.',
+    description: 'Legacy paid access with a larger learning-material allowance.',
     monthlyPackLimit: 25,
     maxCardsPerPack: 100,
     maxStoredCards: 2500,
@@ -35,7 +35,7 @@ export const TIER_POLICIES: Record<PlanTier, TierPolicy> = {
   },
   premium: {
     label: 'Premium',
-    description: 'Deeper learning tools, summaries, and richer interrupts.',
+    description: 'Personalized guidance, your own material, and richer interruptions.',
     monthlyPackLimit: 100,
     maxCardsPerPack: 100,
     maxStoredCards: 10000,

@@ -1,389 +1,44 @@
-import { useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useAiAccess } from '../features/ai-access/useAiAccess';
-import { usePricingCurrency } from '../features/pricing/usePricingCurrency';
-import { useBillingAccount } from '../features/billing/useBillingAccount';
-import type { PlanTier } from '../types/domain';
-
-type BillingCadence = 'monthly' | 'annual';
-
-interface PlanCardDefinition {
-  tier: PlanTier;
-  title: string;
-  price: string;
-  cadenceLabel: string;
-  priceClassName?: string;
-  priceRowClassName?: string;
-  benefits: string[];
-  ctaLabel: string;
-  ctaKind: 'current' | 'coming-soon' | 'checkout' | 'portal';
-  badge?: string;
-  secondaryBadge?: string;
-}
+import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { useAiAccess } from '../features/ai-access/useAiAccess'
+import { useAuth } from '../features/auth/useAuth'
+import { useBillingAccount } from '../features/billing/useBillingAccount'
+import { usePricingCurrency } from '../features/pricing/usePricingCurrency'
+import { isPublicPaidTier, PUBLIC_PLANS } from '../features/product/publicPlans'
+import { trackProductEvent } from '../features/product/productExperience'
 
 export function PricingPage() {
-  const location = useLocation();
-  const { isLoading, settings } = useAiAccess();
-  const {
-    billingAccount,
-    error: billingError,
-    isLoading: isBillingLoading,
-    startCheckout,
-    openPortal,
-  } =
-    useBillingAccount();
-  const [billingCadence, setBillingCadence] =
-    useState<BillingCadence>('monthly');
-  const { currency, prices } = usePricingCurrency();
-  const [pendingTier, setPendingTier] = useState<'pro' | 'premium' | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const billingQueryMessage = new URLSearchParams(location.search).get('billing');
+  const location = useLocation(); const { user } = useAuth(); const { settings, isLoading } = useAiAccess()
+  const { billingAccount, error: billingError, startCheckout, openPortal } = useBillingAccount()
+  const { currency, prices } = usePricingCurrency(); const [cadence, setCadence] = useState<'monthly'|'annual'>('monthly')
+  const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null)
+  const isPaid = isPublicPaidTier(settings.planTier)
+  const managed = ['active','trialing','past_due'].includes(billingAccount?.subscriptionStatus ?? '')
+  const paidPrice = cadence === 'monthly' ? prices.premiumMonthly : prices.premiumAnnual
+  const cancelled = new URLSearchParams(location.search).get('billing') === 'cancelled'
 
-  const hasManagedSubscription =
-    billingAccount?.subscriptionStatus === 'active' ||
-    billingAccount?.subscriptionStatus === 'trialing' ||
-    billingAccount?.subscriptionStatus === 'past_due';
-  const hasStripeSubscription = Boolean(billingAccount?.stripeSubscriptionId);
-  const hasEntitledPaidAccess =
-    (settings.planTier === 'pro' || settings.planTier === 'premium') &&
-    !hasManagedSubscription &&
-    !hasStripeSubscription;
-
-  const planCards = useMemo<PlanCardDefinition[]>(() => {
-    const proPrice =
-      billingCadence === 'monthly' ? prices.proMonthly : prices.proAnnual;
-    const proCadenceLabel = billingCadence === 'monthly' ? '/month' : '/year';
-    const premiumPrice =
-      billingCadence === 'monthly'
-        ? prices.premiumMonthly
-        : prices.premiumAnnual;
-    const premiumCadenceLabel =
-      billingCadence === 'monthly' ? '/month' : '/year';
-
-    const cards: PlanCardDefinition[] = [
-      {
-        tier: 'free',
-        title: 'Free',
-        price: prices.freeMonthly,
-        cadenceLabel: '/month',
-        benefits: [
-          'Store up to 100 cards',
-          'Generate up to 3 packs per month',
-          'Generate up to 10 cards per pack',
-          'Access to the lighter hosted language learning model',
-        ],
-        ctaLabel:
-          settings.planTier === 'free'
-            ? 'Current plan'
-            : hasEntitledPaidAccess
-              ? 'Included access'
-            : hasManagedSubscription
-              ? 'Manage plan'
-              : 'Not active',
-        ctaKind: settings.planTier === 'free'
-          ? 'current'
-          : hasEntitledPaidAccess
-            ? 'coming-soon'
-          : hasManagedSubscription
-            ? 'portal'
-            : 'coming-soon',
-      },
-      {
-        tier: 'pro',
-        title: 'Pro',
-        price: proPrice,
-        cadenceLabel: proCadenceLabel,
-        benefits: [
-          'Store up to 2,500 cards',
-          'Generate up to 25 packs per month',
-          'Generate up to 100 cards per pack',
-          'Access to a stronger model',
-        ],
-        ctaLabel:
-          settings.planTier === 'pro'
-            ? 'Current plan'
-            : settings.planTier === 'premium'
-              ? hasEntitledPaidAccess
-                ? 'Included access'
-                : 'Manage plan'
-              : hasManagedSubscription
-                ? 'Manage plan'
-                : 'Start Pro',
-        ctaKind: settings.planTier === 'pro'
-          ? 'current'
-          : settings.planTier === 'premium'
-            ? hasEntitledPaidAccess
-              ? 'coming-soon'
-              : 'portal'
-            : hasManagedSubscription
-            ? 'portal'
-            : 'checkout',
-        badge:
-          billingCadence === 'monthly'
-            ? 'Annual discount available'
-            : 'Popular',
-        secondaryBadge:
-          billingCadence === 'annual' ? '12 months for 10' : undefined,
-      },
-      {
-        tier: 'premium',
-        title: 'Premium',
-        price: premiumPrice,
-        cadenceLabel: premiumCadenceLabel,
-        benefits: [
-          'Store up to 10,000 cards',
-          'Generate up to 100 packs per month',
-          'Generate up to 100 cards per pack',
-          'Access to our strongest model',
-          'Generate deeper follow-up packs from any topic',
-          'Generate pack summaries to solidify learning',
-          'Unlock weekly progress charts',
-          'See confidence breakdowns across every review',
-          'Spot strongest and weakest topics instantly',
-        ],
-        ctaLabel:
-          settings.planTier === 'premium'
-            ? 'Current plan'
-            : settings.planTier === 'pro'
-              ? hasManagedSubscription
-                ? 'Upgrade plan'
-                : 'Start Premium'
-              : hasManagedSubscription
-                ? 'Manage plan'
-                : 'Start Premium',
-        ctaKind: settings.planTier === 'premium'
-          ? 'current'
-          : settings.planTier === 'pro'
-            ? hasEntitledPaidAccess
-              ? 'coming-soon'
-              : hasManagedSubscription
-              ? 'portal'
-              : 'checkout'
-            : hasManagedSubscription
-              ? 'portal'
-              : 'checkout',
-        badge:
-          billingCadence === 'monthly'
-            ? 'Annual discount available'
-            : 'Best value',
-        secondaryBadge:
-          billingCadence === 'annual' ? '12 months for 10' : undefined,
-      },
-    ];
-
-    return cards;
-  }, [
-    billingCadence,
-    hasEntitledPaidAccess,
-    hasManagedSubscription,
-    prices.freeMonthly,
-    prices.premiumAnnual,
-    prices.premiumMonthly,
-    prices.proAnnual,
-    prices.proMonthly,
-    settings.planTier,
-  ]);
-
-  async function handleCheckout(planTier: 'pro' | 'premium') {
-    setPendingTier(planTier);
-    setActionError(null);
-
+  async function paidAction() {
+    setBusy(true); setError(null)
     try {
-      await startCheckout({
-        planTier,
-        billingInterval: billingCadence === 'monthly' ? 'month' : 'year',
-        currency,
-      });
-    } catch (nextError) {
-      setActionError(
-        nextError instanceof Error
-          ? nextError.message
-          : 'Unable to open checkout right now.',
-      );
-    } finally {
-      setPendingTier(null);
-    }
+      if (managed && billingAccount?.stripeSubscriptionId) await openPortal()
+      else if (!isPaid) {
+        if (user) void trackProductEvent(user.id, 'upgrade_clicked', { cadence })
+        await startCheckout({ planTier: 'premium', billingInterval: cadence === 'monthly' ? 'month' : 'year', currency })
+      }
+    } catch (next) { setError(next instanceof Error ? next.message : 'Unable to open billing.') }
+    finally { setBusy(false) }
   }
 
-  async function handlePortal() {
-    setPendingTier('pro');
-    setActionError(null);
-
-    try {
-      await openPortal();
-    } catch (nextError) {
-      setActionError(
-        nextError instanceof Error
-          ? nextError.message
-          : 'Unable to open billing right now.',
-      );
-    } finally {
-      setPendingTier(null);
-    }
-  }
-
-  return (
-    <div className='space-y-6'>
-      <section className='overflow-hidden'>
-        <div className='flex flex-wrap justify-end gap-3'>
-          <div className='soft-card inline-flex p-1'>
-            {(['monthly', 'annual'] as BillingCadence[]).map((cadence) => (
-              <button
-                key={cadence}
-                type='button'
-                onClick={() => setBillingCadence(cadence)}
-                className={[
-                  'rounded-full px-4 py-2 text-sm font-semibold transition',
-                  billingCadence === cadence
-                    ? 'bg-reef text-white shadow-lg shadow-reef/20'
-                    : 'text-[var(--app-text)] hover:bg-[var(--app-surface-strong)]',
-                ].join(' ')}
-              >
-                {cadence === 'monthly' ? 'Monthly' : 'Annual'}
-              </button>
-            ))}
-          </div>
-        </div>
-        {billingQueryMessage === 'cancelled' ? (
-          <div className='mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900'>
-            Checkout was cancelled. No billing changes were made.
-          </div>
-        ) : null}
-        {actionError || billingError ? (
-          <div className='mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900'>
-            {actionError ?? billingError}
-          </div>
-        ) : null}
-        {hasManagedSubscription ? (
-          <div className='mt-6 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-3 text-sm text-slate-700 dark:text-slate-200'>
-            Paid plan changes are handled in your billing portal. Upgrades can take effect straight away, while downgrades and cancellations stay active until the end of the current billing period.
-          </div>
-        ) : null}
-        {hasEntitledPaidAccess ? (
-          <div className='mt-6 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900'>
-            This account currently has paid access enabled outside Stripe, so there is no subscription to manage or cancel in the billing portal yet.
-          </div>
-        ) : null}
-        <div className='mt-8 grid gap-4 xl:grid-cols-3'>
-          {planCards.map((plan) => {
-            const isCurrent = !isLoading && settings.planTier === plan.tier;
-
-            return (
-              <article
-                key={plan.tier}
-                className={[
-                  'relative flex h-full flex-col overflow-hidden rounded-[2rem] border p-6',
-                  'border-[var(--app-border)] bg-[var(--app-surface-muted)]',
-                ].join(' ')}
-              >
-                {plan.badge || plan.secondaryBadge ? (
-                  <div className='absolute right-4 top-4 flex flex-col items-end gap-2'>
-                    {plan.badge ? (
-                      <div
-                        className={[
-                          'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]',
-                          plan.secondaryBadge
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-amber-400 text-slate-900',
-                        ].join(' ')}
-                      >
-                        {plan.badge}
-                      </div>
-                    ) : null}
-                    {plan.secondaryBadge ? (
-                      <div className='rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900'>
-                        {plan.secondaryBadge}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                <div className='min-h-[7.5rem]'>
-                  <h3 className='text-2xl font-extrabold tracking-tight text-ink dark:text-white'>
-                    {plan.title}
-                  </h3>
-                  <div
-                    className={[
-                      'mt-4 flex min-h-[3.5rem] gap-2',
-                      plan.priceRowClassName ?? 'items-end',
-                    ].join(' ')}
-                  >
-                    <span
-                      className={[
-                        'font-extrabold tracking-tight text-ink dark:text-white',
-                        plan.priceClassName ?? 'text-4xl',
-                      ].join(' ')}
-                    >
-                      {plan.price}
-                    </span>
-                    {plan.cadenceLabel ? (
-                      <span className='pb-1 text-sm font-semibold text-slate-500 dark:text-slate-300'>
-                        {plan.cadenceLabel}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-
-                <ul className='mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-200'>
-                  {plan.benefits.map((benefit) => (
-                    <li key={benefit} className='flex items-start gap-3'>
-                      <span className='inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-reef/12 text-sm font-bold text-reef'>
-                        ✓
-                      </span>
-                      <span className='flex-1 font-semibold leading-6'>
-                        {benefit}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className='mt-auto pt-6'>
-                  {plan.ctaKind === 'checkout' ? (
-                    <button
-                      type='button'
-                      className='action-button min-h-[44px] w-full px-4 py-2 text-sm'
-                      onClick={() =>
-                        void handleCheckout(plan.tier === 'premium' ? 'premium' : 'pro')
-                      }
-                      disabled={isLoading || isBillingLoading || pendingTier !== null}
-                    >
-                      {isLoading || isBillingLoading
-                        ? 'Loading…'
-                        : pendingTier === plan.tier
-                          ? 'Opening checkout…'
-                          : plan.ctaLabel}
-                    </button>
-                  ) : plan.ctaKind === 'portal' ? (
-                    <button
-                      type='button'
-                      className='ghost-button min-h-[44px] w-full px-4 py-2 text-sm'
-                      onClick={() => void handlePortal()}
-                      disabled={isLoading || isBillingLoading || pendingTier !== null}
-                    >
-                      {isLoading || isBillingLoading
-                        ? 'Loading…'
-                        : pendingTier
-                          ? 'Opening billing…'
-                          : plan.ctaLabel}
-                    </button>
-                  ) : (
-                    <button
-                      type='button'
-                      className={[
-                        isCurrent ? 'action-button' : 'ghost-button',
-                        'min-h-[44px] w-full px-4 py-2 text-sm',
-                      ].join(' ')}
-                      disabled
-                    >
-                      {isLoading ? 'Loading…' : plan.ctaLabel}
-                    </button>
-                  )}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-    </div>
-  );
+  return <div className="space-y-6"><section className="panel p-6 sm:p-8"><p className="section-kicker">Simple pricing</p><h1 className="mt-3 text-3xl font-extrabold">Start with the whole habit loop. Upgrade for personalisation.</h1><p className="muted-copy mt-4 max-w-3xl leading-7">Use Better Focus for free, then upgrade when you want more personal guidance and learning from your own material.</p>
+    <div className="mt-6 soft-card inline-flex p-1">{(['monthly','annual'] as const).map(item => <button key={item} type="button" onClick={() => setCadence(item)} className={`rounded-full px-4 py-2 text-sm font-semibold ${cadence === item ? 'bg-reef text-white' : ''}`}>{item === 'monthly' ? 'Monthly' : 'Annual'}</button>)}</div>
+    {cancelled ? <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Checkout was cancelled. No billing changes were made.</div> : null}
+    {error || billingError ? <div role="alert" className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">{error ?? billingError}</div> : null}
+    {settings.planTier === 'pro' ? <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">Your existing plan remains active. New customers see the simplified Better Focus Pro offer; use the billing portal for subscription changes.</div> : null}
+  </section>
+  <section className="grid gap-5 md:grid-cols-2"><h2 className="sr-only">Compare Free and Better Focus Pro</h2>{[
+    { key: 'free', ...PUBLIC_PLANS.free, price: prices.freeMonthly, suffix: '/month' },
+    { key: 'paid', ...PUBLIC_PLANS.paid, price: paidPrice, suffix: cadence === 'monthly' ? '/month' : '/year' },
+  ].map(plan => <article key={plan.key} className="panel flex flex-col p-7"><div><h3 className="text-2xl font-extrabold">{plan.name}</h3><p className="muted-copy mt-2 text-sm leading-6">{plan.description}</p><div className="mt-6"><span className="text-4xl font-extrabold">{plan.price}</span><span className="muted-copy ml-2 text-sm">{plan.suffix}</span></div></div><ul className="mt-7 flex-1 space-y-3">{plan.benefits.map(item => <li key={item} className="flex gap-3 text-sm leading-6"><span className="font-bold text-reef">✓</span>{item}</li>)}</ul>
+    {plan.key === 'free' ? <button type="button" className="ghost-button mt-7" disabled>{!isPaid && !isLoading ? 'Current plan' : 'Included'}</button> : <button type="button" className="action-button mt-7" disabled={busy || (isPaid && !managed)} onClick={() => void paidAction()}>{busy ? 'Opening…' : isPaid ? managed ? 'Manage subscription' : 'Included access' : 'Choose Better Focus Pro'}</button>}</article>)}</section>
+  <p className="muted-copy px-2 text-sm">Displayed prices come from the configured checkout catalogue. Subscription cancellation and payment details are managed securely through the billing portal.</p></div>
 }

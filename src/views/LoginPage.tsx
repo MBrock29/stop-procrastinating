@@ -1,171 +1,192 @@
-import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth'
+import { getSupabaseBrowserClient } from '../lib/supabase'
+import { BrandMark, Icon } from '../ui/Icon'
 import { SiteFooter } from '../ui/SiteFooter'
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const { authError, signInWithGoogle, signInWithPassword, signUpWithPassword, status } =
-    useAuth()
+  const [params] = useSearchParams()
+  const {
+    authError,
+    mode,
+    signInWithGoogle,
+    signInWithPassword,
+    signUpWithPassword,
+    status,
+  } = useAuth()
+  const [register, setRegister] = useState(params.get('mode') === 'register')
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [authMode, setAuthMode] = useState<'signin' | 'register'>(
-    searchParams.get('mode') === 'register' ? 'register' : 'signin',
-  )
-  const [pending, setPending] = useState(false)
-  const redirect = searchParams.get('redirect') ?? '/app'
+  const [notice, setNotice] = useState<string | null>(null)
+  const requested = params.get('redirect')
+  const redirect =
+    requested?.startsWith('/') &&
+    !requested.startsWith('//') &&
+    !requested.includes('\\')
+      ? requested
+      : register
+        ? '/app/onboarding'
+        : '/app'
+  if (status === 'authenticated') return <Navigate to={redirect} replace />
 
-  if (status === 'authenticated') {
-    return <Navigate to={redirect} replace />
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setBusy(true)
     setError(null)
-    setPending(true)
-
-    const formData = new FormData(event.currentTarget)
-    const email = String(formData.get('email') ?? '')
-    const password = String(formData.get('password') ?? '')
-
+    setNotice(null)
+    const form = new FormData(event.currentTarget)
     try {
-      if (authMode === 'register') {
+      const email = String(form.get('email') ?? '')
+      const password = String(form.get('password') ?? '')
+      if (register) {
         await signUpWithPassword(email, password)
-      } else {
-        await signInWithPassword(email, password)
-      }
+        const client = getSupabaseBrowserClient()
+        if (client && !(await client.auth.getSession()).data.session) {
+          setNotice(
+            'Check your inbox to confirm your email. The link will bring you back to set up your learning.',
+          )
+          return
+        }
+      } else await signInWithPassword(email, password)
       navigate(redirect)
-    } catch (nextError) {
-      const message =
-        nextError instanceof Error
-          ? nextError.message
-          : authMode === 'register'
-            ? 'Unable to create your account right now.'
-            : 'Unable to sign in right now.'
-      setError(message)
+    } catch (next) {
+      setError(
+        next instanceof Error
+          ? next.message
+          : 'Unable to sign in. Please try again.',
+      )
     } finally {
-      setPending(false)
-    }
-  }
-
-  async function handleGoogleSignIn() {
-    setError(null)
-    setPending(true)
-
-    try {
-      await signInWithGoogle()
-    } catch (nextError) {
-      const message =
-        nextError instanceof Error ? nextError.message : 'Unable to start Google sign-in.'
-      setError(message)
-      setPending(false)
+      setBusy(false)
     }
   }
 
   return (
-    <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between pb-4">
-        <Link to="/" className="text-sm font-semibold text-slate-600 transition hover:text-reef dark:text-slate-300">
-          ← Back to home
-        </Link>
-      </div>
-
-      <div className="mx-auto max-w-xl">
-        <section className="panel px-6 py-7 sm:px-8">
-          <div className="mx-auto max-w-md">
-            <div className="flex rounded-full border border-slate-200/70 bg-white/70 p-1 dark:border-white/10 dark:bg-white/5">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('signin')
-                  setError(null)
-                }}
-                className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  authMode === 'signin'
-                    ? 'bg-reef text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                Sign in
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('register')
-                  setError(null)
-                }}
-                className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  authMode === 'register'
-                    ? 'bg-reef text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                Register
-              </button>
-            </div>
-
-            <h2 className="mt-6 text-2xl font-bold text-ink dark:text-white">
-              {authMode === 'register' ? 'Create your focus space' : 'Sign in to your focus space'}
-            </h2>
-
-            <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Email</span>
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  placeholder="you@example.com"
-                  className="app-input"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  Password
-                </span>
+    <div className="mx-auto flex min-h-screen max-w-lg flex-col px-5 py-8">
+      <Link to="/" className="mx-auto flex items-center gap-3 font-extrabold">
+        <BrandMark />
+        Better Focus
+      </Link>
+      <main className="my-auto py-10">
+        <section className="panel p-7 sm:p-9">
+          <p className="section-kicker">A little more space for you</p>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight">
+            {mode === 'demo'
+              ? 'Take a look around.'
+              : register
+                ? 'Start a better browser habit.'
+                : 'Welcome back.'}
+          </h1>
+          <p className="mt-3 text-sm leading-6 muted-copy">
+            {mode === 'demo'
+              ? 'This is a local preview. Your learning stays in this browser; no real account is created and no password is needed.'
+              : register
+                ? 'Choose your distractions. Learn something you care about.'
+                : 'Your learning and focus space are right here.'}
+          </p>
+          {notice ? (
+            <p
+              role="status"
+              className="mt-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800"
+            >
+              {notice}
+            </p>
+          ) : null}
+          <form
+            className="mt-6 space-y-4"
+            onSubmit={(event) => void submit(event)}
+          >
+            <label className="block text-sm font-semibold">
+              Email
+              <input
+                type="email"
+                name="email"
+                autoComplete="email"
+                required
+                className="app-input mt-2"
+                placeholder="you@example.com"
+              />
+            </label>
+            {mode !== 'demo' ? (
+              <label className="block text-sm font-semibold">
+                Password
                 <input
                   type="password"
                   name="password"
+                  autoComplete={register ? 'new-password' : 'current-password'}
+                  minLength={register ? 8 : undefined}
                   required
-                  placeholder="••••••••"
-                  className="app-input"
+                  className="app-input mt-2"
                 />
               </label>
-              {error ? (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  {error}
-                </div>
-              ) : null}
-              {authError ? (
-                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
-                  {authError}
-                </div>
-              ) : null}
-              <button type="submit" className="action-button w-full">
-                {pending
-                  ? authMode === 'register'
-                    ? 'Creating account…'
-                    : 'Signing in…'
-                  : authMode === 'register'
-                    ? 'Create account'
-                    : 'Continue'}
-              </button>
-            </form>
-
-            <button
-              type="button"
-              onClick={() => void handleGoogleSignIn()}
-              className="google-button mt-4 w-full"
-              disabled={pending}
-            >
-              Continue with Google
+            ) : null}
+            {error || authError ? (
+              <p
+                role="alert"
+                className="rounded-xl bg-rose-50 p-3 text-sm text-rose-800"
+              >
+                {error ?? authError}
+              </p>
+            ) : null}
+            <button disabled={busy} className="action-button w-full">
+              {busy
+                ? 'Opening…'
+                : mode === 'demo'
+                  ? 'Enter local preview'
+                  : register
+                    ? 'Create my free account'
+                    : 'Sign in'}
+              <Icon name="arrow" />
             </button>
-          </div>
+          </form>
+          {mode !== 'demo' ? (
+            <>
+              <button
+                disabled={busy}
+                className="ghost-button mt-3 w-full"
+                onClick={() => {
+                  setBusy(true)
+                  void signInWithGoogle(redirect)
+                    .catch((next) =>
+                      setError(
+                        next instanceof Error
+                          ? next.message
+                          : 'Unable to start Google sign-in.',
+                      ),
+                    )
+                    .finally(() => setBusy(false))
+                }}
+              >
+                Continue with Google
+              </button>
+              <div className="mt-5 flex flex-wrap justify-between gap-3 text-xs">
+                <button
+                  className="font-semibold text-reef"
+                  onClick={() => {
+                    setRegister(!register)
+                    setError(null)
+                    setNotice(null)
+                  }}
+                >
+                  {register
+                    ? 'Already have an account? Sign in'
+                    : 'New here? Create an account'}
+                </button>
+                {!register ? (
+                  <Link to="/forgot-password" className="text-reef">
+                    Forgot password?
+                  </Link>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+          <Link to="/" className="mt-6 block text-center text-xs muted-copy">
+            Back to Better Focus
+          </Link>
         </section>
-      </div>
-
-      <SiteFooter className="mx-auto max-w-xl" />
+      </main>
+      <SiteFooter />
     </div>
   )
 }

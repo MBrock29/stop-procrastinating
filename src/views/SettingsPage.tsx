@@ -8,6 +8,7 @@ import { useBlockedDomains } from '../features/blocked-domains/useBlockedDomains
 import { useLearningCards } from '../features/cards/useLearningCards'
 import { useExtensionStatus } from '../features/extension/useExtensionStatus'
 import { usePricingCurrency } from '../features/pricing/usePricingCurrency'
+import { isPublicPaidTier } from '../features/product/publicPlans'
 
 export function SettingsPage() {
   const navigate = useNavigate()
@@ -48,17 +49,12 @@ export function SettingsPage() {
     billingAccount?.subscriptionStatus === 'past_due'
   const hasStripeSubscription = Boolean(billingAccount?.stripeSubscriptionId)
   const hasEntitledPaidAccess =
-    (settings.planTier === 'pro' || settings.planTier === 'premium') &&
+    isPublicPaidTier(settings.planTier) &&
     !hasManagedSubscription &&
     !hasStripeSubscription
-  const currentPlanLabel =
-    settings.planTier === 'byok'
-      ? 'Bring your own key'
-      : settings.planTier === 'premium'
-        ? 'Premium'
-        : settings.planTier === 'pro'
-          ? 'Pro'
-          : 'Free'
+  const currentPlanLabel = isPublicPaidTier(settings.planTier)
+    ? 'Better Focus Pro'
+    : 'Free'
   const nextBillingDate = billingAccount?.currentPeriodEnd
     ? new Date(billingAccount.currentPeriodEnd).toLocaleDateString()
     : null
@@ -137,31 +133,6 @@ export function SettingsPage() {
     }
   }
 
-  async function handleContinueButtonToggle(event: ChangeEvent<HTMLInputElement>) {
-    const nextChecked = event.target.checked
-
-    setPending(true)
-    setError(null)
-    setMessage(null)
-
-    try {
-      await updateSettings({ showContinueToSiteButton: nextChecked })
-      setMessage(
-        nextChecked
-          ? 'Continue to site will now appear on redirect sessions.'
-          : 'Continue to site is now hidden on redirect sessions.',
-      )
-    } catch (nextError) {
-      const nextMessage =
-        nextError instanceof Error
-          ? nextError.message
-          : 'Unable to update your redirect setting.'
-      setError(nextMessage)
-    } finally {
-      setPending(false)
-    }
-  }
-
   async function handlePremiumInterruptModeChange(event: ChangeEvent<HTMLSelectElement>) {
     const nextMode = event.target.value === 'summary' ? 'summary' : 'cards'
 
@@ -173,8 +144,8 @@ export function SettingsPage() {
       await updateSettings({ premiumInterruptMode: nextMode })
       setMessage(
         nextMode === 'summary'
-          ? 'Premium redirects now open with a saved summary first when one is available.'
-          : 'Premium redirects now open straight into cards.',
+          ? 'Interruptions now open with a saved summary first when one is available.'
+          : 'Interruptions now open straight into questions.',
       )
     } catch (nextError) {
       const nextMessage =
@@ -248,9 +219,7 @@ export function SettingsPage() {
           Keep your account and setup in good shape.
         </h2>
         <p className="muted-copy mt-4 max-w-2xl text-sm leading-6 sm:text-base">
-          {showByok
-            ? 'Review your sign-in details, extension connection, and BYOK security from one place.'
-            : 'Review your sign-in details and extension connection from one place.'}
+          Review your sign-in details, plan, and interruption preferences from one place.
         </p>
 
         {message || billingQueryMessage === 'success' ? (
@@ -282,19 +251,8 @@ export function SettingsPage() {
               Current plan
             </div>
             <div className="mt-3 text-lg font-bold text-ink dark:text-white">
-              {settings.planTier === 'byok'
-                ? 'Bring your own key'
-                : settings.planTier === 'premium'
-                  ? 'Premium'
-                : settings.planTier === 'pro'
-                  ? 'Pro'
-                  : 'Free'}
+              {currentPlanLabel}
             </div>
-            {settings.planTier === 'byok' ? (
-              <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
-                Preferred model: {settings.preferredModel}
-              </div>
-            ) : null}
           </div>
           <div className="metric-card">
             <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
@@ -381,70 +339,18 @@ export function SettingsPage() {
             ) : null}
 
             <div className="mt-5 flex flex-wrap gap-3">
-              {settings.planTier === 'free' ? (
-                <>
-                  <button
-                    type="button"
-                    className="action-button"
-                    onClick={() => void handleStartCheckout('pro')}
-                    disabled={pending || isBillingLoading}
-                  >
-                    Start Pro
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => void handleStartCheckout('premium')}
-                    disabled={pending || isBillingLoading}
-                  >
-                    Start Premium
-                  </button>
-                </>
+              {!isPublicPaidTier(settings.planTier) ? (
+                <button
+                  type="button"
+                  className="action-button"
+                  onClick={() => void handleStartCheckout('premium')}
+                  disabled={pending || isBillingLoading}
+                >
+                  Choose Better Focus Pro
+                </button>
               ) : null}
 
-              {settings.planTier === 'pro' ? (
-                <>
-                  {hasManagedSubscription ? (
-                    <>
-                      <button
-                        type="button"
-                        className="action-button"
-                        onClick={() => void handleOpenBillingPortal()}
-                        disabled={pending || isBillingLoading}
-                      >
-                        Upgrade to Premium
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => void handleOpenBillingPortal()}
-                        disabled={pending || isBillingLoading}
-                      >
-                        Manage plan
-                      </button>
-                    </>
-                  ) : hasEntitledPaidAccess ? (
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      disabled
-                    >
-                      Included access
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="action-button"
-                      onClick={() => void handleStartCheckout('premium')}
-                      disabled={pending || isBillingLoading}
-                    >
-                      Start Premium
-                    </button>
-                  )}
-                </>
-              ) : null}
-
-              {settings.planTier === 'premium' ? (
+              {isPublicPaidTier(settings.planTier) ? (
                 hasManagedSubscription ? (
                   <button
                     type="button"
@@ -469,30 +375,9 @@ export function SettingsPage() {
                     onClick={() => void handleStartCheckout('premium')}
                     disabled={pending || isBillingLoading}
                   >
-                    Start Premium billing
+                    Start Better Focus Pro billing
                   </button>
                 )
-              ) : null}
-
-              {settings.planTier === 'byok' ? (
-                <>
-                  <button
-                    type="button"
-                    className="action-button"
-                    onClick={() => void handleStartCheckout('pro')}
-                    disabled={pending || isBillingLoading}
-                  >
-                    Start Pro
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => void handleStartCheckout('premium')}
-                    disabled={pending || isBillingLoading}
-                  >
-                    Start Premium
-                  </button>
-                </>
               ) : null}
 
               <Link to="/app/pricing" className="ghost-button">
@@ -595,29 +480,11 @@ export function SettingsPage() {
               Redirect actions
             </div>
             <p className="muted-copy mt-2 leading-6">
-              Choose whether redirect sessions should show a quick way back to the
-              blocked site.
+              Every interruption includes a clear “Continue anyway” action. Better
+              Focus adds a useful pause without trapping you.
             </p>
-            <label className="mt-4 flex items-start gap-3">
-              <input
-                type="checkbox"
-                checked={settings.showContinueToSiteButton}
-                onChange={(event) => void handleContinueButtonToggle(event)}
-                disabled={pending || isLoading}
-                className="mt-1 h-4 w-4 rounded border-[var(--app-border)] text-reef focus:ring-reef disabled:cursor-not-allowed"
-              />
-              <span>
-                <span className="block font-semibold text-ink dark:text-white">
-                  Show “Continue to site”
-                </span>
-                <span className="muted-copy mt-1 block leading-6">
-                  If turned off, redirect sessions will keep users inside Better Focus
-                  without showing the shortcut back to the original site.
-                </span>
-              </span>
-            </label>
 
-            <div className="mt-5 border-t border-[var(--app-border)] pt-5">
+            <div className="mt-4 border-t border-[var(--app-border)] pt-5">
               <div className="font-semibold text-ink dark:text-white">
                 Automatic return
               </div>
@@ -662,14 +529,14 @@ export function SettingsPage() {
             </div>
           </div>
 
-          {settings.planTier === 'premium' ? (
+          {isPublicPaidTier(settings.planTier) ? (
             <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm">
               <div className="font-semibold text-ink dark:text-white">
-                Premium interrupt mode
+                Learning challenge format
               </div>
               <p className="muted-copy mt-2 leading-6">
-                Choose whether Premium redirect sessions should open with quick cards
-                or a saved topic summary first.
+                Choose whether interruptions open with quick questions or a saved
+                topic summary when one is available.
               </p>
               <label className="mt-4 block">
                 <span className="mb-2 block font-semibold text-ink dark:text-white">

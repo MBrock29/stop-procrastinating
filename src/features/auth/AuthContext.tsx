@@ -251,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email,
           password,
           options: {
-            emailRedirectTo: env.appUrl,
+            emailRedirectTo: new URL('/app/onboarding', env.appUrl).toString(),
           },
         })
 
@@ -267,7 +267,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setStatus('authenticated')
         }
       },
-      async signInWithGoogle() {
+      async signInWithGoogle(redirectPath = '/app') {
         if (!hasSupabaseEnv) {
           const email = 'demo@example.com'
           setDemoUser(email)
@@ -286,7 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await client.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: env.appUrl,
+            redirectTo: new URL(redirectPath.startsWith('/') && !redirectPath.startsWith('//') && !redirectPath.includes('\\') ? redirectPath : '/app', env.appUrl).toString(),
           },
         })
 
