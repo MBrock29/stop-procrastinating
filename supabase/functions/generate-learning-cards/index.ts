@@ -1,10 +1,14 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { normalizeQuestion, parseGeneratedCards, extractResponseText } from '../_shared/cardGeneration.mjs';
 import { decryptApiKey } from '../_shared/byokCrypto.ts';
+import { resolveGenerationRequest } from '../_shared/generationRequest.ts';
+
+const CARD_PROMPT_VERSION = 'cards-v1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type, x-byok-api-key, x-byok-provider',
+    'authorization, x-client-info, apikey, content-type, x-byok-api-key, x-byok-provider, x-generation-worker-secret, x-generation-user-id',
 };
 
 type PlanTier = 'free' | 'pro' | 'premium' | 'byok';
@@ -295,30 +299,6 @@ function buildCardsSchema(cardCount: number) {
   };
 }
 
-function parseCards(parsed: unknown) {
-  if (!parsed || typeof parsed !== 'object') {
-    return [];
-  }
-
-  const cards =
-    (parsed as { cards?: Array<{ question?: string; answer?: string }> })
-      .cards ?? [];
-
-  return cards
-    .filter((card) => card.question?.trim() && card.answer?.trim())
-    .map((card) => ({
-      question: card.question!.trim(),
-      answer: card.answer!.trim(),
-    }));
-}
-
-function normalizeQuestion(question: string) {
-  return question
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
 function ensureUniqueCards(
   cards: Array<{ question: string; answer: string }>,
   existingQuestions: string[],
@@ -375,6 +355,7 @@ async function generateWithOpenAi(
   maxOutputTokens: number,
 ) {
   const response = await fetch('https://api.openai.com/v1/responses', {
+    signal: AbortSignal.timeout(60_000),
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -417,6 +398,8 @@ async function generateWithOpenAi(
   const payload = (await response.json()) as {
     error?: { message?: string };
     output_text?: string;
+    status?: string;
+    output?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }>;
     usage?: { input_tokens?: number; output_tokens?: number };
   };
 
@@ -428,7 +411,7 @@ async function generateWithOpenAi(
   }
 
   try {
-    const cards = parseCards(extractJsonPayload(payload.output_text ?? ''));
+    const cards = parseGeneratedCards(extractJsonPayload(extractResponseText(payload)));
 
     if (!cards.length) {
       throw new HttpError(502, 'No valid cards were returned.');
@@ -467,6 +450,7 @@ async function generateWithOpenRouter(
   const response = await fetch(
     'https://openrouter.ai/api/v1/chat/completions',
     {
+      signal: AbortSignal.timeout(60_000),
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -523,7 +507,7 @@ async function generateWithOpenRouter(
     : (content ?? '');
 
   try {
-    const cards = parseCards(extractJsonPayload(rawText));
+    const cards = parseGeneratedCards(extractJsonPayload(rawText));
 
     if (!cards.length) {
       throw new HttpError(502, 'No valid cards were returned.');
@@ -567,9 +551,14 @@ async function insertGenerationEvent(
     estimatedCostUsd?: number | null;
     usedByok: boolean;
     failureReason?: string | null;
+    requestId?: string;
+    latencyMs?: number;
   },
 ) {
   const { error } = await client.from('ai_generation_events').insert({
+    request_id: event.requestId ?? null,
+    prompt_version: CARD_PROMPT_VERSION,
+    latency_ms: event.latencyMs ?? null,
     user_id: event.userId,
     topic: event.topic,
     plan_tier: event.planTier,
@@ -590,6 +579,8 @@ async function insertGenerationEvent(
 }
 
 Deno.serve(async (request) => {
+  const requestId = crypto.randomUUID();
+  const startedAt = performance.now();
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -605,44 +596,35 @@ Deno.serve(async (request) => {
     );
   }
 
-  const authHeader = request.headers.get('Authorization');
+  const identity = await resolveGenerationRequest(request);
+  if ('error' in identity) return jsonResponse({ error: identity.error }, identity.status);
+  const { client, user } = identity;
 
-  if (!authHeader) {
-    return jsonResponse({ error: 'Missing authorization header.' }, 401);
+  let body: Record<string, unknown>;
+  try {
+    const parsed: unknown = await request.json();
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return jsonResponse({ error: 'A JSON object is required.' }, 400);
+    }
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body.' }, 400);
+  }
+  const topic = typeof body.topic === 'string' ? body.topic.trim() : '';
+  const requestedModel = sanitizeModel(typeof body.requestedModel === 'string' ? body.requestedModel : null);
+  const requestedCardCount = body.cardCount ?? 10;
+  if (!topic || topic.length > 500 || typeof requestedCardCount !== 'number' ||
+    !Number.isSafeInteger(requestedCardCount) || requestedCardCount < 1 || requestedCardCount > 100) {
+    return jsonResponse({ error: 'Provide a topic of 1–500 characters and an integer card count of 1–100.' }, 400);
   }
 
-  const client = createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        Authorization: authHeader,
-      },
-    },
-  });
-
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
-
-  if (userError || !user) {
-    return jsonResponse({ error: 'Unable to validate the current user.' }, 401);
-  }
-
-  const body = (await request.json()) as {
-    topic?: string;
-    cardCount?: number;
-    requestedModel?: string;
-  };
-
-  const topic = body.topic?.trim();
-  const requestedModel = sanitizeModel(body.requestedModel);
-  const requestedCardCount = Math.max(1, Number(body.cardCount ?? 10) || 1);
-
-  const { data: settingsData } = await client
+  const { data: settingsData, error: settingsError } = await client
     .from('user_ai_settings')
     .select('plan_tier, byok_provider, preferred_model')
     .eq('user_id', user.id)
     .maybeSingle();
+
+  if (settingsError) return jsonResponse({ error: 'Unable to validate AI access settings.' }, 503);
 
   const settings =
     (settingsData as UserAiSettingsRow | null) ?? getDefaultSettings();
@@ -664,7 +646,7 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: 'A topic is required.' }, 400);
   }
 
-  const { data: lastEventData } = await client
+  const { data: lastEventData, error: lastEventError } = await client
     .from('ai_generation_events')
     .select('created_at')
     .eq('user_id', user.id)
@@ -672,11 +654,15 @@ Deno.serve(async (request) => {
     .limit(1)
     .maybeSingle();
 
+  if (lastEventError) return jsonResponse({ error: 'Unable to validate generation cooldown.' }, 503);
+
   if (!isOwnerOverride && lastEventData?.created_at) {
     const lastCreatedAt = new Date(lastEventData.created_at).getTime();
 
     if (Date.now() - lastCreatedAt < REQUEST_COOLDOWN_MS) {
       await insertGenerationEvent(client, {
+        requestId,
+        latencyMs: Math.round(performance.now() - startedAt),
         userId: user.id,
         topic,
         planTier: settings.plan_tier,
@@ -699,12 +685,14 @@ Deno.serve(async (request) => {
     }
   }
 
-  const { count: monthlySuccessCount } = await client
+  const { count: monthlySuccessCount, error: usageError } = await client
     .from('ai_generation_events')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)
     .eq('status', 'success')
     .gte('created_at', getStartOfMonth());
+
+  if (usageError) return jsonResponse({ error: 'Unable to validate generation quota.' }, 503);
 
   if (
     !isOwnerOverride &&
@@ -712,6 +700,8 @@ Deno.serve(async (request) => {
     (monthlySuccessCount ?? 0) >= policy.monthlyPackLimit
   ) {
     await insertGenerationEvent(client, {
+      requestId,
+      latencyMs: Math.round(performance.now() - startedAt),
       userId: user.id,
       topic,
       planTier: settings.plan_tier,
@@ -739,6 +729,8 @@ Deno.serve(async (request) => {
 
   if (requestedCardCount > policy.maxCardsPerPack) {
     await insertGenerationEvent(client, {
+      requestId,
+      latencyMs: Math.round(performance.now() - startedAt),
       userId: user.id,
       topic,
       planTier: settings.plan_tier,
@@ -761,13 +753,15 @@ Deno.serve(async (request) => {
     );
   }
 
-  const { data: previousTopicCardsData } = await client
+  const { data: previousTopicCardsData, error: previousCardsError } = await client
     .from('learning_cards')
     .select('question')
     .eq('user_id', user.id)
     .eq('generation_topic', topic)
     .order('created_at', { ascending: false })
     .limit(80);
+
+  if (previousCardsError) return jsonResponse({ error: 'Unable to check existing questions.' }, 503);
 
   const previousTopicQuestions = (
     (previousTopicCardsData as ExistingLearningCardRow[] | null) ?? []
@@ -845,6 +839,8 @@ Deno.serve(async (request) => {
 
   if (maxOutputTokens < minimumNeededOutputTokens) {
     await insertGenerationEvent(client, {
+      requestId,
+      latencyMs: Math.round(performance.now() - startedAt),
       userId: user.id,
       topic,
       planTier: settings.plan_tier,
@@ -892,6 +888,8 @@ Deno.serve(async (request) => {
       estimatedCostUsd > maxRequestCostUsd
     ) {
       await insertGenerationEvent(client, {
+        requestId,
+        latencyMs: Math.round(performance.now() - startedAt),
         userId: user.id,
         topic,
         planTier: settings.plan_tier,
@@ -916,6 +914,8 @@ Deno.serve(async (request) => {
     }
 
     await insertGenerationEvent(client, {
+      requestId,
+      latencyMs: Math.round(performance.now() - startedAt),
       userId: user.id,
       topic,
       planTier: settings.plan_tier,
@@ -932,6 +932,11 @@ Deno.serve(async (request) => {
     return jsonResponse({
       cards: generation.cards,
       meta: {
+        requestId,
+        promptVersion: CARD_PROMPT_VERSION,
+        latencyMs: Math.round(performance.now() - startedAt),
+        inputTokens: generation.usage.inputTokens,
+        outputTokens: generation.usage.outputTokens,
         planTier: settings.plan_tier,
         provider: effectiveProvider,
         model: canonicalModel,
@@ -950,6 +955,8 @@ Deno.serve(async (request) => {
     const status = error instanceof HttpError ? error.status : 500;
 
     await insertGenerationEvent(client, {
+      requestId,
+      latencyMs: Math.round(performance.now() - startedAt),
       userId: user.id,
       topic,
       planTier: settings.plan_tier,

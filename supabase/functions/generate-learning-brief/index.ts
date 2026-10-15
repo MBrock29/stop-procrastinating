@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { resolveGenerationRequest } from '../_shared/generationRequest.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -375,22 +375,9 @@ Deno.serve(async (request) => {
       throw new HttpError(500, 'Supabase environment variables are missing.');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: request.headers.get('Authorization') ?? '',
-        },
-      },
-    });
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new HttpError(401, 'Unable to validate the current user.');
-    }
+    const identity = await resolveGenerationRequest(request);
+    if ('error' in identity) throw new HttpError(identity.status, identity.error);
+    const { client: supabase, user } = identity;
 
     const body = (await request.json()) as {
       topic?: string;

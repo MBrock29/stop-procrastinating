@@ -18,6 +18,11 @@ export interface GeneratedCardDraft {
 export interface GenerateCardsResult {
   cards: GeneratedCardDraft[]
   meta: {
+    requestId?: string
+    promptVersion?: string
+    latencyMs?: number
+    inputTokens?: number | null
+    outputTokens?: number | null
     planTier: PlanTier
     provider: AiProvider
     model: string
@@ -29,33 +34,9 @@ export interface GenerateCardsResult {
   }
 }
 
-function createLocalCards(input: GenerateCardsInput) {
-  const normalizedTopic = input.topic.trim()
-
-  return Array.from({ length: input.cardCount }, (_, index) => {
-    const questionNumber = index + 1
-    return {
-      question: `${normalizedTopic}: question ${questionNumber}`,
-      answer: `Key idea ${questionNumber} for ${normalizedTopic}: explain the trade-off, give a concrete example, and mention one common pitfall to avoid in production.`,
-    }
-  })
-}
-
 export async function generateCardsWithAi(input: GenerateCardsInput) {
   if (!hasSupabaseEnv) {
-    return {
-      cards: createLocalCards(input),
-      meta: {
-        planTier: 'free' as PlanTier,
-        provider: 'openai' as AiProvider,
-        model: env.openaiModel,
-        monthlyPacksUsed: 1,
-        monthlyPackLimit: 3,
-        maxCardsPerPack: 10,
-        usedByok: false,
-        estimatedCostUsd: null,
-      },
-    } satisfies GenerateCardsResult
+    throw new Error('Personalised generation needs a connected account. In local preview, choose a ready-made set or add your own questions.')
   }
 
   const client = getSupabaseBrowserClient()

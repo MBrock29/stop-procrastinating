@@ -25,17 +25,13 @@ describe('generateCardsWithAi demo mode', () => {
     getSession.mockReset()
   })
 
-  it('returns the requested number of local fallback cards when Supabase is absent', async () => {
+  it('does not fabricate learning content when Supabase is absent', async () => {
     const { generateCardsWithAi } = await import('./aiGenerator')
 
-    const result = await generateCardsWithAi({
+    await expect(generateCardsWithAi({
       topic: 'mid-senior React interview questions',
       cardCount: 3,
-    })
-
-    expect(result.cards).toHaveLength(3)
-    expect(result.cards[0]?.question).toContain('mid-senior React interview questions')
-    expect(result.meta.model).toBe('gpt-4.1-mini')
+    })).rejects.toThrow('Personalised generation needs a connected account')
     expect(getSession).not.toHaveBeenCalled()
   })
 })
