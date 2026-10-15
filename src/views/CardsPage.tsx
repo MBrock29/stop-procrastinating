@@ -1,13 +1,13 @@
 import type { FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { TIER_POLICIES } from '../features/ai-access/constants'
 import { useAiAccess } from '../features/ai-access/useAiAccess'
 import { useAuth } from '../features/auth/useAuth'
 import { generateLearningBrief } from '../features/briefs/briefGenerator'
 import { useLearningBriefs } from '../features/briefs/useLearningBriefs'
 import { generateCardsWithAi } from '../features/cards/aiGenerator'
 import { useLearningCards } from '../features/cards/useLearningCards'
+import { AiCardFeedback } from '../features/feedback/AiCardFeedback'
 import type { LearningCard } from '../types/domain'
 
 interface CardDraft {
@@ -24,16 +24,6 @@ const initialAiDraft: AiDraft = {
   topic: '',
   cardCount: '10',
 }
-
-const demoBriefs = [
-  {
-    id: 'demo-brief-react-performance',
-    title: 'React performance summary',
-    topic: 'React performance interview pack',
-    content:
-      'This sample summary shows how Premium can recap a pack after you study it. In a real summary, Better Focus groups the cards into the main ideas, highlights one practical example, and reminds you about a key pitfall to remember.\n\nHere, the recap would likely connect rendering costs, memoisation trade-offs, and when to prioritise simpler code over premature optimisation.',
-  },
-]
 
 function CardEditor({
   draft,
@@ -136,6 +126,7 @@ function CardListItem({
             {card.answer}
           </p>
           <ReviewStats card={card} />
+          {card.source === 'ai' ? <AiCardFeedback cardId={card.id} sourceId={card.groundedSourceId} /> : null}
           <div className="mt-3 text-sm text-slate-500 dark:text-slate-300">
             {card.isArchived
               ? 'Archived: hidden from learning sessions, but still saved here.'
@@ -488,7 +479,7 @@ export function CardsPage() {
                 parsedCardCount > remainingStorageSlots
               ? `You can only add ${remainingStorageSlots} more card${remainingStorageSlots === 1 ? '' : 's'} before reaching this plan’s ${storageCap}-card limit.`
           : null
-  const previewBriefs = showPremiumTools ? briefs : demoBriefs
+  const previewBriefs = briefs
   const orderedBriefs = useMemo(
     () => sortItemsByStoredOrder(previewBriefs, briefOrder, (brief) => brief.id),
     [briefOrder, previewBriefs],
@@ -633,7 +624,7 @@ export function CardsPage() {
       setPackActionState({
         packId: pack.batchId,
         tone: 'success',
-        message: `Saved a summary for ${pack.topic} with ${generated.meta.model}.`,
+        message: `Saved a summary for ${pack.topic}.`,
       })
     } catch (nextError) {
       const message =
@@ -766,33 +757,29 @@ export function CardsPage() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="lg:col-span-2"><Link to="/app/cards" className="text-link text-xs">Back to my learning</Link><h1 className="page-title mt-4">Question editor.</h1><p className="muted-copy mt-3 text-sm">Edit individual questions, organise saved sets and manage summaries.</p></div>
       <section className="panel px-6 py-6 sm:px-8">
-        <p className="section-kicker">Learning cards</p>
+        <h2 className="section-kicker">Learning cards</h2>
         <p className="muted-copy mt-4 max-w-xl">
-          Add short questions with the generator below. These cards power your
-          learning sessions whenever you choose to review or get redirected here.
+          Choose a ready-made set, create your own questions, or ask Better Focus to prepare material for a topic.
+          These cards power each short learning challenge.
         </p>
         <div className="mt-4 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 text-sm leading-6 muted-copy">
           <div className="font-semibold text-ink dark:text-white">
-            Current AI plan: {TIER_POLICIES[settings.planTier].label}
+            Your learning allowance
           </div>
           <div className="mt-1">
-            {settings.planTier === 'byok'
-              ? `Using ${settings.preferredModel} through ${settings.byokProvider}.`
-              : settings.planTier === 'premium'
-                ? '100 cards per pack, 100 packs per month, deeper practice, and premium learning tools.'
-              : `${tierPolicy.maxCardsPerPack} cards per pack, ${
-                  tierPolicy.monthlyPackLimit ?? 'unlimited'
-                } packs per month.`}{' '}
-            {remainingPackAllowance != null ? `${remainingPackAllowance} pack${remainingPackAllowance === 1 ? '' : 's'} left this month. ` : ''}
+            {remainingPackAllowance != null ? `${remainingPackAllowance} material request${remainingPackAllowance === 1 ? '' : 's'} available this month. ` : 'Generate new material whenever you need it. '}
             {storageCap != null
               ? `${storedCardsCount}/${storageCap} cards stored.`
               : `${storedCardsCount} cards stored.`}
           </div>
           <Link to="/app/settings" className="mt-3 inline-block font-semibold text-reef">
-            Manage plans
+            Plan and billing
           </Link>
         </div>
+
+        <div className="soft-card mt-6 p-5"><p className="text-sm font-semibold">Looking for a personalised starter set?</p><Link to="/app/cards" className="text-link mt-3">Use the learning-set builder</Link></div>
 
         {formError ? (
           <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -802,12 +789,11 @@ export function CardsPage() {
 
         <form className="soft-card mt-10 space-y-4 border p-5" onSubmit={handleGenerateCards}>
           <div>
-            <p className="section-kicker">AI generated packs</p>
-            <h3 className="mt-2 text-lg font-bold text-ink dark:text-white">Generate a batch from a topic</h3>
+            <p className="section-kicker">Create learning material</p>
+            <h3 className="mt-2 text-lg font-bold text-ink dark:text-white">Tell Better Focus what you want to learn</h3>
             <p className="muted-copy mt-2 text-sm leading-6">
-              Enter a topic such as “Senior level programming interview questions” or
-              “Common English-Spanish phrases with translation” and the app will create
-              a saved set of cards.
+              Enter a focused topic such as “React interview questions” or “everyday Colombian Spanish”.
+              Better Focus will prepare a saved set for future interruptions.
             </p>
             <p className="muted-copy mt-2 text-sm leading-6">
               This plan supports up to {aiCardLimit} cards per pack.
@@ -872,7 +858,7 @@ export function CardsPage() {
             className="action-button"
             disabled={pending || !hasValidCardCount}
           >
-            {pending ? 'Generating…' : 'Generate AI cards'}
+            {pending ? 'Preparing…' : 'Create learning material'}
           </button>
         </form>
 
@@ -888,7 +874,7 @@ export function CardsPage() {
               </h3>
               {briefsExpanded ? (
                 <p className="muted-copy mt-2 text-sm leading-6">
-                  Review saved pack recaps here. Create them from the actions on each AI pack below.
+                  Review saved recaps here. Create them from the actions on each generated set below.
                 </p>
               ) : null}
             </div>
@@ -1015,7 +1001,7 @@ export function CardsPage() {
           {packsExpanded ? (
             generatedPacks.length === 0 ? (
               <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-border)] px-4 py-5 text-sm muted-copy">
-                No AI packs yet. Generate a topic-based pack to see it listed here.
+                No generated sets yet. Create questions for a topic to see them listed here.
               </div>
             ) : (
               <div className="mt-4 space-y-3">
@@ -1102,7 +1088,7 @@ export function CardsPage() {
                         ) : (
                           <>
                             <span
-                              title="Upgrade to Premium to summarise saved packs."
+                              title="Choose Better Focus Pro to summarise saved sets."
                               className="inline-flex"
                             >
                               <button
@@ -1115,7 +1101,7 @@ export function CardsPage() {
                             </span>
                             {canGoDeeper ? (
                               <span
-                                title="Upgrade to Premium to generate deeper follow-up packs."
+                                title="Choose Better Focus Pro to generate deeper follow-up sets."
                                 className="inline-flex"
                               >
                                 <button
