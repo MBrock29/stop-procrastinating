@@ -10,6 +10,10 @@ interface LearningCardRow {
   source: 'manual' | 'ai'
   generation_topic: string | null
   generation_batch_id: string | null
+  grounded_source_id?: string | null
+  citation_chunk_ids?: string[]
+  citation_excerpts?: string[]
+  grounding_score?: number | string | null
   is_user_edited: boolean
   latest_confidence: 'know' | 'semi' | 'not_confident' | null
   is_archived: boolean
@@ -50,6 +54,10 @@ function mapRow(row: LearningCardRow): LearningCard {
     source: row.source,
     generationTopic: row.generation_topic,
     generationBatchId: row.generation_batch_id,
+    groundedSourceId: row.grounded_source_id ?? null,
+    citationChunkIds: row.citation_chunk_ids ?? [],
+    citationExcerpts: row.citation_excerpts ?? [],
+    groundingScore: row.grounding_score == null ? null : Number(row.grounding_score),
     isUserEdited: row.is_user_edited,
     latestConfidence: row.latest_confidence,
     isArchived: row.is_archived,
@@ -117,6 +125,10 @@ export async function createLearningCard(userId: string, input: SaveLearningCard
       source: input.source ?? 'manual',
       generationTopic: input.generationTopic ?? null,
       generationBatchId: input.generationBatchId ?? null,
+      groundedSourceId: null,
+      citationChunkIds: [],
+      citationExcerpts: [],
+      groundingScore: null,
       isUserEdited: input.isUserEdited ?? false,
       latestConfidence: null,
       isArchived: false,
@@ -370,6 +382,10 @@ export async function bulkCreateLearningCards(userId: string, inputs: SaveLearni
       source: input.source ?? 'manual',
       generationTopic: input.generationTopic ?? null,
       generationBatchId: input.generationBatchId ?? null,
+      groundedSourceId: null,
+      citationChunkIds: [],
+      citationExcerpts: [],
+      groundingScore: null,
       isUserEdited: input.isUserEdited ?? false,
       latestConfidence: null,
       isArchived: false,
