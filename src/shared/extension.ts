@@ -10,6 +10,17 @@ export const EXTENSION_ALLOW_ONCE_MESSAGE = 'STOP_PROCRASTINATING_ALLOW_ONCE'
 export interface ExtensionSyncPayload {
   appBaseUrl: string
   blockedDomains: string[]
+  rules?: ExtensionRule[]
+}
+
+export interface ExtensionRule {
+  domain: string
+  scheduleDays: number[]
+  scheduleAllDay?: boolean
+  scheduleStart: string
+  scheduleEnd: string
+  interventionMode: import('../types/domain').InterventionMode
+  pausedUntil: string | null
 }
 
 export interface ExtensionStatusPayload extends ExtensionSyncPayload {

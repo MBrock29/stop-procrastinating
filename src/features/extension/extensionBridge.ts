@@ -9,6 +9,7 @@ import {
   type ExtensionAllowOncePayload,
   type ExtensionStatusPayload,
   type ExtensionSyncPayload,
+  type ExtensionRule,
 } from '../../shared/extension'
 
 function getWindowMessage(payload: ExtensionSyncPayload) {
@@ -19,11 +20,12 @@ function getWindowMessage(payload: ExtensionSyncPayload) {
   }
 }
 
-export function syncExtensionRules(blockedDomains: string[]) {
+export function syncExtensionRules(blockedDomains: string[], rules?: ExtensionRule[]) {
   window.postMessage(
     getWindowMessage({
       appBaseUrl: env.appUrl,
       blockedDomains,
+      rules,
     }),
     window.location.origin,
   )

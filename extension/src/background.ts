@@ -17,12 +17,14 @@ async function getStatus(): Promise<ExtensionStatusPayload> {
     appBaseUrl: DEFAULT_APP_URL,
     blockedDomains: [],
     lastSyncedAt: null,
+    rules: [],
   })
 
   return {
     appBaseUrl: stored.appBaseUrl as string,
     blockedDomains: stored.blockedDomains as string[],
     lastSyncedAt: stored.lastSyncedAt as string | null,
+    rules: stored.rules as ExtensionSyncPayload['rules'],
   }
 }
 
@@ -30,6 +32,7 @@ async function setStatus(payload: ExtensionSyncPayload) {
   await chrome.storage.local.set({
     appBaseUrl: payload.appBaseUrl,
     blockedDomains: payload.blockedDomains,
+    rules: payload.rules ?? [],
     lastSyncedAt: new Date().toISOString(),
   })
 }
@@ -46,6 +49,7 @@ chrome.runtime.onInstalled.addListener(() => {
     appBaseUrl: DEFAULT_APP_URL,
     blockedDomains: [],
     lastSyncedAt: null,
+    rules: [],
   })
 })
 
@@ -77,6 +81,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         appBaseUrl: DEFAULT_APP_URL,
         blockedDomains: [],
         lastSyncedAt: null,
+        rules: [],
       })
       .then(() => sendResponse({ ok: true }))
     return true

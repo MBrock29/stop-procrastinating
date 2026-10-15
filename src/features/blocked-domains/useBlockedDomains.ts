@@ -4,10 +4,12 @@ import {
   deleteBlockedDomain,
   listBlockedDomains,
   updateBlockedDomainState,
+  updateBlockedDomainControls,
 } from './blockedDomainsRepository'
 import { useAuth } from '../auth/useAuth'
 import { normalizeDomainInput } from '../../utils/domains'
 import type { BlockedDomain } from '../../types/domain'
+import type { InterventionMode } from '../../types/domain'
 
 export function useBlockedDomains() {
   const { user } = useAuth()
@@ -50,9 +52,11 @@ export function useBlockedDomains() {
     }
 
     void loadDomains()
+    window.addEventListener('better-focus:rules-changed', loadDomains)
 
     return () => {
       cancelled = true
+      window.removeEventListener('better-focus:rules-changed', loadDomains)
     }
   }, [user])
 
@@ -66,7 +70,9 @@ export function useBlockedDomains() {
       }
 
       const normalizedDomain = normalizeDomainInput(rawInput)
-      const alreadyExists = domains.some((item) => item.domain === normalizedDomain)
+      const alreadyExists = domains.some(
+        (item) => item.domain === normalizedDomain,
+      )
 
       if (alreadyExists) {
         throw new Error('That domain is already on your blocked list.')
@@ -74,6 +80,7 @@ export function useBlockedDomains() {
 
       const created = await createBlockedDomain(user.id, normalizedDomain)
       setDomains((current) => [created, ...current])
+      window.dispatchEvent(new Event('better-focus:rules-changed'))
       return created
     },
     async toggleDomain(domainId: string, isActive: boolean) {
@@ -81,7 +88,11 @@ export function useBlockedDomains() {
         throw new Error('You must be signed in to update blocked domains.')
       }
 
-      const updated = await updateBlockedDomainState(user.id, domainId, isActive)
+      const updated = await updateBlockedDomainState(
+        user.id,
+        domainId,
+        isActive,
+      )
 
       if (!updated) {
         return
@@ -90,6 +101,7 @@ export function useBlockedDomains() {
       setDomains((current) =>
         current.map((item) => (item.id === domainId ? updated : item)),
       )
+      window.dispatchEvent(new Event('better-focus:rules-changed'))
     },
     async removeDomain(domainId: string) {
       if (!user) {
@@ -98,6 +110,32 @@ export function useBlockedDomains() {
 
       await deleteBlockedDomain(user.id, domainId)
       setDomains((current) => current.filter((item) => item.id !== domainId))
+      window.dispatchEvent(new Event('better-focus:rules-changed'))
+    },
+    async updateControls(
+      domainId: string,
+      input: {
+        scheduleDays: number[]
+        scheduleAllDay: boolean
+        scheduleStart: string
+        scheduleEnd: string
+        interventionMode: InterventionMode
+        pausedUntil: string | null
+      },
+    ) {
+      if (!user)
+        throw new Error('You must be signed in to update blocked sites.')
+      const updated = await updateBlockedDomainControls(
+        user.id,
+        domainId,
+        input,
+      )
+      if (updated)
+        setDomains((current) =>
+          current.map((item) => (item.id === domainId ? updated : item)),
+        )
+      window.dispatchEvent(new Event('better-focus:rules-changed'))
+      return updated
     },
   }
 }
