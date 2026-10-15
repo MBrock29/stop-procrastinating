@@ -23,6 +23,9 @@ interface AiSettingsRow {
 }
 
 interface AiGenerationEventRow {
+  request_id: string | null
+  prompt_version: string | null
+  latency_ms: number | null
   id: string
   user_id: string
   topic: string
@@ -162,6 +165,9 @@ function mapSettingsRow(row: AiSettingsRow): AiAccessSettings {
 
 function mapEventRow(row: AiGenerationEventRow): AiGenerationEvent {
   return {
+    requestId: row.request_id ?? null,
+    promptVersion: row.prompt_version ?? null,
+    latencyMs: row.latency_ms ?? null,
     id: row.id,
     userId: row.user_id,
     topic: row.topic,
